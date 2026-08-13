@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Richard Mark H. Adlawan — Deck Officer</title>
+<meta name="description" content="Richard Mark H. Adlawan — Management-level Deck Officer (STCW II/2). Chief Mate CoC, bulk carrier & container experience, shipboard software builder.">
+<script>
+/* Theme before first paint. Dark is default. */
+(function(){
+  try{
+    var t = localStorage.getItem('rma_site_theme');
+    if(t === 'light'){ document.documentElement.setAttribute('data-theme','light'); }
+  }catch(e){}
+  document.documentElement.classList.add('js');
+})();
+</script>
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --sea-0:#0B1220;          /* page ground */
+  --sea-1:#101A2D;          /* panels / cards */
+  --sea-2:#0E1626;          /* nav / inset */
+  --hairline:#1D2A44;
+  --ink:#E7EDF7;
+  --ink-dim:#8E99AF;
+  --signal:#22C55E;
+  --signal-ink:#052E13;     /* dark text on green bars */
+  --signal-dim:rgba(34,197,94,.14);
+  --glow:0 0 12px rgba(34,197,94,.35);
+  --glow-soft:0 0 8px rgba(34,197,94,.22);
+  --amber:#F59E0B;
+  --alert:#EF4444;
+  --nav-h:52px;
+  --font-ui:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono:"SF Mono", ui-monospace, Menlo, Monaco, "Cascadia Mono", "Roboto Mono", monospace;
+  --radius:12px;
+  --maxw:1080px;
+}
+:root[data-theme="light"]{
+  --sea-0:#F5F7FA;
+  --sea-1:#FFFFFF;
+  --sea-2:#EEF2F7;
+  --hairline:#D9E1EC;
+  --ink:#101826;
+  --ink-dim:#5A6578;
+  /* green-800: the 11-12px eyebrows, pills and badges sit on a green-tinted
+     surface, so the accent must clear 4.5:1 against that tint, not against white */
+  --signal:#166534;
+  --signal-ink:#FFFFFF;
+  --signal-dim:rgba(22,101,52,.10);
+  --glow:0 0 10px rgba(22,101,52,.20);
+  --glow-soft:0 0 6px rgba(22,101,52,.12);
+}
+
+/* ============ SHELL (proven iOS pattern) ============ */
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ height:100%; }
+body{
+  font-family:var(--font-ui);
+  background:var(--sea-0);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  text-size-adjust:100%;
+  -webkit-text-size-adjust:100%;
+}
+#app{
+  height:100vh;
+  height:100dvh;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+main{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+}
+@media (prefers-reduced-motion: reduce){
+  main{ scroll-behavior:auto; }
+}
+
+/* ============ NAV (flex child, not fixed) ============ */
+nav{
+  height:var(--nav-h);
+  flex:0 0 var(--nav-h);
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:0 16px;
+  background:var(--sea-2);
+  border-bottom:1px solid var(--hairline);
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.brand{
+  font-family:var(--font-mono);
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.08em;
+  color:var(--ink);
+  white-space:nowrap;
+}
+.brand b{ color:var(--signal); }
+.nav-links{
+  flex:1;
+  display:flex;
+  gap:2px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  -ms-overflow-style:none;
+}
+.nav-links::-webkit-scrollbar{ display:none; }
+.nav-links a{
+  font-size:12.5px;
+  font-weight:600;
+  letter-spacing:.02em;
+  color:var(--ink-dim);
+  text-decoration:none;
+  padding:7px 10px;
+  border-radius:8px;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.nav-links a:hover{ color:var(--ink); background:var(--sea-1); }
+.nav-links a[aria-current="true"]{ color:var(--signal); background:var(--signal-dim); }
+#themeBtn{
+  flex:0 0 auto;
+  width:34px; height:34px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--sea-1);
+  border:1px solid var(--hairline);
+  border-radius:9px;
+  color:var(--ink-dim);
+  cursor:pointer;
+}
+#themeBtn:hover{ color:var(--ink); }
+#themeBtn svg{ width:17px; height:17px; }
+#themeBtn .ic-sun{ display:none; }
+:root[data-theme="light"] #themeBtn .ic-sun{ display:block; }
+:root[data-theme="light"] #themeBtn .ic-moon{ display:none; }
+a:focus-visible, button:focus-visible{
+  outline:2px solid var(--signal);
+  outline-offset:2px;
+}
+
+/* ============ DRAFT-MARK RAIL (signature, ≥1200px) ============ */
+#draftRail{
+  display:none;
+  position:fixed;
+  left:26px;
+  top:50%;
+  transform:translateY(-50%);
+  height:62vh;
+  width:88px;
+  z-index:5;
+  pointer-events:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+@media (min-width:1200px){
+  #draftRail{ display:block; }
+}
+.rail-edge{
+  position:absolute;
+  left:34px; top:0; bottom:0;
+  width:2px;
+  background:var(--hairline);
+}
+.rail-mark{
+  position:absolute;
+  left:0;
+  width:100%;
+  height:0;
+  font-family:var(--font-mono);
+  font-size:11px;
+  font-weight:700;
+  color:var(--ink-dim);
+  letter-spacing:.05em;
+}
+.rail-mark span{
+  position:absolute;
+  right:60px;
+  top:-7px;
+}
+.rail-mark::after{
+  content:"";
+  position:absolute;
+  left:28px;
+  top:-1px;
+  width:14px;
+  height:2px;
+  background:var(--ink-dim);
+  opacity:.55;
+}
+.rail-mark.sub{ color:var(--signal); }
+.rail-mark.sub::after{ background:var(--signal); opacity:.8; }
+#railWater{
+  position:absolute;
+  left:30px; right:44px; bottom:0;
+  height:0%;
+  background:-webkit-linear-gradient(bottom, rgba(34,197,94,.16), rgba(34,197,94,.02));
+  background:linear-gradient(to top, rgba(34,197,94,.16), rgba(34,197,94,.02));
+}
+#railLine{
+  position:absolute;
+  left:24px; right:0;
+  bottom:0;
+  height:0;
+  border-top:2px solid var(--signal);
+  box-shadow:var(--glow-soft);
+}
+#railLabel{
+  position:absolute;
+  left:34px;
+  top:6px;
+  font-family:var(--font-mono);
+  font-size:9.5px;
+  font-weight:700;
+  letter-spacing:.14em;
+  color:var(--signal);
+  white-space:nowrap;
+}
+
+/* ============ LAYOUT ============ */
+.wrap{
+  max-width:var(--maxw);
+  margin:0 auto;
+  padding:0 20px;
+}
+section{ padding:56px 0 8px; }
+section:last-of-type{ padding-bottom:48px; }
+.eyebrow{
+  font-family:var(--font-mono);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.22em;
+  color:var(--signal);
+  text-transform:uppercase;
+  margin-bottom:10px;
+}
+h2{
+  font-size:26px;
+  font-weight:800;
+  letter-spacing:-.02em;
+  margin-bottom:20px;
+}
+.card{
+  background:var(--sea-1);
+  border:1px solid var(--hairline);
+  border-radius:var(--radius);
+  padding:20px;
+}
+
+/* ============ HERO ============ */
+#hero{ padding:64px 0 24px; }
+.hero-eyebrow{
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  font-weight:700;
+  letter-spacing:.2em;
+  color:var(--ink-dim);
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+h1{
+  font-size:44px;
+  font-weight:800;
+  letter-spacing:-.025em;
+  line-height:1.06;
+  margin-bottom:16px;
+}
+.coc-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-family:var(--font-mono);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.04em;
+  color:var(--signal);
+  background:var(--signal-dim);
+  border:1px solid var(--signal);
+  border-radius:999px;
+  padding:7px 14px;
+  margin-bottom:16px;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.coc-badge .dot{
+  width:7px; height:7px;
+  border-radius:50%;
+  background:var(--signal);
+  box-shadow:var(--glow);
+}
+.headline{
+  font-size:17px;
+  line-height:1.55;
+  color:var(--ink-dim);
+  max-width:620px;
+  margin-bottom:6px;
+}
+.current{
+  font-size:15px;
+  line-height:1.55;
+  color:var(--ink);
+  max-width:620px;
+  margin-bottom:4px;
+}
+.current .mono{ color:var(--signal); }
+.homebase{
+  font-size:13.5px;
+  color:var(--ink-dim);
+  margin-bottom:24px;
+}
+.mono{
+  font-family:var(--font-mono);
+  font-weight:600;
+}
+.hero-actions{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:34px;
+}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+  font-weight:700;
+  padding:12px 20px;
+  border-radius:11px;
+  text-decoration:none;
+  cursor:pointer;
+  border:1px solid transparent;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+  -webkit-tap-highlight-color:transparent;
+  min-height:44px;
+}
+.btn svg{ width:16px; height:16px; }
+.btn-primary{
+  background:var(--signal);
+  color:var(--signal-ink);
+  box-shadow:var(--glow-soft);
+}
+:root[data-theme="dark"] .btn-primary, :root:not([data-theme="light"]) .btn-primary{ color:#052E13; }
+.btn-primary:hover{ filter:brightness(1.08); }
+.btn-ghost{
+  background:transparent;
+  color:var(--ink);
+  border-color:var(--hairline);
+}
+.btn-ghost:hover{ border-color:var(--signal); color:var(--signal); }
+.stat-row{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:12px;
+}
+.stat{
+  background:var(--sea-1);
+  border:1px solid var(--hairline);
+  border-radius:var(--radius);
+  padding:14px 16px;
+}
+.stat .v{
+  font-family:var(--font-mono);
+  font-size:22px;
+  font-weight:700;
+  color:var(--signal);
+  text-shadow:var(--glow-soft);
+  letter-spacing:-.01em;
+  white-space:nowrap;
+}
+.stat .l{
+  font-size:10.5px;
+  font-weight:700;
+  letter-spacing:.12em;
+  color:var(--ink-dim);
+  text-transform:uppercase;
+  margin-top:5px;
+}
+
+/* ============ ABOUT ============ */
+.summary{
+  font-size:16px;
+  line-height:1.7;
+  color:var(--ink);
+  max-width:760px;
+}
+.summary strong{ color:var(--signal); font-weight:700; }
+
+/* ============ SEA SERVICE TIMELINE ============ */
+.timeline{
+  position:relative;
+  padding-left:26px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.timeline::before{
+  content:"";
+  position:absolute;
+  left:8px; top:8px; bottom:8px;
+  width:2px;
+  background:var(--hairline);
+}
+.svc{
+  position:relative;
+  background:var(--sea-1);
+  border:1px solid var(--hairline);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.svc::before{
+  content:"";
+  position:absolute;
+  left:-22px; top:22px;
+  width:10px; height:10px;
+  border-radius:50%;
+  background:var(--signal);
+  box-shadow:var(--glow-soft);
+}
+.svc-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  background:-webkit-linear-gradient(left, #16A34A, #22C55E);
+  background:linear-gradient(90deg, #16A34A, #22C55E);
+  color:#052E13;
+  padding:10px 16px;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.svc-head .vessel{
+  font-family:var(--font-mono);
+  font-size:14.5px;
+  font-weight:800;
+  letter-spacing:.05em;
+}
+.svc-head .flagtype{
+  font-size:11px;
+  font-weight:700;
+  opacity:.85;
+  text-align:right;
+}
+.svc-body{
+  padding:13px 16px 15px;
+}
+.svc-rank-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+.rank-chip{
+  font-size:13px;
+  font-weight:700;
+  color:var(--ink);
+}
+.dur-badge{
+  font-family:var(--font-mono);
+  font-size:12px;
+  font-weight:700;
+  color:var(--signal);
+  background:var(--signal-dim);
+  border:1px solid var(--hairline);
+  border-radius:999px;
+  padding:4px 12px;
+  white-space:nowrap;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.dur-badge.live{ border-color:var(--signal); box-shadow:var(--glow-soft); }
+.svc-dates{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-family:var(--font-mono);
+  font-size:12.5px;
+  color:var(--ink-dim);
+}
+.svc-dates svg{ width:14px; height:14px; flex:0 0 auto; }
+.svc-dates .arrow{ color:var(--signal); }
+.svc-note{
+  margin-top:6px;
+  font-size:12px;
+  color:var(--ink-dim);
+}
+.svc-totals{
+  margin-top:20px;
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:12px;
+}
+.svc-manning{
+  margin-top:14px;
+  font-size:13px;
+  color:var(--ink-dim);
+}
+.svc-manning .mono{ color:var(--ink); }
+
+/* ============ COMPETENCY LISTS ============ */
+.comp-list{
+  list-style:none;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.comp-list li{
+  position:relative;
+  background:var(--sea-1);
+  border:1px solid var(--hairline);
+  border-radius:10px;
+  padding:12px 14px 12px 34px;
+  font-size:14px;
+  line-height:1.55;
+}
+.comp-list li::before{
+  content:"";
+  position:absolute;
+  left:14px; top:19px;
+  width:8px; height:8px;
+  border:2px solid var(--signal);
+  border-radius:50%;
+}
+
+/* ============ CERTIFICATIONS ============ */
+.cert-table{
+  width:100%;
+  border-collapse:collapse;
+  background:var(--sea-1);
+  border:1px solid var(--hairline);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+.cert-table th{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ink-dim);
+  text-align:left;
+  padding:12px 16px;
+  border-bottom:1px solid var(--hairline);
+  background:var(--sea-2);
+}
+.cert-table td{
+  padding:12px 16px;
+  border-bottom:1px solid var(--hairline);
+  font-size:14px;
+  line-height:1.5;
+  vertical-align:top;
+}
+.cert-table tr:last-child td{ border-bottom:none; }
+.cert-note{
+  display:block;
+  font-size:12px;
+  color:var(--ink-dim);
+  margin-top:3px;
+}
+.pill{
+  display:inline-block;
+  font-family:var(--font-mono);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  color:var(--signal);
+  background:var(--signal-dim);
+  border:1px solid var(--signal);
+  border-radius:999px;
+  padding:3px 12px;
+  box-shadow:var(--glow-soft);
+  white-space:nowrap;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.cert-wrap{ border-radius:var(--radius); }
+
+/* ============ TOOLS & PROJECTS ============ */
+.tools-grid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:14px;
+}
+.tool-card{
+  background:var(--sea-1);
+  border:1px solid var(--hairline);
+  border-radius:var(--radius);
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.tool-card:hover{ border-color:var(--signal); }
+.tool-card .t-icon{
+  width:34px; height:34px;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--hairline);
+  border-radius:9px;
+  color:var(--signal);
+  background:var(--signal-dim);
+}
+.tool-card .t-icon svg{ width:18px; height:18px; }
+.tool-card h3{
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:-.01em;
+}
+.tool-card p{
+  font-size:13px;
+  line-height:1.55;
+  color:var(--ink-dim);
+}
+.tech-line{
+  margin-top:18px;
+  font-family:var(--font-mono);
+  font-size:12.5px;
+  color:var(--ink-dim);
+  line-height:1.6;
+}
+.tech-line b{ color:var(--signal); font-weight:700; }
+
+/* ============ LEADERSHIP / CONTACT ============ */
+.lead-list{
+  list-style:none;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  max-width:760px;
+}
+.lead-list li{
+  position:relative;
+  padding-left:26px;
+  font-size:15px;
+  line-height:1.6;
+}
+.lead-list li::before{
+  content:"";
+  position:absolute;
+  left:2px; top:8px;
+  width:9px; height:9px;
+  border:2px solid var(--signal);
+  border-radius:50%;
+}
+.contact-card{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  max-width:560px;
+}
+.contact-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  font-size:14.5px;
+}
+.contact-row svg{ width:17px; height:17px; color:var(--signal); flex:0 0 auto; }
+.contact-row .dim{ color:var(--ink-dim); }
+footer{
+  border-top:1px solid var(--hairline);
+  padding:22px 0 30px;
+  font-size:12.5px;
+  color:var(--ink-dim);
+  text-align:center;
+}
+footer .mono{ font-size:11.5px; }
+
+/* ============ REVEAL MOTION ============ */
+@media (prefers-reduced-motion: no-preference){
+  .js .reveal{
+    opacity:0;
+    -webkit-transform:translateY(12px);
+    transform:translateY(12px);
+    -webkit-transition:opacity .45s ease-out, -webkit-transform .45s ease-out;
+    transition:opacity .45s ease-out, transform .45s ease-out;
+  }
+  .js .reveal.in{
+    opacity:1;
+    -webkit-transform:none;
+    transform:none;
+  }
+  @-webkit-keyframes heroRise{
+    from{ opacity:0; -webkit-transform:translateY(14px); transform:translateY(14px); }
+    to{ opacity:1; -webkit-transform:none; transform:none; }
+  }
+  @keyframes heroRise{
+    from{ opacity:0; -webkit-transform:translateY(14px); transform:translateY(14px); }
+    to{ opacity:1; -webkit-transform:none; transform:none; }
+  }
+  .js #hero .rise{
+    opacity:0;
+    -webkit-animation:heroRise .55s ease-out forwards;
+    animation:heroRise .55s ease-out forwards;
+    will-change:transform, opacity;
+  }
+  .js #hero .rise:nth-child(2){ -webkit-animation-delay:.06s; animation-delay:.06s; }
+  .js #hero .rise:nth-child(3){ -webkit-animation-delay:.12s; animation-delay:.12s; }
+  .js #hero .rise:nth-child(4){ -webkit-animation-delay:.18s; animation-delay:.18s; }
+  .js #hero .rise:nth-child(5){ -webkit-animation-delay:.24s; animation-delay:.24s; }
+  .js #hero .rise:nth-child(6){ -webkit-animation-delay:.30s; animation-delay:.30s; }
+  .js #hero .rise:nth-child(7){ -webkit-animation-delay:.36s; animation-delay:.36s; }
+  .js #hero .rise:nth-child(8){ -webkit-animation-delay:.42s; animation-delay:.42s; }
+}
+
+/* ============ BREAKPOINTS ============ */
+@media (max-width:768px){
+  h1{ font-size:32px; }
+  h2{ font-size:22px; }
+  .stat-row{ grid-template-columns:1fr 1fr; }
+  .comp-list{ grid-template-columns:1fr; }
+  .tools-grid{ grid-template-columns:1fr; }
+  .svc-totals{ grid-template-columns:1fr; }
+  .svc-head{ flex-direction:column; align-items:flex-start; gap:2px; }
+  .svc-head .flagtype{ text-align:left; }
+  .cert-table thead{ display:none; }
+  .cert-table, .cert-table tbody, .cert-table tr, .cert-table td{ display:block; width:100%; }
+  .cert-table tr{ border-bottom:1px solid var(--hairline); }
+  .cert-table tr:last-child{ border-bottom:none; }
+  .cert-table td{ border-bottom:none; padding:5px 16px; }
+  .cert-table td:first-child{ padding-top:13px; }
+  .cert-table td:last-child{ padding-bottom:13px; }
+  .brand{ font-size:12px; }
+}
+@media (max-width:380px){
+  h1{ font-size:28px; }
+  .stat-row{ grid-template-columns:1fr 1fr; gap:8px; }
+  .stat .v{ font-size:18px; }
+  .wrap{ padding:0 14px; }
+  .hero-actions .btn{ flex:1; justify-content:center; }
+}
+
+/* ============ PRINT FALLBACK ============ */
+@media print{
+  :root{
+    --sea-0:#FFFFFF; --sea-1:#FFFFFF; --sea-2:#F2F4F7;
+    --hairline:#C9D2DE; --ink:#101826; --ink-dim:#4A5568;
+    --signal:#16A34A; --signal-dim:#EAF6EE;
+    --glow:none; --glow-soft:none;
+  }
+  #app{ height:auto; display:block; overflow:visible; }
+  main{ overflow:visible; }
+  nav, #draftRail, .hero-actions, #themeBtn{ display:none !important; }
+  section{ padding:18px 0; }
+  .svc-head{ background:#16A34A !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .stat .v{ text-shadow:none; }
+  a{ color:inherit; text-decoration:none; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <nav aria-label="Site">
+    <span class="brand">R.M.H.<b>ADLAWAN</b></span>
+    <div class="nav-links" id="navLinks">
+      <a href="#about">About</a>
+      <a href="#service">Sea Service</a>
+      <a href="#bridge">Bridge</a>
+      <a href="#cargo">Cargo</a>
+      <a href="#safety">Safety</a>
+      <a href="#certs">Certifications</a>
+      <a href="#tools">Tools</a>
+      <a href="#leadership">Leadership</a>
+      <a href="#contact">Contact</a>
+    </div>
+    <button id="themeBtn" aria-label="Toggle light or dark theme">
+      <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+  </nav>
+
+  <main id="main">
+    <!-- Signature: hull draft-mark rail (desktop only, decorative) -->
+    <aside id="draftRail" aria-hidden="true">
+      <div class="rail-edge"></div>
+      <div id="railScale"></div>
+      <div id="railWater"></div>
+      <div id="railLine"><span id="railLabel">DECK</span></div>
+    </aside>
+
+    <div class="wrap">
+
+      <!-- ================= HERO ================= -->
+      <section id="hero">
+        <p class="hero-eyebrow rise">Deck Officer &middot; Merchant Marine</p>
+        <h1 class="rise">Richard Mark<br>H.&nbsp;Adlawan</h1>
+        <p class="coc-badge rise"><span class="dot"></span>CHIEF MATE CoC &middot; UNLIMITED, OCEANGOING &middot; STCW II/2</p>
+        <p class="headline rise">Management-level Deck Officer&ensp;|&ensp;Bulk Carrier &amp; Container Experience&ensp;|&ensp;Shipboard Software Builder</p>
+        <p class="current rise">Currently: 2nd Officer, MV FG Eucalyptus — Supramax Bulk Carrier, <span class="mono">50,011 DWT</span>, Singapore Flag</p>
+        <p class="homebase rise">Home base: Talisay City, Cebu, Philippines</p>
+        <div class="hero-actions rise">
+          <a class="btn btn-primary" href="ADLAWAN_RICHARD_CV.pdf" download>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+            Download CV
+          </a>
+          <a class="btn btn-ghost" href="#contact">Contact</a>
+        </div>
+        <div class="stat-row rise">
+          <div class="stat"><div class="v" id="statTotal">—</div><div class="l">Officer seatime</div></div>
+          <div class="stat"><div class="v" id="stat2O">—</div><div class="l">As 2nd Officer</div></div>
+          <div class="stat"><div class="v">50,011</div><div class="l">DWT current vessel</div></div>
+          <div class="stat"><div class="v">0</div><div class="l">Incidents, all contracts</div></div>
+        </div>
+      </section>
+
+      <!-- ================= ABOUT ================= -->
+      <section id="about">
+        <p class="eyebrow">Profile</p>
+        <h2 class="reveal">About</h2>
+        <p class="summary reveal">Management-level Deck Officer (STCW II/2) with 3.5+ years&rsquo; officer watchkeeping experience across container vessels and bulk carriers. Chief Mate Certificate of Competency (Unlimited, Oceangoing) — MARINA Philippines. <strong>Clean record across all completed contracts — zero incidents, all contracts finished in full.</strong> Seeking Chief Mate positions on bulk carriers; open to 2nd Officer roles with confirmed onboard promotion pathway to Chief Mate. Distinctive edge: designs and builds offline shipboard calculation software in active bridge use.</p>
+      </section>
+
+      <!-- ================= SEA SERVICE ================= -->
+      <section id="service">
+        <p class="eyebrow">Record</p>
+        <h2 class="reveal">Sea Service</h2>
+        <div class="timeline" id="timeline"><!-- built by JS from SERVICE data --></div>
+        <div class="svc-totals reveal">
+          <div class="stat"><div class="v" id="tot2O">—</div><div class="l">Total as 2nd Officer</div></div>
+          <div class="stat"><div class="v" id="tot3O">—</div><div class="l">Total as 3rd Officer</div></div>
+          <div class="stat"><div class="v" id="totAll">—</div><div class="l">Total officer seatime</div></div>
+        </div>
+        <p class="svc-manning reveal">Manning: <span class="mono">V.Ships (Fleet 6B Manila)</span></p>
+      </section>
+
+      <!-- ================= BRIDGE & NAVIGATION ================= -->
+      <section id="bridge">
+        <p class="eyebrow">Watchkeeping</p>
+        <h2 class="reveal">Bridge &amp; Navigation Competencies</h2>
+        <ul class="comp-list">
+          <li class="reveal">Berth-to-berth passage planning and execution, worldwide trading: ocean passages, archipelagic waters, high-density TSS (Singapore Strait, Malacca), Australian and East Asian coastal waters</li>
+          <li class="reveal">ECDIS: JRC and Furuno — route planning, safety contour management, chart/permit updating, alarm management</li>
+          <li class="reveal">Radar/ARPA: JRC and Furuno — collision avoidance in restricted visibility and heavy traffic</li>
+          <li class="reveal">Gyro and magnetic compass management: daily error observations (azimuth/amplitude), deviation records, compass error logs</li>
+          <li class="reveal">MSI management: GMDSS/NAVTEX/SafetyNET EGC monitoring, NAVAREA warning indexing and route-relevance analysis</li>
+          <li class="reveal">Weather routing liaison, heavy-weather passage planning, tropical cyclone avoidance</li>
+          <li class="reveal">Bridge Team &amp; Resource Management (BTRM) — Dec 2025</li>
+          <li class="reveal">Nautical publications and chart correction management</li>
+        </ul>
+      </section>
+
+      <!-- ================= CARGO & DECK ================= -->
+      <section id="cargo">
+        <p class="eyebrow">Operations</p>
+        <h2 class="reveal">Cargo &amp; Deck Operations</h2>
+        <ul class="comp-list">
+          <li class="reveal">Cargo experience: woodchips, tapioca chips, dry bulk (Supramax), containerized cargo incl. reefer container monitoring</li>
+          <li class="reveal">Cargo watch officer: sequence monitoring, ballast/deballast coordination, trim/draft management, air draft control</li>
+          <li class="reveal">Draft surveys to 0.5&nbsp;cm precision with heeling and draft-list corrections (initial/intermediate/final)</li>
+          <li class="reveal">Daily Progress Reporting: period-based load/discharge rates, cargo remaining, ETC projections</li>
+          <li class="reveal">Hold preparation: grain-clean and charterer&rsquo;s standard per voyage instructions; hold inspections</li>
+          <li class="reveal">Hatch covers (folding type): operation, weathertightness maintenance, hose testing</li>
+          <li class="reveal">Loading computers: OEC LOAD-MASTER, CLOUD — condition planning, stress/stability verification against approved Loading Manual</li>
+          <li class="reveal">Manual stability verification using vessel hydrostatic tables</li>
+        </ul>
+      </section>
+
+      <!-- ================= SAFETY & COMPLIANCE ================= -->
+      <section id="safety">
+        <p class="eyebrow">Standards</p>
+        <h2 class="reveal">Safety &amp; Compliance</h2>
+        <ul class="comp-list">
+          <li class="reveal">Clean record: zero incidents across all contracts; all contracts completed in full</li>
+          <li class="reveal">PSC inspections attended: Australia (AMSA), Vietnam, Philippines</li>
+          <li class="reveal">Designated Medical Officer (2/O): medical stores to Singapore flag Scale A (MLC 2006), controlled substances custody, expiry auditing, requisitions</li>
+          <li class="reveal">Led and conducted shipboard drills (fire, abandon ship, enclosed space rescue, MOB) under Master&rsquo;s oversight</li>
+          <li class="reveal">Risk assessments and permit-to-work compliance (enclosed space, hot work, working aloft)</li>
+          <li class="reveal">ISM Code shipboard implementation, SMS compliance</li>
+        </ul>
+      </section>
+
+      <!-- ================= CERTIFICATIONS ================= -->
+      <section id="certs">
+        <p class="eyebrow">Documents</p>
+        <h2 class="reveal">Certifications</h2>
+        <div class="cert-wrap reveal">
+        <table class="cert-table">
+          <thead><tr><th>Certificate</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>CoC Chief Mate (Management Level, STCW II/2), Unlimited / Oceangoing — MARINA<span class="cert-note">New issuance in final evaluation; current CoC valid to Sep 2026</span></td><td><span class="pill">VALID</span></td></tr>
+            <tr><td>GMDSS GOC</td><td><span class="pill">VALID</span></td></tr>
+            <tr><td>Management Level Functions 2 &amp; 3 (2025); BTRM (Dec 2025)</td><td><span class="pill">VALID</span></td></tr>
+            <tr><td>BST (updated), PSCRB, Advanced Fire Fighting</td><td><span class="pill">VALID</span></td></tr>
+            <tr><td>Medical First Aid (MEFA) and Medical Care (MECA) — both held</td><td><span class="pill">VALID</span></td></tr>
+            <tr><td>Ship Security Officer (SSO) — Certificate of Proficiency</td><td><span class="pill">VALID</span></td></tr>
+            <tr><td>ISPS Security Awareness / Designated Security Duties</td><td><span class="pill">VALID</span></td></tr>
+            <tr><td>ECDIS Generic + type-specific (JRC, Furuno)</td><td><span class="pill">VALID</span></td></tr>
+            <tr><td>Singapore (MPA) Certificate of Endorsement</td><td><span class="pill">VALID</span></td></tr>
+            <tr><td>Philippine Passport, SIRB, Yellow Fever</td><td><span class="pill">VALID</span></td></tr>
+            <tr><td>PEME: Fit for Duty<span class="cert-note">Valid to Dec 2027</span></td><td><span class="pill">VALID</span></td></tr>
+          </tbody>
+        </table>
+        </div>
+      </section>
+
+      <!-- ================= TOOLS & PROJECTS ================= -->
+      <section id="tools">
+        <p class="eyebrow">Shipboard Software</p>
+        <h2 class="reveal">Tools &amp; Projects</h2>
+        <div class="tools-grid">
+          <div class="tool-card reveal">
+            <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l9 4 9-4"/><path d="M3 12l9 4 9-4"/><path d="M12 3L3 7l9 4 9-4-9-4Z"/></svg></div>
+            <h3>Cargo Loading/Discharge Suite</h3>
+            <p>Offline single-file apps in active bridge use: stowage calculator, DPR with period-based rates, draft readings, heeling calculator, daily cargo log with messaging-app report export.</p>
+          </div>
+          <div class="tool-card reveal">
+            <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+            <h3>Noon Report Guide</h3>
+            <p>Live voyage progress tracker: DTG, average speed, ROB, consumption.</p>
+          </div>
+          <div class="tool-card reveal">
+            <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v14H4z"/><path d="M8 8h8M8 12h6"/><path d="M2 21h20"/></svg></div>
+            <h3>EGC Warning Reader</h3>
+            <p>Automated parser/organizer for Inmarsat-C SafetyNET printouts — 7-tier categorization, ZIP import.</p>
+          </div>
+          <div class="tool-card reveal">
+            <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg></div>
+            <h3>MSI Index Log Pipeline</h3>
+            <p>Automated NAVAREA X/XI and AUSCOAST warning index logs with Word document generation.</p>
+          </div>
+          <div class="tool-card reveal">
+            <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/><circle cx="12" cy="12" r="9"/></svg></div>
+            <h3>Medical Inventory System</h3>
+            <p>Scale A compliance workbook: expiry tracking, requisition generation.</p>
+          </div>
+          <div class="tool-card reveal">
+            <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg></div>
+            <h3>&ldquo;Bulk Carrier Knowledge Edition 2025&rdquo;</h3>
+            <p>Compiled internal reference document.</p>
+          </div>
+        </div>
+        <p class="tech-line reveal"><b>&gt;</b> Vanilla JS/HTML/CSS &middot; offline-first architecture &middot; Excel &middot; AI-assisted development (Claude/Claude Code) &middot; Git/GitHub</p>
+      </section>
+
+      <!-- ================= LEADERSHIP ================= -->
+      <section id="leadership">
+        <p class="eyebrow">Crew</p>
+        <h2 class="reveal">Leadership &amp; Mentorship</h2>
+        <ul class="lead-list">
+          <li class="reveal">Trained and mentored deck cadets and junior officers in watchkeeping, cargo operations, and bridge equipment</li>
+          <li class="reveal">Directly mentored fellow seafarers through promotion to 3rd Officer and 2nd Officer ranks</li>
+        </ul>
+      </section>
+
+      <!-- ================= CONTACT ================= -->
+      <section id="contact">
+        <p class="eyebrow">Reach Out</p>
+        <h2 class="reveal">Contact</h2>
+        <div class="card contact-card reveal">
+          <div class="contact-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+            <span>Email — <span class="dim">available on request</span></span>
+          </div>
+          <div class="contact-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            <span>Home base — <span class="dim">Talisay City, Cebu, Philippines</span></span>
+          </div>
+          <div class="contact-row">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 15.5v.5"/></svg>
+            <span class="dim">Direct contact details are shared with employers and manning agencies on request.</span>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <p>&copy; <span id="year"></span> Richard Mark H. Adlawan</p>
+        <p class="mono">Single-file &middot; offline-first &middot; no dependencies</p>
+      </footer>
+
+    </div>
+  </main>
+</div>
+
+<script>
+'use strict';
+
+/* ============ SEA SERVICE DATA (Section 5 — verbatim) ============ */
+const SERVICE = [
+  { vessel:'FG EUCALYPTUS', type:'Supramax Bulk Carrier, 50,011 DWT, SG flag', rank:'2nd Officer', from:'2026-02-07', to:null,        dur:null,      note:'Contract to Oct 2026' },
+  { vessel:'CL BANYAN',     type:'Bulk Carrier (woodchips)',                   rank:'2nd Officer', from:'2024-09-13', to:'2025-08-12', dur:'11m 03d', note:null },
+  { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'2nd Officer', from:'2024-02-12', to:'2024-04-05', dur:'1m 23d',  note:null },
+  { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'2nd Officer', from:'2023-09-17', to:'2023-10-02', dur:'0m 15d',  note:null },
+  { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'2nd Officer', from:'2023-04-01', to:'2023-09-17', dur:'5m 19d',  note:null },
+  { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'3rd Officer', from:'2022-03-09', to:'2022-10-27', dur:'7m 22d',  note:null },
+  { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'3rd Officer', from:'2020-12-11', to:'2021-07-12', dur:'7m 03d',  note:null }
+];
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAY_MS = 86400000;
+
+function parseD(s){ const p = s.split('-'); return new Date(Date.UTC(+p[0], +p[1]-1, +p[2])); }
+function today(){ const n = new Date(); return new Date(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate())); }
+function fmtD(s){ const d = parseD(s); return String(d.getUTCDate()).padStart(2,'0') + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
+function spanDays(c){ const end = c.to ? parseD(c.to) : today(); return Math.round((end - parseD(c.from)) / DAY_MS) + 1; }
+function monthsOf(days){ return days / 30.4375; }
+function fmtYM(days){
+  const m = monthsOf(days);
+  const y = Math.floor(m / 12);
+  const rm = Math.round(m - y * 12);
+  if (rm === 12) return (y + 1) + 'y 0m';
+  return y > 0 ? y + 'y ' + rm + 'm' : rm + ' mo';
+}
+function fmtMD(days){
+  const m = Math.floor(monthsOf(days));
+  const d = Math.round(days - m * 30.4375);
+  return m + 'm ' + String(d).padStart(2,'0') + 'd';
+}
+
+/* ============ TIMELINE RENDER ============ */
+(function buildTimeline(){
+  const host = document.getElementById('timeline');
+  const cal = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
+  let html = '';
+  for (const c of SERVICE){
+    const live = !c.to;
+    const durTxt = live ? 'Present · ' + fmtMD(spanDays(c)) : c.dur;
+    const toTxt = live ? 'Present' : fmtD(c.to);
+    html +=
+      '<article class="svc reveal">' +
+        '<div class="svc-head">' +
+          '<span class="vessel">' + c.vessel + '</span>' +
+          '<span class="flagtype">' + c.type + '</span>' +
+        '</div>' +
+        '<div class="svc-body">' +
+          '<div class="svc-rank-row">' +
+            '<span class="rank-chip">' + c.rank + '</span>' +
+            '<span class="dur-badge' + (live ? ' live' : '') + '">' + durTxt + '</span>' +
+          '</div>' +
+          '<div class="svc-dates">' + cal +
+            '<span>' + fmtD(c.from) + '</span><span class="arrow">&rarr;</span><span>' + toTxt + '</span>' +
+          '</div>' +
+          (c.note ? '<p class="svc-note">' + c.note + '</p>' : '') +
+        '</div>' +
+      '</article>';
+  }
+  host.innerHTML = html;
+})();
+
+/* ============ LIVE SEATIME TOTALS ============ */
+(function totals(){
+  let d2 = 0, d3 = 0;
+  for (const c of SERVICE){
+    if (c.rank === '2nd Officer') d2 += spanDays(c);
+    else d3 += spanDays(c);
+  }
+  const all = d2 + d3;
+  document.getElementById('stat2O').textContent  = Math.round(monthsOf(d2)) + ' mo';
+  document.getElementById('statTotal').textContent = fmtYM(all);
+  document.getElementById('tot2O').textContent   = fmtYM(d2);
+  document.getElementById('tot3O').textContent   = fmtYM(d3);
+  document.getElementById('totAll').textContent  = fmtYM(all);
+})();
+
+/* ============ THEME TOGGLE (rma_site_theme) ============ */
+(function theme(){
+  const root = document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click', function(){
+    const light = root.getAttribute('data-theme') === 'light';
+    if (light) root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme','light');
+    try{ localStorage.setItem('rma_site_theme', light ? 'dark' : 'light'); }catch(e){}
+  });
+})();
+
+/* ============ SCROLL: rail + active nav + reveals ============ */
+(function scrollWiring(){
+  const main = document.getElementById('main');
+  const sections = ['hero','about','service','bridge','cargo','safety','certs','tools','leadership','contact']
+    .map(function(id){ return document.getElementById(id); });
+  const labels = { hero:'DECK', about:'PROFILE', service:'SEA SERVICE', bridge:'BRIDGE', cargo:'CARGO',
+                   safety:'SAFETY', certs:'DOCUMENTS', tools:'SOFTWARE', leadership:'CREW', contact:'CONTACT' };
+  const navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav-links a'));
+
+  /* draft-mark rail scale: hull numerals, 0 m at keel (bottom) to 12 m */
+  const scale = document.getElementById('railScale');
+  let marksHtml = '';
+  for (let m = 0; m <= 12; m += 2){
+    const sub = ''; /* submerged class applied on scroll */
+    marksHtml += '<div class="rail-mark" data-m="' + m + '" style="bottom:' + (m / 12 * 100) + '%"><span>' + m + 'M</span></div>';
+  }
+  scale.innerHTML = marksHtml;
+  const marks = Array.prototype.slice.call(scale.children);
+  const water = document.getElementById('railWater');
+  const line  = document.getElementById('railLine');
+  const label = document.getElementById('railLabel');
+
+  let ticking = false;
+  function onScroll(){
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      ticking = false;
+      const max = main.scrollHeight - main.clientHeight;
+      const p = max > 0 ? Math.min(1, Math.max(0, main.scrollTop / max)) : 0;
+
+      /* waterline rises as you scroll — draft increases as the page loads you deeper */
+      const pct = (p * 100).toFixed(2) + '%';
+      water.style.height = pct;
+      line.style.bottom = pct;
+      for (const mk of marks){
+        mk.classList.toggle('sub', (+mk.getAttribute('data-m') / 12) <= p + 0.001);
+      }
+
+      /* current section: last section whose top passed 40% of viewport.
+         Sections lay out against <body>, so subtract the nav to get scroll-container coords. */
+      let cur = sections[0];
+      const navH = main.getBoundingClientRect().top;
+      const cut = main.scrollTop + main.clientHeight * 0.4;
+      for (const s of sections){ if (s.offsetTop - navH <= cut) cur = s; }
+      /* Contact is shorter than the activation line is deep, so it can never win
+         the loop — at the end of the scroll the last section is the current one. */
+      if (main.scrollTop + main.clientHeight >= main.scrollHeight - 2){
+        cur = sections[sections.length - 1];
+      }
+      label.textContent = labels[cur.id] || '';
+      for (const a of navLinks){
+        const active = a.getAttribute('href') === '#' + cur.id;
+        if (active) a.setAttribute('aria-current','true');
+        else a.removeAttribute('aria-current');
+      }
+    });
+  }
+  main.addEventListener('scroll', onScroll, { passive:true });
+  onScroll();
+})();
+
+/* ============ REVEAL ON SCROLL ============ */
+(function reveals(){
+  const els = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  if (!('IntersectionObserver' in window)){
+    for (const el of els) el.classList.add('in');
+    return;
+  }
+  const io = new IntersectionObserver(function(entries){
+    for (const e of entries){
+      if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { root:document.getElementById('main'), rootMargin:'0px 0px -8% 0px', threshold:0.05 });
+  for (const el of els) io.observe(el);
+})();
+
+document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
