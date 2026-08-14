@@ -32,10 +32,23 @@ To regenerate from the command line instead:
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --no-pdf-header-footer --print-to-pdf="ADLAWAN_RICHARD_CV.pdf" cv_print.html
 ```
 
+## Checking consistency
+
+```bash
+node verify.mjs
+```
+
+Run this after editing either page, and before publishing. It needs nothing installed. It checks
+that both files carry the same sea service record, that the "3+ years" claim is still true against
+the dates, that no phone number, personal email or expired document has crept in, and that neither
+page has picked up a remote resource that would break offline use. It exits non-zero on failure, so
+it also works as a pre-commit hook.
+
 ## Editing the sea service record
 
 Both pages build their service tables from a `SERVICE` array near the top of their `<script>`
-block. The two copies must stay identical, or the website and the PDF will disagree.
+block. The two copies must stay identical, or the website and the PDF will disagree — `verify.mjs`
+is what catches it if they drift.
 
 Each entry carries the vessel, type, rank, start date and end date. A `to` of `null` means the
 contract is current: the duration counts to today's date, and the row reads "Present". Seatime

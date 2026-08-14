@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Richard Mark H. Adlawan — Deck Officer</title>
 <meta name="description" content="Richard Mark H. Adlawan — Management-level Deck Officer (STCW II/2). Chief Mate CoC, bulk carrier & container experience, shipboard software builder.">
+<!-- Anchor mark, inline so the tab icon survives offline and file:// like the rest of the page.
+     og:image and og:url need an absolute host and are added once the site has its URL. -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230B1220'/><g fill='none' stroke='%2322C55E' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><circle cx='16' cy='7.4' r='2.4'/><path d='M16 10v14'/><path d='M10.5 13.2h11'/><path d='M7 18.6a9 9 0 0 0 18 0'/></g></svg>">
+<meta name="theme-color" content="#0B1220">
+<meta property="og:type" content="profile">
+<meta property="og:title" content="Richard Mark H. Adlawan — Deck Officer">
+<meta property="og:description" content="Chief Mate CoC (Unlimited, Oceangoing), STCW II/2. Bulk carrier and container experience, currently 2nd Officer on a Supramax bulk carrier.">
+<meta name="twitter:card" content="summary">
 <script>
 /* Theme before first paint. Dark is default. */
 (function(){
@@ -29,6 +37,13 @@
   --signal-dim:rgba(34,197,94,.14);
   --glow:0 0 12px rgba(34,197,94,.35);
   --glow-soft:0 0 8px rgba(34,197,94,.22);
+  --water-deep:rgba(34,197,94,.16);
+  --water-shallow:rgba(34,197,94,.02);
+  /* Service-card bar stays vivid in both themes on purpose — it is the crew-app
+     record look, and its dark ink reads on this green either way. */
+  --bar-from:#16A34A;
+  --bar-to:#22C55E;
+  --bar-ink:#052E13;
   --amber:#F59E0B;
   --alert:#EF4444;
   --nav-h:52px;
@@ -51,6 +66,8 @@
   --signal-dim:rgba(22,101,52,.10);
   --glow:0 0 10px rgba(22,101,52,.20);
   --glow-soft:0 0 6px rgba(22,101,52,.12);
+  --water-deep:rgba(22,101,52,.20);
+  --water-shallow:rgba(22,101,52,.03);
 }
 
 /* ============ SHELL (proven iOS pattern) ============ */
@@ -116,12 +133,15 @@ nav{
 }
 .nav-links::-webkit-scrollbar{ display:none; }
 .nav-links a{
+  display:inline-flex;
+  align-items:center;
+  min-height:44px;
   font-size:12.5px;
   font-weight:600;
   letter-spacing:.02em;
   color:var(--ink-dim);
   text-decoration:none;
-  padding:7px 10px;
+  padding:0 10px;
   border-radius:8px;
   white-space:nowrap;
   cursor:pointer;
@@ -130,7 +150,7 @@ nav{
 .nav-links a[aria-current="true"]{ color:var(--signal); background:var(--signal-dim); }
 #themeBtn{
   flex:0 0 auto;
-  width:34px; height:34px;
+  width:44px; height:44px;
   display:flex; align-items:center; justify-content:center;
   background:var(--sea-1);
   border:1px solid var(--hairline);
@@ -147,6 +167,30 @@ a:focus-visible, button:focus-visible{
   outline:2px solid var(--signal);
   outline-offset:2px;
 }
+/* Nine nav links precede the content; keyboard users get a way past them. */
+.skip{
+  position:absolute;
+  left:8px;
+  top:-60px;
+  z-index:20;
+  display:inline-flex;
+  align-items:center;
+  min-height:44px;
+  padding:10px 16px;
+  font-size:14px;
+  font-weight:700;
+  color:var(--signal-ink);
+  background:var(--signal);
+  border-radius:0 0 10px 10px;
+  text-decoration:none;
+  -webkit-transition:top .18s ease-out;
+  transition:top .18s ease-out;
+}
+.skip:focus{ top:0; }
+@media (prefers-reduced-motion: reduce){
+  .skip{ -webkit-transition:none; transition:none; }
+}
+main:focus{ outline:none; }
 
 /* ============ DRAFT-MARK RAIL (signature, ≥1200px) ============ */
 #draftRail{
@@ -203,8 +247,8 @@ a:focus-visible, button:focus-visible{
   position:absolute;
   left:30px; right:44px; bottom:0;
   height:0%;
-  background:-webkit-linear-gradient(bottom, rgba(34,197,94,.16), rgba(34,197,94,.02));
-  background:linear-gradient(to top, rgba(34,197,94,.16), rgba(34,197,94,.02));
+  background:-webkit-linear-gradient(bottom, var(--water-deep), var(--water-shallow));
+  background:linear-gradient(to top, var(--water-deep), var(--water-shallow));
 }
 #railLine{
   position:absolute;
@@ -350,7 +394,6 @@ h1{
   color:var(--signal-ink);
   box-shadow:var(--glow-soft);
 }
-:root[data-theme="dark"] .btn-primary, :root:not([data-theme="light"]) .btn-primary{ color:#052E13; }
 .btn-primary:hover{ filter:brightness(1.08); }
 .btn-ghost{
   background:transparent;
@@ -432,9 +475,9 @@ h1{
   align-items:center;
   justify-content:space-between;
   gap:10px;
-  background:-webkit-linear-gradient(left, #16A34A, #22C55E);
-  background:linear-gradient(90deg, #16A34A, #22C55E);
-  color:#052E13;
+  background:-webkit-linear-gradient(left, var(--bar-from), var(--bar-to));
+  background:linear-gradient(90deg, var(--bar-from), var(--bar-to));
+  color:var(--bar-ink);
   padding:10px 16px;
   user-select:none;
   -webkit-user-select:none;
@@ -712,6 +755,10 @@ footer .mono{ font-size:11.5px; }
 }
 
 /* ============ BREAKPOINTS ============ */
+/* Tablet: three tool cards across is ~250px each here, too tight to read. */
+@media (min-width:769px) and (max-width:1080px){
+  .tools-grid{ grid-template-columns:1fr 1fr; }
+}
 @media (max-width:768px){
   h1{ font-size:32px; }
   h2{ font-size:22px; }
@@ -758,7 +805,8 @@ footer .mono{ font-size:11.5px; }
 </head>
 <body>
 <div id="app">
-  <nav aria-label="Site">
+  <a class="skip" href="#main">Skip to content</a>
+  <nav aria-label="Primary">
     <span class="brand">R.M.H.<b>ADLAWAN</b></span>
     <div class="nav-links" id="navLinks">
       <a href="#about">About</a>
@@ -777,7 +825,7 @@ footer .mono{ font-size:11.5px; }
     </button>
   </nav>
 
-  <main id="main">
+  <main id="main" tabindex="-1">
     <!-- Signature: hull draft-mark rail (desktop only, decorative) -->
     <aside id="draftRail" aria-hidden="true">
       <div class="rail-edge"></div>
@@ -815,7 +863,7 @@ footer .mono{ font-size:11.5px; }
       <section id="about">
         <p class="eyebrow">Profile</p>
         <h2 class="reveal">About</h2>
-        <p class="summary reveal">Management-level Deck Officer (STCW II/2) with 3.5+ years&rsquo; officer watchkeeping experience across container vessels and bulk carriers. Chief Mate Certificate of Competency (Unlimited, Oceangoing) — MARINA Philippines. <strong>Clean record across all completed contracts — zero incidents, all contracts finished in full.</strong> Seeking Chief Mate positions on bulk carriers; open to 2nd Officer roles with confirmed onboard promotion pathway to Chief Mate. Distinctive edge: designs and builds offline shipboard calculation software in active bridge use.</p>
+        <p class="summary reveal">Management-level Deck Officer (STCW II/2) with 3+ years&rsquo; officer watchkeeping experience across container vessels and bulk carriers. Chief Mate Certificate of Competency (Unlimited, Oceangoing) — MARINA Philippines. <strong>Clean record across all completed contracts — zero incidents, all contracts finished in full.</strong> Seeking Chief Mate positions on bulk carriers; open to 2nd Officer roles with confirmed onboard promotion pathway to Chief Mate. Distinctive edge: designs and builds offline shipboard calculation software in active bridge use.</p>
       </section>
 
       <!-- ================= SEA SERVICE ================= -->
@@ -883,7 +931,7 @@ footer .mono{ font-size:11.5px; }
         <h2 class="reveal">Certifications</h2>
         <div class="cert-wrap reveal">
         <table class="cert-table">
-          <thead><tr><th>Certificate</th><th>Status</th></tr></thead>
+          <thead><tr><th scope="col">Certificate</th><th scope="col">Status</th></tr></thead>
           <tbody>
             <tr><td>CoC Chief Mate (Management Level, STCW II/2), Unlimited / Oceangoing — MARINA<span class="cert-note">New issuance in final evaluation; current CoC valid to Sep 2026</span></td><td><span class="pill">VALID</span></td></tr>
             <tr><td>GMDSS GOC</td><td><span class="pill">VALID</span></td></tr>
@@ -1092,43 +1140,68 @@ function fmtMD(days){
   const line  = document.getElementById('railLine');
   const label = document.getElementById('railLabel');
 
+  /* Geometry is measured up front, never inside the scroll frame. Reading offsetTop
+     per frame after writing styles forces a synchronous layout on every frame.
+     Sections lay out against <body>, so the nav height comes off to reach
+     scroll-container coordinates. */
+  let navH = 0, viewH = 0, maxScroll = 0, tops = [];
+  function measure(){
+    navH = main.getBoundingClientRect().top;
+    viewH = main.clientHeight;
+    maxScroll = main.scrollHeight - viewH;
+    tops = sections.map(function(s){ return s.offsetTop - navH; });
+  }
+
   let ticking = false;
   function onScroll(){
     if (ticking) return;
     ticking = true;
     requestAnimationFrame(function(){
       ticking = false;
-      const max = main.scrollHeight - main.clientHeight;
-      const p = max > 0 ? Math.min(1, Math.max(0, main.scrollTop / max)) : 0;
 
-      /* waterline rises as you scroll — draft increases as the page loads you deeper */
+      /* read */
+      const st = main.scrollTop;
+
+      /* compute */
+      const p = maxScroll > 0 ? Math.min(1, Math.max(0, st / maxScroll)) : 0;
       const pct = (p * 100).toFixed(2) + '%';
+      const cut = st + viewH * 0.4;
+      let cur = 0;
+      for (let i = 0; i < tops.length; i++){ if (tops[i] <= cut) cur = i; }
+      /* Contact is shorter than the activation line is deep, so it can never win
+         the loop — at the end of the scroll the last section is the current one. */
+      if (st >= maxScroll - 2) cur = sections.length - 1;
+      const curId = sections[cur].id;
+
+      /* write — waterline rises as you scroll, draft increasing as you go deeper */
       water.style.height = pct;
       line.style.bottom = pct;
       for (const mk of marks){
         mk.classList.toggle('sub', (+mk.getAttribute('data-m') / 12) <= p + 0.001);
       }
-
-      /* current section: last section whose top passed 40% of viewport.
-         Sections lay out against <body>, so subtract the nav to get scroll-container coords. */
-      let cur = sections[0];
-      const navH = main.getBoundingClientRect().top;
-      const cut = main.scrollTop + main.clientHeight * 0.4;
-      for (const s of sections){ if (s.offsetTop - navH <= cut) cur = s; }
-      /* Contact is shorter than the activation line is deep, so it can never win
-         the loop — at the end of the scroll the last section is the current one. */
-      if (main.scrollTop + main.clientHeight >= main.scrollHeight - 2){
-        cur = sections[sections.length - 1];
-      }
-      label.textContent = labels[cur.id] || '';
+      label.textContent = labels[curId] || '';
       for (const a of navLinks){
-        const active = a.getAttribute('href') === '#' + cur.id;
-        if (active) a.setAttribute('aria-current','true');
+        if (a.getAttribute('href') === '#' + curId) a.setAttribute('aria-current','true');
         else a.removeAttribute('aria-current');
       }
     });
   }
+
+  let resizeTick = false;
+  function onResize(){
+    if (resizeTick) return;
+    resizeTick = true;
+    requestAnimationFrame(function(){
+      resizeTick = false;
+      measure();
+      onScroll();
+    });
+  }
+
+  measure();
   main.addEventListener('scroll', onScroll, { passive:true });
+  window.addEventListener('resize', onResize, { passive:true });
+  window.addEventListener('load', onResize);
   onScroll();
 })();
 
@@ -1145,6 +1218,14 @@ function fmtMD(days){
     }
   }, { root:document.getElementById('main'), rootMargin:'0px 0px -8% 0px', threshold:0.05 });
   for (const el of els) io.observe(el);
+})();
+
+/* will-change is a hint for an animation in flight, not a resting state. */
+(function dropHeroHint(){
+  const risers = document.querySelectorAll('#hero .rise');
+  for (const el of risers){
+    el.addEventListener('animationend', function(){ el.style.willChange = 'auto'; }, { once:true });
+  }
 })();
 
 document.getElementById('year').textContent = new Date().getFullYear();
