@@ -259,7 +259,7 @@ const SERVICE = [
   { vessel:'FG EUCALYPTUS', type:'Supramax Bulk Carrier, 50,011 DWT, SG flag', rank:'2nd Officer', from:'2026-02-07', to:null,        dur:null,      note:'to Oct 2026' },
   { vessel:'CL BANYAN',     type:'Bulk Carrier (woodchips)',                   rank:'2nd Officer', from:'2024-09-13', to:'2025-08-12', dur:'11m 03d', note:null },
   { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'2nd Officer', from:'2024-02-12', to:'2024-04-05', dur:'1m 23d',  note:null },
-  { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'2nd Officer', from:'2023-09-17', to:'2023-10-02', dur:'0m 15d',  note:null },
+  { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'2nd Officer', from:'2023-09-17', to:'2023-10-02', dur:'15d',     note:null },
   { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'2nd Officer', from:'2023-04-01', to:'2023-09-17', dur:'5m 19d',  note:null },
   { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'3rd Officer', from:'2022-03-09', to:'2022-10-27', dur:'7m 22d',  note:null },
   { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'3rd Officer', from:'2020-12-11', to:'2021-07-12', dur:'7m 03d',  note:null }
@@ -282,6 +282,8 @@ function fmtYM(days){
 function fmtMD(days){
   const m = Math.floor(monthsOf(days));
   const d = Math.round(days - m * 30.4375);
+  /* Under a month, "0m 15d" reads like a broken field. Drop the empty unit. */
+  if (m === 0) return d + 'd';
   return m + 'm ' + String(d).padStart(2,'0') + 'd';
 }
 

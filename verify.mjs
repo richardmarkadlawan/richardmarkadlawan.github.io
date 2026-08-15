@@ -12,10 +12,11 @@
  * Exits non-zero on any failure, so it works as a pre-commit hook.
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 
 const SITE = 'index.html';
 const PRINT = 'cv_print.html';
+const PDF = 'ADLAWAN_RICHARD_CV.pdf';
 
 const read = f => readFileSync(new URL(f, import.meta.url), 'utf8');
 const failures = [];
@@ -79,6 +80,10 @@ if (a && b){
   a.forEach((r, i) => {
     if (r.to !== null && !r.dur) fail(`row ${i + 1} (${r.vessel}) is closed but has no duration`);
     if (r.to === null && r.dur) fail(`row ${i + 1} (${r.vessel}) is open, so dur must be null`);
+    /* "0m 15d" reads like a broken field; a sub-month contract is just "15d". */
+    if (r.dur && /^0m\s/.test(r.dur)){
+      fail(`row ${i + 1} (${r.vessel}) has duration "${r.dur}" — drop the empty month, write "${r.dur.replace(/^0m\s*/, '').replace(/^0+/, '')}"`);
+    }
   });
 }
 
@@ -119,6 +124,41 @@ const banned = [
 for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
   for (const [re, what] of banned){
     if (re.test(src)) fail(`${file} contains ${what}`);
+  }
+}
+
+/* ---------- the PDF goes stale on its own ---------- */
+
+/* The PDF is a frozen snapshot of numbers the two pages compute live. While a contract
+   is open, its duration and every seatime total grow by a day, every day — so a PDF
+   that was correct when it was exported quietly stops matching the site. Nothing in the
+   browser can notice that, and a recruiter reads the PDF, not the site. */
+{
+  let pdf = null;
+  try { pdf = statSync(new URL(PDF, import.meta.url)); }
+  catch { fail(`${PDF} is missing — regenerate it from ${PRINT} (see README)`); }
+
+  if (pdf){
+    const printStat = statSync(new URL(PRINT, import.meta.url));
+    if (pdf.mtimeMs < printStat.mtimeMs){
+      fail(`${PDF} is older than ${PRINT} — regenerate the PDF (see README)`);
+    } else if (a && a.some(r => r.to === null)){
+      /* Compare *local* calendar days, not UTC ones. Both pages derive "today" from
+         new Date().getFullYear/getMonth/getDate — the local date — so that is the clock
+         the PDF's numbers were frozen against. Diffing UTC day floors instead reported a
+         PDF exported this morning as a day stale for anyone east of UTC. */
+      const localDay = d =>
+        Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000;
+      const days = localDay(new Date()) - localDay(pdf.mtime);
+      if (days > 0){
+        fail(`${PDF} was exported ${days} day(s) ago and a contract is still open, ` +
+             `so its durations and totals now understate the record — regenerate it`);
+      } else {
+        ok(`${PDF} is current (exported today, open contract still counting)`);
+      }
+    } else {
+      ok(`${PDF} is newer than ${PRINT}`);
+    }
   }
 }
 

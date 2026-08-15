@@ -44,6 +44,15 @@ the dates, that no phone number, personal email or expired document has crept in
 page has picked up a remote resource that would break offline use. It exits non-zero on failure, so
 it also works as a pre-commit hook.
 
+It also checks that **the PDF has not gone stale**. Both pages compute durations and seatime
+totals live, but the PDF is a frozen export — so while a contract is open, every day that passes
+makes the PDF understate the record by a day. The check fails if the PDF is older than
+`cv_print.html`, or if it was exported on an earlier day while a contract is still open. When it
+fails, regenerate the PDF (below) and run it again.
+
+Note that the word "phone" is banned outright, not just phone-number patterns. That is deliberate —
+a blunt guard is the right trade for a privacy check — so avoid the word even in code comments.
+
 ## Editing the sea service record
 
 Both pages build their service tables from a `SERVICE` array near the top of their `<script>`
@@ -56,6 +65,18 @@ totals are computed from these dates at page load, so they stay current without 
 
 Adding a contract means adding one entry to the array in each file, newest first. Nothing else
 needs to change.
+
+## Certifications
+
+The website lists certificates as a plain two-column list under a single **ALL VALID** badge on
+the heading, rather than repeating a status against every row. If a certificate ever stops being
+valid, that badge is no longer true — split the list or drop the badge rather than leaving it.
+
+## Still to do once the site has a URL
+
+`og:image`, `og:url` and `<link rel="canonical">` all need an absolute host, so they are not in
+`index.html` yet — there is a comment in `<head>` marking the spot. Everything else, including the
+`schema.org/Person` structured data, is inline and works from `file://`.
 
 ## Contact details
 
