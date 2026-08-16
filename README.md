@@ -90,8 +90,22 @@ makes the PDF understate the record by a day. The check fails if the PDF is olde
 `cv_print.html`, or if it was exported on an earlier day while a contract is still open. When it
 fails, regenerate the PDF (below) and run it again.
 
-Note that the word "phone" is banned outright, not just phone-number patterns. That is deliberate —
-a blunt guard is the right trade for a privacy check — so avoid the word even in code comments.
+Note that the word "phone" is banned outright in the two CV pages, not just phone-number patterns.
+That is deliberate — a blunt guard is the right trade for a privacy check — so avoid the word even
+in code comments.
+
+**It scans `apps/` for contact details too**, and that is not decoration. A contact watermark
+carrying a personal email and mobile number shipped inside the draft survey app and sat live on the
+public site, while this script reported all clear — it only ever read `index.html` and
+`cv_print.html`. Anything published is in scope now.
+
+The apps are checked against the patterns that match real contact details (personal email domains,
+`tel:` links, `+CC NNNNNNN` numbers) but *not* the bare word "phone" — app UI copy says "phone"
+legitimately, and a check that cries wolf is a check people learn to ignore.
+
+**The watermark belongs in the working copy, not the hosted one.** When you re-copy the draft
+survey app from source, drop the `wm-contact` element again; the `.wm-contact` CSS is left in place
+so the rest of the diff stays clean.
 
 ## Editing the sea service record
 
