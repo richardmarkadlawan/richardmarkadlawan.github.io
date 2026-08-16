@@ -3,7 +3,7 @@
 Personal career website, matching PDF CV, and five working shipboard apps. No build step,
 no dependencies.
 
-Live at **https://vonreese14.github.io**
+Live at **https://richardmarkadlawan.github.io**
 
 | File | What it is |
 |---|---|
@@ -18,8 +18,9 @@ with no signal.
 
 ## Publishing to GitHub Pages
 
-The repo is `vonreese14/vonreese14.github.io`. Because the name matches the account, GitHub
-serves it at the bare `https://vonreese14.github.io` with no path.
+The repo is `richardmarkadlawan/richardmarkadlawan.github.io`. The repo name must match the
+account username exactly — that is what makes GitHub serve it at the bare
+`https://richardmarkadlawan.github.io` with no path, rather than as a project site under it.
 
 Push to `main` and it redeploys — the site is served as-is, nothing compiles. The repo must stay
 **public**; serving Pages from a private repo needs a paid plan.
