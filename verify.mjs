@@ -12,7 +12,7 @@
  * Exits non-zero on any failure, so it works as a pre-commit hook.
  */
 
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync, statSync, readdirSync } from 'node:fs';
 
 const SITE = 'index.html';
 const PRINT = 'cv_print.html';
@@ -125,6 +125,32 @@ for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
   for (const [re, what] of banned){
     if (re.test(src)) fail(`${file} contains ${what}`);
   }
+}
+
+/* The apps are published too, and for a while nothing checked them. A contact watermark
+   carrying a personal email and mobile number shipped inside the draft survey app and sat
+   live, while this script reported all clear — it only ever read the two CV pages.
+   Anything served is in scope now.
+
+   The word-"phone" rule is dropped for the apps: they legitimately discuss phones in UI
+   copy, and a false positive there teaches people to ignore the check. The patterns that
+   match actual contact details still apply. */
+const appBanned = [
+  [/@(?:gmail|yahoo|outlook|hotmail)\./i, 'a personal email address'],
+  [/\btel:/i, 'a telephone link'],
+  [/\+\d{1,3}[\s-]?\d{7,12}\b/, 'what looks like a phone number']
+];
+for (const dir of readdirSync(new URL('apps/', import.meta.url), { withFileTypes: true })){
+  if (!dir.isDirectory()) continue;
+  const rel = `apps/${dir.name}/index.html`;
+  let src;
+  try { src = read(rel); } catch { fail(`${rel} is missing`); continue; }
+  let clean = true;
+  for (const [re, what] of appBanned){
+    const hit = src.match(re);
+    if (hit){ fail(`${rel} contains ${what}: "${hit[0]}"`); clean = false; }
+  }
+  if (clean) ok(`${rel}: no contact details`);
 }
 
 /* ---------- the PDF goes stale on its own ---------- */
