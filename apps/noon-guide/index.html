@@ -1,0 +1,3188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- viewport-fit=cover is REQUIRED for env(safe-area-inset-*) to be non-zero;
+     without it the floating header capsule slides under the Dynamic Island. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Noon Guide">
+<title>Noon Guide</title>
+<style>
+:root {
+  --nav-h:68px; --top-h:78px;
+  --accent:#1A4A8A; --accent2:#1565C0; --accent-light:#E8F0FE;
+  --green:#1B6B2F; --green-light:#E6F4EA;
+  --amber:#92400E; --amber-light:#FEF3C7;
+  --yellow:#FACC15; --yellow-light:#FEFCE8; --yellow-dark:#78350F;
+  --red:#B71C1C; --bg:#F0F2F6; --card:#FFFFFF;
+  --text1:#111827; --text2:#4B5563; --textm:#9CA3AF;
+  --border:#E5E7EB; --ibg:#F9FAFB;
+  --sh:0 1px 4px rgba(0,0,0,.08);
+  --r:14px; --rs:10px; --rx:8px;
+  /* Liquid-glass chrome: floating capsules, content scrolls underneath */
+  --sat:env(safe-area-inset-top); --sab:env(safe-area-inset-bottom);
+  --glass-h:58px;             /* header capsule */
+  --glass-gap:8px;            /* capsule inset from the safe area */
+  --navbar-h:62px;            /* native glass tab bar on iOS */
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;background:var(--bg);color:var(--text1);-webkit-text-size-adjust:100%;}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden;}
+/* TOP BAR — floating liquid-glass capsule */
+#topbar{
+  position:fixed;z-index:200;
+  top:calc(var(--sat) + var(--glass-gap));left:11px;right:11px;height:var(--glass-h);
+  border-radius:calc(var(--glass-h) / 2);
+  display:flex;align-items:center;padding:0 18px;gap:10px;
+  background:rgba(255,255,255,.60);
+  -webkit-backdrop-filter:blur(26px) saturate(185%);
+          backdrop-filter:blur(26px) saturate(185%);
+  border:.5px solid rgba(255,255,255,.85);
+  box-shadow:0 10px 34px rgba(16,24,40,.16), 0 2px 8px rgba(16,24,40,.08),
+             inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.35);
+}
+#topVessel{font-size:14px;font-weight:700;color:var(--text1);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.clock-block{flex-shrink:0;}
+.clock-row{display:flex;align-items:center;justify-content:flex-end;gap:5px;}
+.clock-row+.clock-row{margin-top:3px;}
+.clock-lbl{font-size:9px;font-weight:800;letter-spacing:1px;color:var(--textm);width:44px;flex-shrink:0;text-align:left;}
+.clock-val{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text1);letter-spacing:.4px;min-width:62px;text-align:right;}
+.clock-val.lt{color:var(--text2);}
+#ltRow{cursor:pointer;border-radius:5px;padding:2px 4px;margin:-2px -4px;touch-action:manipulation;}
+#ltRow:active{background:rgba(17,24,39,.08);}
+.tz-ico{font-size:10px;color:var(--textm);width:11px;flex-shrink:0;text-align:right;}
+/* MAIN — scrolls edge to edge, underneath both capsules */
+#main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;background:var(--bg);}
+.tab-pane{display:none;
+  padding:calc(var(--sat) + var(--glass-gap) + var(--glass-h) + 12px) 14px
+          calc(var(--sab) + var(--navbar-h) + 28px);}
+.tab-pane.active{display:block;}
+/* Keypad up — native hides the glass tab bar, so stop reserving its height too. */
+body.kb-open .tab-pane{padding-bottom:calc(var(--sab) + 16px);}
+/* NAV — hidden on iOS, where a native Liquid Glass tab bar replaces it */
+#bottomnav{height:var(--nav-h);background:var(--card);border-top:1.5px solid var(--border);display:flex;flex-shrink:0;}
+body.native-tabs #bottomnav{display:none;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--textm);font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;touch-action:manipulation;padding:0;}
+.nav-btn svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.nav-btn.active{color:var(--accent);}
+/* LAYOUT */
+.sec{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--textm);margin:20px 0 8px 2px;}
+.sec:first-child{margin-top:2px;}
+.card{background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;margin-bottom:10px;}
+.clbl{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--accent);padding:12px 16px 0;}
+.row{display:flex;align-items:center;padding:0 16px;min-height:58px;border-bottom:1px solid var(--border);gap:10px;}
+.row:last-child{border-bottom:none;}
+.row label{font-size:16px;font-weight:600;color:var(--text1);flex:0 0 auto;width:134px;line-height:1.3;}
+.unit{font-size:13px;color:var(--textm);flex-shrink:0;}
+/* INPUTS */
+input[type="text"],input[type="number"],textarea,select{flex:1;min-width:0;background:transparent;border:none;outline:none;font-size:17px;color:var(--text1);font-family:inherit;-webkit-appearance:none;appearance:none;text-align:right;}
+input[type="date"],input[type="time"]{flex:1;min-width:0;background:transparent;border:none;outline:none;font-size:16px;font-weight:600;color:var(--accent2);font-family:inherit;text-align:right;cursor:pointer;}
+textarea{text-align:left;padding:14px 0;resize:none;min-height:88px;font-size:15px;color:var(--text2);line-height:1.7;}
+select{font-weight:700;color:var(--accent2);flex:0 0 48px;text-align:center;font-size:15px;}
+/* BADGES */
+.lt-badge{font-size:10px;font-weight:800;color:var(--green);background:var(--green-light);padding:2px 7px;border-radius:4px;letter-spacing:.5px;flex-shrink:0;}
+.arr-tz-badge{font-size:10px;font-weight:800;color:var(--accent);background:var(--accent-light);padding:3px 8px;border-radius:5px;flex-shrink:0;cursor:pointer;touch-action:manipulation;}
+/* POSITION */
+.pos-row{flex-direction:column;align-items:flex-start;padding:12px 16px;min-height:auto;gap:8px;}
+.pos-row label{width:auto;font-size:13px;font-weight:700;color:var(--text2);}
+.pos-fields{display:flex;align-items:center;gap:6px;width:100%;}
+.pos-fields input[type="number"]{text-align:center;background:var(--ibg);border:1.5px solid var(--border);border-radius:var(--rx);padding:10px 4px;font-weight:700;font-size:18px;flex:1;-webkit-appearance:none;outline:none;}
+.pos-fields input[type="number"]:focus{border-color:var(--accent);background:var(--accent-light);}
+.deg{font-size:16px;color:var(--text2);flex-shrink:0;}
+.pos-fields select{background:var(--accent);color:#fff;border-radius:var(--rx);padding:10px 4px;flex:0 0 46px;font-size:14px;font-weight:800;border:none;-webkit-appearance:none;}
+.hem-btn{background:var(--accent);color:#fff;border-radius:var(--rx);padding:10px 6px;flex:0 0 46px;font-size:14px;font-weight:800;border:none;cursor:pointer;touch-action:manipulation;line-height:1;-webkit-tap-highlight-color:transparent;}
+.hem-btn:active{opacity:.7;}
+/* CALCS & HINTS */
+.calc{flex:1;text-align:right;font-size:18px;font-weight:700;color:var(--green);}
+.hint{background:var(--yellow-light);border-radius:var(--rx);padding:8px 12px;margin:8px 16px 0;font-size:12px;font-weight:700;color:var(--yellow-dark);display:none;}
+.btn-yellow{background:var(--yellow);color:#1A1A1A;font-weight:800;}
+.nav-btn[data-tab="tab-noon"]{color:#A16207;}
+.nav-btn[data-tab="tab-noon"].active{color:#92400E;}
+.nav-btn[data-tab="tab-noon"] svg{stroke:#A16207;}
+.nav-btn[data-tab="tab-noon"].active svg{stroke:#92400E;}
+.bfbadge{margin:0 16px 10px;padding:10px 14px;background:var(--accent-light);border-radius:var(--rx);font-size:13px;font-weight:600;color:var(--accent);display:none;}
+/* BUTTONS */
+/* Every variant carries the SAME 2px border box (transparent unless the variant paints
+   it) and box-sizing:border-box + min-height. Without this, ghost's 1px and outline's 2px
+   borders made those buttons taller AND — because flex-basis:0 resolves on the content
+   box — 4px wider than their neighbours in a row. Variants may only change colour. */
+.btn{box-sizing:border-box;min-height:54px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px 17px;border-radius:var(--rs);border:2px solid transparent;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;touch-action:manipulation;}
+.btn:last-child{margin-bottom:0;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-green{background:var(--green);color:#fff;}
+.btn-ghost{background:#F3F4F6;color:var(--text2);border-color:var(--border);}
+.btn-outline{background:transparent;color:var(--accent);border-color:var(--accent);}
+.btn-danger{background:#FEE2E2;color:var(--red);}
+.act-row{display:flex;gap:8px;margin-bottom:12px;}
+.act-row.tight{margin-bottom:0;}
+.act-row.in-card{margin:12px 0 0;}
+.act-row .btn{margin:0;flex:1 1 0;min-width:0;min-height:46px;font-size:14px;padding:10px 12px;}
+.divider{height:1px;background:var(--border);margin:8px 0;}
+/* BANNER */
+.vbanner{background:var(--accent);border-radius:var(--r);padding:16px 16px 20px;margin-bottom:10px;text-align:center;}
+.vbanner .vr{font-size:13px;color:rgba(255,255,255,.75);margin-top:4px;}
+.vbanner .vd{font-size:20px;font-weight:800;color:#fff;margin-top:10px;letter-spacing:.5px;}
+/* SUMMARY */
+.scard{background:var(--card);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);padding:16px;margin-bottom:10px;}
+.stitle{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--accent);margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid var(--accent-light);}
+.srow{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px solid var(--border);gap:12px;}
+.srow:last-child{border-bottom:none;padding-bottom:0;}
+.slbl{font-size:14px;color:var(--text2);font-weight:500;flex-shrink:0;}
+.sval{font-size:18px;font-weight:700;color:var(--text1);text-align:right;min-width:0;}
+.sval.blue{color:var(--accent2);font-size:19px;}
+.sval.green{color:var(--green);}
+.sval.amber{color:var(--amber);}
+.sval.yellow-val{color:var(--yellow-dark);background:var(--yellow);padding:2px 10px;border-radius:4px;font-size:17px;font-weight:800;}
+/* LOG */
+.log-card{background:var(--card);border-radius:var(--r);border:1px solid var(--border);margin-bottom:10px;overflow:hidden;box-shadow:var(--sh);}
+.log-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:manipulation;}
+.log-date{font-size:17px;font-weight:700;color:var(--accent);}
+.log-meta{font-size:12px;color:var(--textm);margin-top:3px;}
+/* Sizing must move to width/height — font-size does nothing to an <svg>.
+   The existing rotate rule below keeps working on it unchanged. */
+.chev{width:16px;height:16px;color:var(--textm);transition:transform .2s;}
+.log-card.open .chev{transform:rotate(180deg);}
+.log-body{display:none;padding:0 16px 16px;border-top:1px solid var(--border);}
+.log-card.open .log-body{display:block;}
+.li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.li:last-of-type{border-bottom:none;}
+.li .k{color:var(--text2);flex-shrink:0;}
+.li .v{font-weight:600;color:var(--text1);text-align:right;max-width:60%;word-break:break-word;}
+/* EMPTY */
+.empty{text-align:center;padding:56px 24px;color:var(--textm);}
+.empty-ico{width:48px;height:48px;margin:0 auto 14px;}
+.empty p{font-size:15px;line-height:1.65;}
+/* MODAL */
+.mbg{display:flex;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;opacity:0;visibility:hidden;transition:opacity .28s ease,visibility 0s .28s;}
+.mbg.open,.mbg.closing{visibility:visible;}
+.mbg.open{opacity:1;transition:opacity .3s ease;}
+.msheet{background:var(--card);border-radius:22px 22px 0 0;padding:14px 20px 48px;width:100%;}
+/* Sheets rise from below and fall back — the exit needs .closing to stay mounted while it plays. */
+.msheet,.msheet-tall{transform:translateY(110%);transition:transform .28s cubic-bezier(.4,0,1,1);will-change:transform;}
+.mbg.open .msheet,.mbg.open .msheet-tall{transform:translateY(0);transition:transform .34s cubic-bezier(.32,.72,0,1);}
+.mbg.dragging .msheet,.mbg.dragging .msheet-tall{transition:none;}
+/* Grab handle — tap or drag down to dismiss. */
+.mgrab{display:flex;justify-content:center;padding:10px 0 14px;cursor:grab;touch-action:none;}
+.mgrab i{display:block;width:40px;height:5px;border-radius:3px;background:rgba(60,60,67,.3);}
+.mgrab:active i{background:rgba(60,60,67,.5);}
+.msheet-tall-hdr .mgrab{padding:2px 0 12px;margin-top:-8px;}
+.mttl{display:flex;align-items:center;gap:8px;font-size:19px;font-weight:700;color:var(--text1);margin-bottom:8px;}
+.mmsg{font-size:15px;color:var(--text2);line-height:1.55;margin-bottom:22px;}
+.macts{display:flex;flex-direction:column;gap:10px;}
+/* TZ PICKER */
+.tz-picker-row{display:flex;align-items:center;justify-content:center;gap:20px;margin:20px 0 8px;}
+.tz-adj-btn{width:64px;height:64px;border-radius:50%;background:var(--accent);color:#fff;font-size:34px;font-weight:300;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;flex-shrink:0;}
+.tz-adj-btn:active{opacity:.7;}
+.tz-val{font-size:36px;font-weight:800;color:var(--accent);min-width:120px;text-align:center;letter-spacing:1px;}
+.tz-hint{text-align:center;font-size:12px;color:var(--textm);margin-bottom:20px;}
+/* EDIT MODAL */
+.msheet-tall{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-height:92dvh;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;}
+.msheet-tall-hdr{padding:20px 20px 14px;flex-shrink:0;border-bottom:1px solid var(--border);}
+.msheet-tall-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 16px;}
+.msheet-tall-ftr{padding:14px 20px 48px;flex-shrink:0;border-top:1px solid var(--border);background:var(--card);display:flex;flex-direction:column;gap:10px;}
+.edit-sec{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--textm);margin:16px 0 8px 2px;}
+.edit-sec:first-child{margin-top:4px;}
+.edit-card{background:var(--ibg);border-radius:var(--rx);border:1px solid var(--border);overflow:hidden;margin-bottom:4px;}
+.erow{display:flex;align-items:center;padding:0 14px;min-height:52px;border-bottom:1px solid var(--border);gap:8px;}
+.erow:last-child{border-bottom:none;}
+.erow label{font-size:15px;font-weight:600;color:var(--text1);flex:0 0 120px;}
+.erow input[type="text"],.erow input[type="number"],.erow select{flex:1;min-width:0;background:transparent;border:none;outline:none;font-size:16px;color:var(--accent2);font-family:inherit;-webkit-appearance:none;appearance:none;text-align:right;font-weight:600;}
+.erow input[type="date"],.erow input[type="time"]{flex:1;min-width:0;background:transparent;border:none;outline:none;font-size:16px;font-weight:600;color:var(--accent2);font-family:inherit;text-align:right;cursor:pointer;}
+.erow textarea{flex:1;text-align:left;padding:10px 0;resize:none;min-height:72px;font-size:14px;color:var(--text2);line-height:1.6;background:transparent;border:none;outline:none;font-family:inherit;}
+.erow .eu{font-size:12px;color:var(--textm);flex-shrink:0;}
+.epos-group{padding:10px 14px;border-bottom:1px solid var(--border);}
+.epos-group:last-child{border-bottom:none;}
+.epos-lbl{font-size:11px;font-weight:700;color:var(--textm);letter-spacing:.5px;margin-bottom:6px;}
+.epos-fields{display:flex;align-items:center;gap:5px;}
+.epos-fields input{text-align:center;background:var(--card);border:1.5px solid var(--border);border-radius:6px;padding:8px 4px;font-weight:700;font-size:16px;flex:1;-webkit-appearance:none;color:var(--text1);outline:none;}
+.epos-fields input:focus{border-color:var(--accent);background:var(--accent-light);}
+.epos-fields select{background:var(--accent);color:#fff;border-radius:6px;padding:8px 4px;flex:0 0 44px;font-size:13px;font-weight:800;border:none;-webkit-appearance:none;text-align:center;}
+.epos-fields .edeg{font-size:14px;color:var(--text2);flex-shrink:0;}
+/* BELL BOOK */
+.bb-row  { display:flex; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border); gap:8px; min-height:48px; }
+.bb-row:last-child { border-bottom:none; }
+.bb-date { flex:0 0 auto; width:106px; font-size:13px; font-weight:600; color:var(--accent2); background:transparent; border:none; outline:none; cursor:pointer; text-align:left; }
+.bb-date.dim { color:var(--textm); }
+.bb-time { flex:0 0 70px; font-size:17px; font-weight:800; color:var(--text1); background:transparent; border:none; outline:none; cursor:pointer; text-align:center; font-variant-numeric:tabular-nums; }
+.bb-evt  { flex:1; min-width:0; font-size:15px; font-weight:600; color:var(--text1); background:transparent; border:none; outline:none; font-family:inherit; }
+.bb-del  { flex-shrink:0; background:none; border:none; color:var(--textm); font-size:20px; line-height:1; cursor:pointer; padding:4px; touch-action:manipulation; width:28px; text-align:center; }
+.bb-del-ph { flex-shrink:0; width:28px; }
+.bb-add  { box-sizing:border-box; display:flex; align-items:center; justify-content:center; padding:13px 16px; background:var(--accent-light); color:var(--accent); font-size:14px; font-weight:700; border:none; width:100%; cursor:pointer; touch-action:manipulation; font-family:inherit; gap:6px; border-top:1px solid var(--border); }
+.mano-row { display:flex; align-items:center; padding:8px 12px; border-bottom:1px solid var(--border); gap:8px; min-height:48px; background:#FFF8F8; }
+.mano-row:last-child { border-bottom:none; }
+.mano-row input[type="text"].mano-lbl { flex:1; min-width:0; font-size:14px; font-weight:600; color:var(--text1); background:transparent; border:none; outline:none; font-family:inherit; text-align:left; }
+.mano-dist { flex:0 0 70px; font-size:15px; font-weight:800; color:var(--red); background:transparent; border:none; outline:none; text-align:right; font-variant-numeric:tabular-nums; }
+.mano-unit { flex:0 0 22px; font-size:12px; color:var(--textm); }
+
+/* COL-ROW */
+.col-row{flex-direction:column;align-items:flex-start;padding:12px 16px;min-height:auto;gap:10px;}
+.col-row-lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--textm);}
+.col-row-field{display:flex;align-items:center;width:100%;gap:8px;}
+.col-row-field .fl{font-size:12px;font-weight:700;color:var(--textm);width:42px;flex-shrink:0;}
+/* VOYAGE TRACKER */
+.vt-card{background:var(--accent);border-radius:var(--r);padding:16px;margin-bottom:10px;overflow:visible;position:relative;}
+.vt-export-btn{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.12);border:none;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s;}
+.vt-export-btn:active{background:rgba(255,255,255,.22);}
+.vt-export-btn.done{animation:vtExportPop .9s ease;}
+@keyframes vtExportPop{
+  0%{transform:scale(1);}
+  30%{transform:scale(1.25);background:rgba(107,203,119,.35);}
+  100%{transform:scale(1);background:rgba(255,255,255,.12);}
+}
+.vt-route{font-size:13px;color:rgba(255,255,255,.7);margin-bottom:2px;}
+.vt-route strong{color:#fff;font-weight:800;}
+.vt-empty{display:flex;align-items:center;justify-content:center;gap:6px;text-align:center;padding:12px 0 4px;color:rgba(255,255,255,.45);font-size:13px;}
+.vt-bar-wrap{position:relative;height:6px;background:rgba(255,255,255,.2);border-radius:3px;margin:14px 0 26px;}
+.vt-bar-fill{height:100%;background:var(--yellow);border-radius:3px;min-width:0;}
+.vt-dot{position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;background:rgba(255,255,255,.4);border:2px solid rgba(255,255,255,.7);border-radius:50%;cursor:pointer;transition:background .15s;}
+.vt-dot.active{background:#fff;border-color:#fff;}
+.vt-dot:active{opacity:.7;}
+.vt-labels{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.vt-lbl{font-size:11px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.4;}
+.vt-lbl small{display:block;font-size:10px;font-weight:600;color:rgba(255,255,255,.55);}
+.vt-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.vt-stat{background:rgba(255,255,255,.1);border-radius:var(--rx);padding:8px 10px;}
+.vt-stat-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.55);}
+.vt-stat-val{font-size:17px;font-weight:800;color:#fff;margin-top:2px;}
+.vt-stat-val.yl{color:var(--yellow);}
+.vt-stat-val.rd{color:#FF6B6B;}
+.vt-stat-val.gn{color:#6BCB77;}
+.vt-stat-lbl.rd{color:rgba(255,107,107,.75);}
+.vt-stat-lbl.gn{color:rgba(107,203,119,.75);}
+.vt-stat-val.cy{color:#5DD9F5;}
+.vt-stat-lbl.cy{color:rgba(93,217,245,.75);}
+
+/* TOAST */
+#toast{display:flex;align-items:center;gap:8px;position:fixed;bottom:calc(var(--sab) + var(--navbar-h) + 24px);left:50%;
+  transform:translateX(-50%) translateY(14px);-webkit-transform:translateX(-50%) translateY(14px);
+  background:rgba(17,24,39,.92);color:#fff;padding:12px 22px;border-radius:22px;
+  font-size:14px;font-weight:600;opacity:0;transition:all .25s ease;z-index:300;
+  white-space:nowrap;pointer-events:none;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);-webkit-transform:translateX(-50%) translateY(0);}
+#importInput{display:none;}
+
+/* ═══════════════════════════════════════════
+   OUTLINE ICON SYSTEM
+   Every stroke property lives on .ico, never on the <svg> element, so the
+   whole app's icon weight is a one-line change. stroke:currentColor is what
+   makes an icon inherit its button's colour and :active state for free.
+═══════════════════════════════════════════ */
+.ico{display:block;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2.2;
+     stroke-linecap:round;stroke-linejoin:round;}
+.tz-ico .ico{margin-left:auto;}
+#toast .t-ico{display:flex;align-items:center;}
+#toast .t-ico:empty{display:none;}   /* or the flex gap leaves a phantom indent */
+#topVessel{display:flex;align-items:center;gap:7px;}
+.arr-tz-badge{display:inline-flex;align-items:center;gap:4px;}
+.vt-export-btn{color:#fff;}
+</style>
+</head>
+<body>
+<div id="app">
+<header id="topbar">
+  <span id="topVessel"><span id="topVesselTxt">NOON GUIDE</span></span>
+  <div class="clock-block">
+    <div class="clock-row">
+      <span class="clock-val" id="clkUtc">--:--:--</span>
+      <span class="clock-lbl">UTC</span>
+      <span class="tz-ico" aria-hidden="true"></span>
+    </div>
+    <div class="clock-row" id="ltRow">
+      <span class="clock-val lt" id="clkLt">--:--:--</span>
+      <span class="clock-lbl" id="clkLtLbl">+0 TZ</span>
+      <span class="tz-ico"><svg class="ico" width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 15.5 15 5a2.12 2.12 0 0 1 3 3L7.5 18.5l-4.3 1.3z"/><path d="m13.5 6.5 4 4"/></svg></span>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ══ VESSEL TAB ══ -->
+<section class="tab-pane active" id="tab-vessel">
+  <div class="vt-card" id="voyageTracker"></div>
+  <div class="sec">Vessel &amp; Voyage Setup</div>
+  <div class="card">
+    <div class="row"><label>Vessel Name</label><input type="text" id="v_name" placeholder="FG Eucalyptus" autocomplete="off" spellcheck="false"></div>
+    <div class="row"><label>Voyage No.</label><input type="text" id="v_voy" placeholder="V.001" autocomplete="off" spellcheck="false"></div>
+    <div class="row"><label>Port of Dep.</label><input type="text" id="v_dep" placeholder="Departure port" autocomplete="off" spellcheck="false"></div>
+    <div class="row"><label>Destination</label><input type="text" id="v_dest" placeholder="Destination port" autocomplete="off" spellcheck="false"></div>
+  </div>
+
+  <div class="sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 16.5h17l-2.2 4.5H5.7z"/><path d="M6 16.5V11h12v5.5"/><path d="M9.5 11V8h5v3"/><path d="M12 8V5"/></svg>Departure Condition</div>
+  <div class="card">
+    <div class="clbl">Draft (m)</div>
+    <div class="row"><label>FWD</label><input type="number" id="dc_fwd" placeholder="0.00" step="0.01" inputmode="decimal"><span class="unit">m</span></div>
+    <div class="row"><label>MID</label><input type="number" id="dc_mid" placeholder="0.00" step="0.01" inputmode="decimal"><span class="unit">m</span></div>
+    <div class="row"><label>AFT</label><input type="number" id="dc_aft" placeholder="0.00" step="0.01" inputmode="decimal"><span class="unit">m</span></div>
+    <div class="clbl" style="margin-top:8px;border-top:1px solid var(--border);padding-top:12px;">Vessel Condition</div>
+    <div class="row"><label>Displacement</label><input type="number" id="dc_disp"  placeholder="0.0"    step="0.1"    inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="row"><label>Deadweight</label>  <input type="number" id="dc_dwt"   placeholder="0.0"    step="0.1"    inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="row"><label>Rolling Period</label><input type="number" id="dc_roll" placeholder="0.0"    step="0.1"    inputmode="decimal"><span class="unit">s</span></div>
+    <div class="row"><label>Water Density</label><input type="number" id="dc_dens"  placeholder="1.0250" step="0.0001" inputmode="decimal"></div>
+    <div class="row"><label>GM</label>           <input type="number" id="dc_gm"   placeholder="0.00"   step="0.01"   inputmode="decimal"><span class="unit">m</span></div>
+    <div class="row"><label>Ballast Water</label><input type="number" id="dc_bwt"   placeholder="0"      step="1"      inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="row"><label>Total Cargo</label>  <input type="number" id="dc_cargo" placeholder="0.00"   step="0.01"   inputmode="decimal"><span class="unit">MT</span></div>
+  </div>
+
+  <div class="sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17.5V11a6 6 0 0 1 12 0v6.5"/><path d="M4 17.5h16"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>Bell Book: Departure</div>
+  <div class="card">
+    <div id="bb-dep-body"></div>
+    <button class="bb-add" id="bb-dep-add">+ Add Event</button>
+    <div style="border-top:2px solid var(--accent-light);background:var(--accent-light);padding:0;">
+      <div class="clbl" style="color:var(--green);padding:10px 16px 4px;"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.8" fill="currentColor" stroke="none"/></svg>COSP — Commencement of Sea Passage</div>
+      <div class="row"><label>Date</label><input type="date" id="dc_cosp_date"></div>
+      <div class="row" style="gap:6px;"><label>Time</label>
+        <input type="time" id="dc_cosp_time" style="flex:1;min-width:0;font-size:16px;font-weight:600;color:var(--accent2);text-align:right;">
+        <span class="arr-tz-badge" id="btnCospTZ"><span class="tzb-txt">+0 TZ</span><svg class="ico" width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 15.5 15 5a2.12 2.12 0 0 1 3 3L7.5 18.5l-4.3 1.3z"/><path d="m13.5 6.5 4 4"/></svg></span></div>
+      <div class="row pos-row"><label>LATITUDE</label>
+        <div class="pos-fields">
+          <input type="number" id="dc_cosp_latD" placeholder="00"     min="0" max="89"     inputmode="decimal" style="max-width:66px;">
+          <span class="deg">°</span>
+          <input type="number" id="dc_cosp_latM" placeholder="00.000" min="0" max="59.999" step="0.001" inputmode="decimal">
+          <span class="deg">'</span>
+          <input type="hidden" id="dc_cosp_latH" value="N">
+          <button class="hem-btn" id="dc_cosp_latH_btn" data-hidden="dc_cosp_latH" data-a="N" data-b="S">N</button>
+        </div>
+      </div>
+      <div class="row pos-row"><label>LONGITUDE</label>
+        <div class="pos-fields">
+          <input type="number" id="dc_cosp_lonD" placeholder="000"    min="0" max="179"    inputmode="decimal" style="max-width:66px;">
+          <span class="deg">°</span>
+          <input type="number" id="dc_cosp_lonM" placeholder="00.000" min="0" max="59.999" step="0.001" inputmode="decimal">
+          <span class="deg">'</span>
+          <input type="hidden" id="dc_cosp_lonH" value="E">
+          <button class="hem-btn" id="dc_cosp_lonH_btn" data-hidden="dc_cosp_lonH" data-a="E" data-b="W">E</button>
+        </div>
+      </div>
+      <div class="row"><label>DMG</label><input type="number" id="dc_cosp_mandist" placeholder="0.0" step="0.1" inputmode="decimal"><span class="unit">NM</span></div>
+      <div class="row"><label>DTG</label><input type="number" id="dc_cosp_dtg" placeholder="0.0" step="0.1" inputmode="decimal"><span class="unit">NM</span></div>
+    </div>
+    <button class="bb-add" id="bb-dep-view" style="background:var(--accent-light);color:var(--accent);"><svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5H7A2.5 2.5 0 0 0 4.5 7v11A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5V7A2.5 2.5 0 0 0 17 4.5h-2"/><rect x="9" y="2.8" width="6" height="3.4" rx="1.2"/><path d="M8.5 11h7M8.5 15h4.5"/></svg>View Summary</button>
+    <button class="bb-add" id="bb-dep-save" style="background:var(--green-light);color:var(--green);font-weight:800;"><svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h9L20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><path d="M8 4v5h7V4"/><rect x="7.5" y="13" width="9" height="7" rx="1"/></svg>Save Departure to Log</button>
+  </div>
+
+  <button class="btn btn-yellow" id="btnGoNoon"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 19a4.5 4.5 0 0 1 .8-8.93 5.5 5.5 0 0 1 10.2-1.1A3.8 3.8 0 0 1 17.5 19z"/></svg>Next: Noon Input<svg class="ico" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12h15"/><path d="m14 6.5 5.5 5.5-5.5 5.5"/></svg></button>
+
+  <div class="sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17.5V11a6 6 0 0 1 12 0v6.5"/><path d="M4 17.5h16"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>Bell Book: Arrival</div>
+  <div class="card">
+    <div id="bb-arr-body"></div>
+    <button class="bb-add" id="bb-arr-add">+ Add Event</button>
+    <div style="border-top:2px solid var(--red);background:#FFF5F5;padding:0;">
+      <div class="clbl" style="color:var(--red);padding:10px 16px 4px;"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.8" fill="currentColor" stroke="none"/></svg>EOSP — End of Sea Passage</div>
+      <div class="row"><label>Date</label><input type="date" id="dc_eosp_date"></div>
+      <div class="row" style="gap:6px;"><label>Time</label>
+        <input type="time" id="dc_eosp_time" style="flex:1;min-width:0;font-size:16px;font-weight:600;color:var(--accent2);text-align:right;">
+        <span class="arr-tz-badge" id="btnEospTZ"><span class="tzb-txt">+0 TZ</span><svg class="ico" width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 15.5 15 5a2.12 2.12 0 0 1 3 3L7.5 18.5l-4.3 1.3z"/><path d="m13.5 6.5 4 4"/></svg></span></div>
+      <div class="row pos-row"><label>LATITUDE</label>
+        <div class="pos-fields">
+          <input type="number" id="dc_eosp_latD" placeholder="00"     min="0" max="89"     inputmode="decimal" style="max-width:66px;">
+          <span class="deg">°</span>
+          <input type="number" id="dc_eosp_latM" placeholder="00.000" min="0" max="59.999" step="0.001" inputmode="decimal">
+          <span class="deg">'</span>
+          <input type="hidden" id="dc_eosp_latH" value="N">
+          <button class="hem-btn" id="dc_eosp_latH_btn" data-hidden="dc_eosp_latH" data-a="N" data-b="S">N</button>
+        </div>
+      </div>
+      <div class="row pos-row"><label>LONGITUDE</label>
+        <div class="pos-fields">
+          <input type="number" id="dc_eosp_lonD" placeholder="000"    min="0" max="179"    inputmode="decimal" style="max-width:66px;">
+          <span class="deg">°</span>
+          <input type="number" id="dc_eosp_lonM" placeholder="00.000" min="0" max="59.999" step="0.001" inputmode="decimal">
+          <span class="deg">'</span>
+          <input type="hidden" id="dc_eosp_lonH" value="E">
+          <button class="hem-btn" id="dc_eosp_lonH_btn" data-hidden="dc_eosp_lonH" data-a="E" data-b="W">E</button>
+        </div>
+      </div>
+      <div class="row"><label>DTG</label><input type="number" id="dc_eosp_dtg" placeholder="0.0" step="0.1" inputmode="decimal"><span class="unit">NM</span></div>
+      <div class="row"><label>DMG</label><input type="number" id="dc_eosp_mandist" placeholder="0.0" step="0.1" inputmode="decimal"><span class="unit">NM</span></div>
+      <div class="clbl" style="color:var(--red);padding:10px 16px 4px;"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 20.5V5.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v15"/><path d="M3.5 20.5h11"/><path d="M6.5 7h5v3.5h-5z"/><path d="M13.5 10h3a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 0 3 0V9l-2.5-2.5"/></svg>Bunkers ROB at EOSP</div>
+      <div class="row"><label>FO ROB</label><input type="number" id="dc_eosp_foRob" placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+      <div class="row"><label>MGO ROB</label><input type="number" id="dc_eosp_mgoRob" placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+      <div class="row"><label>FW ROB</label><input type="number" id="dc_eosp_fwRob" placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+      <div id="eosp-extra-body"></div>
+      <button class="bb-add" id="btnAddManoDist" style="background:#FFF0F0;color:var(--red);border-top:1px solid var(--border);">+ MANO DIST</button>
+      <div id="fwe-block" style="display:none;">
+        <div class="clbl" style="color:var(--red);padding:10px 16px 4px;display:flex;align-items:center;gap:6px;border-top:1px solid var(--border);"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 20.5V5.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v15"/><path d="M3.5 20.5h11"/><path d="M6.5 7h5v3.5h-5z"/><path d="M13.5 10h3a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 0 3 0V9l-2.5-2.5"/></svg><span style="flex:1;">Bunkers ROB at FWE</span><button class="bb-del" id="btnDelFweRob" title="Remove FWE bunkers">×</button></div>
+        <div class="row"><label>FO ROB</label><input type="number" id="dc_fwe_foRob" placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+        <div class="row"><label>MGO ROB</label><input type="number" id="dc_fwe_mgoRob" placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+        <div class="row"><label>FW ROB</label><input type="number" id="dc_fwe_fwRob" placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+      </div>
+      <button class="bb-add" id="btnAddFweRob" style="background:#FFF0F0;color:var(--red);border-top:1px solid var(--border);">+ BUNKERS ROB AT FWE</button>
+    </div>
+    <button class="bb-add" id="bb-arr-view" style="background:var(--accent-light);color:var(--accent);"><svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5H7A2.5 2.5 0 0 0 4.5 7v11A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5V7A2.5 2.5 0 0 0 17 4.5h-2"/><rect x="9" y="2.8" width="6" height="3.4" rx="1.2"/><path d="M8.5 11h7M8.5 15h4.5"/></svg>View Summary</button>
+    <button class="bb-add" id="bb-arr-save" style="background:var(--green-light);color:var(--green);font-weight:800;"><svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h9L20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><path d="M8 4v5h7V4"/><rect x="7.5" y="13" width="9" height="7" rx="1"/></svg>Save Arrival to Log</button>
+  </div>
+
+  <div class="sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5.5" r="2.2"/><path d="M12 7.7v12.8"/><path d="M8 10.5h8"/><path d="M4.5 13.5a7.5 7.5 0 0 0 15 0"/><path d="M3 13.5h3M18 13.5h3"/></svg>Arrival Draft</div>
+  <div class="card">
+    <div class="clbl">Draft (m)</div>
+    <div class="row"><label>FWD</label><input type="number" id="dc_afwd" placeholder="0.00" step="0.01" inputmode="decimal"><span class="unit">m</span></div>
+    <div class="row"><label>MID</label><input type="number" id="dc_amid" placeholder="0.00" step="0.01" inputmode="decimal"><span class="unit">m</span></div>
+    <div class="row"><label>AFT</label><input type="number" id="dc_aaft" placeholder="0.00" step="0.01" inputmode="decimal"><span class="unit">m</span></div>
+    <div class="row"><label>Dock Water Density</label><input type="number" id="dc_adens" placeholder="1.019" step="0.001" inputmode="decimal"></div>
+  </div>
+</section>
+
+<!-- ══ NOON TAB ══ -->
+<section class="tab-pane" id="tab-noon">
+  <div class="act-row">
+    <button class="btn btn-ghost" id="btnClearNoon"><svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5A8 8 0 1 1 17.2 6"/><path d="M20 4v4.2h-4.2"/></svg>New Report</button>
+    <button class="btn btn-primary" id="btnGoSummaryTop">Summary<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12h15"/><path d="m14 6.5 5.5 5.5-5.5 5.5"/></svg></button>
+  </div>
+
+  <div class="sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M4 10h16"/><path d="M8.5 3.5v4M15.5 3.5v4"/></svg>Date &amp; Time</div>
+  <div class="card">
+    <div class="row"><label>Report Date</label><input type="date" id="n_date"></div>
+    <div class="row"><label>Noon Time</label>
+      <input type="hidden" id="n_noon" value="12:00">
+      <span style="font-size:20px;font-weight:800;color:var(--accent2);letter-spacing:1px;flex:1;text-align:right;">12:00</span>
+      <span class="lt-badge">LT</span>
+    </div>
+    <div class="row col-row">
+      <span class="col-row-lbl">Last Rep. Date &amp; Time</span>
+      <div class="col-row-field">
+        <span class="fl">DATE</span>
+        <input type="date" id="n_lastRepDate" style="flex:1;min-width:0;font-size:16px;font-weight:600;color:var(--accent2);text-align:right;">
+      </div>
+      <div class="col-row-field">
+        <span class="fl">TIME</span>
+        <input type="time" id="n_lastRep" style="flex:1;min-width:0;font-size:16px;font-weight:600;color:var(--accent2);text-align:right;">
+        <span class="lt-badge">LT</span>
+      </div>
+    </div>
+    <div class="hint" id="hint_lastRep"></div>
+    <!-- Clock Adjustment -->
+    <div class="row" style="flex-direction:column;align-items:flex-start;padding:12px 16px;min-height:auto;gap:8px;">
+      <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--textm);">Clock Change</span>
+      <div class="act-row tight" style="width:100%;">
+        <button class="btn btn-ghost" id="btnAdvance">+1h ADVANCE</button>
+        <button class="btn btn-ghost" id="btnRetard">−1h RETARD</button>
+      </div>
+      <span id="clockAdjLabel" style="font-size:12px;font-weight:700;color:var(--textm);display:none;"></span>
+    </div>
+  </div>
+
+  <div class="sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m14.8 9.2-1.6 4.4-4.4 1.6 1.6-4.4z"/></svg>Position &amp; Navigation</div>
+  <div class="card">
+    <div class="row"><label>Dist to Go</label><input type="number" id="n_dtg" placeholder="0.0" step="0.1" inputmode="decimal"><span class="unit">NM</span></div>
+    <div class="hint" id="hint_dtg"></div>
+    <div class="row"><label>Planned Course</label><input type="number" id="n_course" placeholder="000.0" min="0" max="359.9" step="0.1" inputmode="decimal"><span class="unit">°T</span></div>
+    <div class="row pos-row"><label>LATITUDE</label>
+      <div class="pos-fields">
+        <input type="number" id="n_latD" placeholder="00" min="0" max="89" inputmode="decimal" style="max-width:66px;">
+        <span class="deg">°</span>
+        <input type="number" id="n_latM" placeholder="00.000" min="0" max="59.999" step="0.001" inputmode="decimal">
+        <span class="deg">'</span>
+        <input type="hidden" id="n_latH" value="N">
+        <button class="hem-btn" id="n_latH_btn" data-hidden="n_latH" data-a="N" data-b="S">N</button>
+      </div>
+    </div>
+    <div class="row pos-row"><label>LONGITUDE</label>
+      <div class="pos-fields">
+        <input type="number" id="n_lonD" placeholder="000" min="0" max="179" inputmode="decimal" style="max-width:66px;">
+        <span class="deg">°</span>
+        <input type="number" id="n_lonM" placeholder="00.000" min="0" max="59.999" step="0.001" inputmode="decimal">
+        <span class="deg">'</span>
+        <input type="hidden" id="n_lonH" value="E">
+        <button class="hem-btn" id="n_lonH_btn" data-hidden="n_lonH" data-a="E" data-b="W">E</button>
+      </div>
+    </div>
+    <div class="row"><label>Dist Run</label><input type="number" id="n_dist" placeholder="0.0" step="0.1" inputmode="decimal"><span class="unit">NM</span></div>
+    <div class="row"><label>Avg Speed</label><span class="calc" id="d_speed">—</span><span class="unit">kts</span></div>
+    <div class="row"><label>ETA (UTC)</label><span class="calc" id="d_eta" style="font-size:15px;">—</span></div>
+    <div class="row" style="gap:6px;"><label style="width:110px;">ETA (LT)</label>
+      <span class="calc" id="d_etaLT" style="font-size:15px;flex:1;">—</span>
+      <span class="arr-tz-badge" id="btnArrTZ"><span class="tzb-txt">+0 TZ</span><svg class="ico" width="11" height="11" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 15.5 15 5a2.12 2.12 0 0 1 3 3L7.5 18.5l-4.3 1.3z"/><path d="m13.5 6.5 4 4"/></svg></span>
+    </div>
+    <div class="row col-row">
+      <span class="col-row-lbl" style="color:var(--accent);">ETA RPT</span>
+      <div class="col-row-field">
+        <span class="fl">DATE</span>
+        <input type="date" id="n_etaRptDate" style="flex:1;min-width:0;font-size:16px;font-weight:600;color:var(--accent2);text-align:right;">
+      </div>
+      <div class="col-row-field">
+        <span class="fl">TIME</span>
+        <input type="time" id="n_etaRptTime" style="flex:1;min-width:0;font-size:16px;font-weight:600;color:var(--accent2);text-align:right;">
+        <span class="lt-badge">LT</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8q2.25-2.6 4.5 0t4.5 0 4.5 0 4.5 0"/><path d="M3 13q2.25-2.6 4.5 0t4.5 0 4.5 0 4.5 0"/><path d="M3 18q2.25-2.6 4.5 0t4.5 0 4.5 0 4.5 0"/></svg>Weather &amp; Sea State</div>
+  <div class="card">
+    <div class="row"><label>Wind Dir.</label><input type="text" id="n_wDir" placeholder="NE / SSW / 045°" autocomplete="off" style="text-transform:uppercase;"></div>
+    <div class="row"><label>Wind Force</label><input type="number" id="n_wBf" placeholder="0–12" min="0" max="12" inputmode="numeric"><span class="unit">BF</span></div>
+    <div class="bfbadge" id="bfBadge"></div>
+    <div class="row"><label>Sea Height</label><input type="number" id="n_seaHt" placeholder="0.0" step="0.1" inputmode="decimal"><span class="unit">m</span></div>
+    <div class="row"><label>Swell</label><input type="number" id="n_swell" placeholder="0.0" step="0.1" inputmode="decimal"><span class="unit">m</span></div>
+  </div>
+
+  <div class="sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 20.5V5.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v15"/><path d="M3.5 20.5h11"/><path d="M6.5 7h5v3.5h-5z"/><path d="M13.5 10h3a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 0 3 0V9l-2.5-2.5"/></svg>Bunkers</div>
+  <div class="card">
+    <div class="clbl">Fuel Oil (FO)</div>
+    <div class="hint" id="hint_fo"></div>
+    <div class="row"><label>ME Cons</label><input type="number" id="n_foMe"     placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="row"><label>AE Cons</label><input type="number" id="n_foAe"     placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="row"><label>Boiler Cons</label><input type="number" id="n_foBoiler" placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="row"><label>Total Cons</label><span class="calc" id="d_foTotal" style="color:var(--amber);">—</span><span class="unit">MT</span></div>
+    <div class="row"><label>FO ROB</label><input type="number" id="n_foRob"     placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="clbl" style="margin-top:8px;border-top:1px solid var(--border);padding-top:12px;">Marine Gas Oil (MGO)</div>
+    <div class="hint" id="hint_mgo"></div>
+    <div class="row"><label>ME Cons</label><input type="number" id="n_mgoMe"    placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="row"><label>AE Cons</label><input type="number" id="n_mgoAe"    placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="row"><label>Boiler Cons</label><input type="number" id="n_mgoBoiler" placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="row"><label>Total Cons</label><span class="calc" id="d_mgoTotal" style="color:var(--amber);">—</span><span class="unit">MT</span></div>
+    <div class="row"><label>MGO ROB</label><input type="number" id="n_mgoRob"   placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="clbl" style="margin-top:8px;border-top:1px solid var(--border);padding-top:12px;">Fresh Water (FW)</div>
+    <div class="hint" id="hint_fw"></div>
+    <div class="row"><label>FW Cons</label><input type="number" id="n_fwCons"   placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="row"><label>FW Gen</label><input type="number" id="n_fwGen"     placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+    <div class="row"><label>FW ROB</label><input type="number" id="n_fwRob"     placeholder="0.000" step="0.001" inputmode="decimal"><span class="unit">MT</span></div>
+  </div>
+
+  <div class="sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5H7A2.5 2.5 0 0 0 4.5 7v11A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5V7A2.5 2.5 0 0 0 17 4.5h-2"/><rect x="9" y="2.8" width="6" height="3.4" rx="1.2"/><path d="M8.5 11h7M8.5 15h4.5"/></svg>Remarks</div>
+  <div class="card"><textarea id="n_rem" placeholder="Remarks, events, defects, observations…"></textarea></div>
+
+  <button class="btn btn-primary" id="btnGoSummaryBot"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 19.5h15"/><path d="M7.5 19.5v-6M12 19.5V7M16.5 19.5v-9"/></svg>View Summary<svg class="ico" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12h15"/><path d="m14 6.5 5.5 5.5-5.5 5.5"/></svg></button>
+</section>
+
+<!-- ══ SUMMARY TAB ══ -->
+<section class="tab-pane" id="tab-summary">
+  <div id="sumContent">
+    <div class="empty"><svg class="ico empty-ico" width="48" height="48" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5H7A2.5 2.5 0 0 0 4.5 7v11A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5V7A2.5 2.5 0 0 0 17 4.5h-2"/><rect x="9" y="2.8" width="6" height="3.4" rx="1.2"/><path d="M8.5 11h7M8.5 15h4.5"/></svg><p>Fill in the Noon Input tab,<br>then tap <strong>View Summary</strong>.</p></div>
+  </div>
+</section>
+
+<!-- ══ LOG TAB ══ -->
+<section class="tab-pane" id="tab-log">
+  <div id="logList"></div>
+  <div id="archiveList"></div>
+  <!-- Actions sit BELOW the records — the log is what you came to read, and the
+       once-a-voyage Archive button should not be the first thing under the header. -->
+  <div class="act-row" style="margin-top:4px;">
+    <button class="btn btn-green" id="btnExport"><svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5V4.5"/><path d="M8 8.2 12 4.2l4 4"/><path d="M4.5 14.5v3A2.5 2.5 0 0 0 7 20h10a2.5 2.5 0 0 0 2.5-2.5v-3"/></svg>Export JSON</button>
+    <button class="btn btn-outline" id="btnImportTrigger"><svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.2v11.3"/><path d="M8 11.5 12 15.5l4-4"/><path d="M4.5 14.5v3A2.5 2.5 0 0 0 7 20h10a2.5 2.5 0 0 0 2.5-2.5v-3"/></svg>Import JSON</button>
+  </div>
+  <input type="file" id="importInput" accept=".json">
+  <div style="margin:-4px 0 0;">
+    <button class="btn btn-yellow" id="btnArchive" style="min-height:46px;font-size:14px;margin-bottom:5px;"><svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1.2"/><path d="M5 8v10.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V8"/><path d="M10 12h4"/></svg><span id="archiveBtnTxt">Archive Voyage</span></button>
+    <div id="archiveHint" style="font-size:12px;color:var(--text2);text-align:center;"></div>
+  </div>
+</section>
+</main>
+
+<nav id="bottomnav">
+  <button class="nav-btn active" data-tab="tab-vessel">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="20"/><path d="M5 15h14"/><path d="M5 15c0 4 3.5 5 7 5s7-1 7-5"/></svg>VESSEL
+  </button>
+  <button class="nav-btn" data-tab="tab-noon">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/></svg>NOON
+  </button>
+  <button class="nav-btn" data-tab="tab-summary">
+    <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/><path d="M9 2v4"/><path d="M15 2v4"/></svg>SUMMARY
+  </button>
+  <button class="nav-btn" data-tab="tab-log">
+    <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>LOG
+  </button>
+</nav>
+</div>
+
+<div id="toast"><span class="t-ico"></span><span class="t-txt"></span></div>
+
+<!-- CONFIRM MODAL -->
+<div class="mbg" id="confirmBg">
+  <div class="msheet">
+    <div class="mgrab"><i></i></div>
+    <div class="mttl" id="confirmTitle">Confirm</div>
+    <div class="mmsg" id="confirmMsg">Are you sure?</div>
+    <div class="macts">
+      <button class="btn btn-primary" id="confirmOk">Confirm</button>
+      <button class="btn btn-ghost" id="confirmCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHIP TZ MODAL -->
+<div class="mbg" id="tzShipBg">
+  <div class="msheet">
+    <div class="mgrab"><i></i></div>
+    <div class="mttl"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.3l3.5 2"/></svg>Ship Local Timezone</div>
+    <div class="mmsg">Set ship's current UTC offset. Affects LT clock and all time calculations.</div>
+    <div class="tz-picker-row">
+      <button class="tz-adj-btn" id="tzShipMinus">−</button>
+      <span class="tz-val" id="tzShipDisplay">+0 TZ</span>
+      <button class="tz-adj-btn" id="tzShipPlus">+</button>
+    </div>
+    <div class="tz-hint">UTC −12 to +14 &nbsp;|&nbsp; Each tap = 1 hour</div>
+    <div class="macts">
+      <button class="btn btn-primary" id="tzShipApply"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="m4.5 12.5 5 5 10-11"/></svg>Apply</button>
+      <button class="btn btn-ghost" id="tzShipCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ARRIVAL TZ MODAL -->
+<div class="mbg" id="tzArrBg">
+  <div class="msheet">
+    <div class="mgrab"><i></i></div>
+    <div class="mttl"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 16.5h17l-2.2 4.5H5.7z"/><path d="M6 16.5V11h12v5.5"/><path d="M9.5 11V8h5v3"/><path d="M12 8V5"/></svg>Arrival Port Timezone</div>
+    <div class="mmsg">UTC offset of destination port. Used for ETA (LT) and ETA RPT.</div>
+    <div class="tz-picker-row">
+      <button class="tz-adj-btn" id="tzArrMinus">−</button>
+      <span class="tz-val" id="tzArrDisplay">+0 TZ</span>
+      <button class="tz-adj-btn" id="tzArrPlus">+</button>
+    </div>
+    <div class="tz-hint">UTC −12 to +14 &nbsp;|&nbsp; Each tap = 1 hour</div>
+    <div class="macts">
+      <button class="btn btn-primary" id="tzArrApply"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="m4.5 12.5 5 5 10-11"/></svg>Apply</button>
+      <button class="btn btn-ghost" id="tzArrCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- COSP TZ MODAL -->
+<div class="mbg" id="tzCospBg">
+  <div class="msheet">
+    <div class="mgrab"><i></i></div>
+    <div class="mttl"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.8" fill="currentColor" stroke="none"/></svg>COSP Timezone</div>
+    <div class="mmsg">UTC offset for Commencement of Sea Passage.</div>
+    <div class="tz-picker-row">
+      <button class="tz-adj-btn" id="tzCospMinus">−</button>
+      <span class="tz-val" id="tzCospDisplay">+0 TZ</span>
+      <button class="tz-adj-btn" id="tzCospPlus">+</button>
+    </div>
+    <div class="tz-hint">UTC −12 to +14 &nbsp;|&nbsp; Each tap = 1 hour</div>
+    <div class="macts">
+      <button class="btn btn-primary" id="tzCospApply"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="m4.5 12.5 5 5 10-11"/></svg>Apply</button>
+      <button class="btn btn-ghost" id="tzCospCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- EOSP TZ MODAL -->
+<div class="mbg" id="tzEospBg">
+  <div class="msheet">
+    <div class="mgrab"><i></i></div>
+    <div class="mttl"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.8" fill="currentColor" stroke="none"/></svg>EOSP Timezone</div>
+    <div class="mmsg">UTC offset for End of Sea Passage.</div>
+    <div class="tz-picker-row">
+      <button class="tz-adj-btn" id="tzEospMinus">−</button>
+      <span class="tz-val" id="tzEospDisplay">+0 TZ</span>
+      <button class="tz-adj-btn" id="tzEospPlus">+</button>
+    </div>
+    <div class="tz-hint">UTC −12 to +14 &nbsp;|&nbsp; Each tap = 1 hour</div>
+    <div class="macts">
+      <button class="btn btn-primary" id="tzEospApply"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="m4.5 12.5 5 5 10-11"/></svg>Apply</button>
+      <button class="btn btn-ghost" id="tzEospCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT LOG MODAL -->
+<div class="mbg" id="editBg">
+  <div class="msheet-tall">
+    <div class="msheet-tall-hdr">
+      <div class="mgrab"><i></i></div>
+      <div class="mttl"><svg class="ico" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 15.5 15 5a2.12 2.12 0 0 1 3 3L7.5 18.5l-4.3 1.3z"/><path d="m13.5 6.5 4 4"/></svg>Edit Report — <span id="editModalDate"></span></div>
+      <div class="mmsg" style="margin-bottom:0;">Correct any figures. Speed &amp; ETA are not recalculated.</div>
+    </div>
+    <div class="msheet-tall-body">
+      <div class="edit-sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m14.8 9.2-1.6 4.4-4.4 1.6 1.6-4.4z"/></svg>Position</div>
+      <div class="edit-card">
+        <div class="epos-group">
+          <div class="epos-lbl">LATITUDE</div>
+          <div class="epos-fields">
+            <input type="number" id="ed_latD" placeholder="00" min="0" max="89" inputmode="decimal" style="max-width:60px;">
+            <span class="edeg">°</span>
+            <input type="number" id="ed_latM" placeholder="00.000" min="0" max="59.999" step="0.001" inputmode="decimal">
+            <span class="edeg">'</span>
+            <select id="ed_latH"><option>N</option><option>S</option></select>
+          </div>
+        </div>
+        <div class="epos-group">
+          <div class="epos-lbl">LONGITUDE</div>
+          <div class="epos-fields">
+            <input type="number" id="ed_lonD" placeholder="000" min="0" max="179" inputmode="decimal" style="max-width:60px;">
+            <span class="edeg">°</span>
+            <input type="number" id="ed_lonM" placeholder="00.000" min="0" max="59.999" step="0.001" inputmode="decimal">
+            <span class="edeg">'</span>
+            <select id="ed_lonH"><option>E</option><option>W</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="edit-sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5 3.5 7v12.5L9 17l6 2.5 5.5-2.5V4.5L15 7z"/><path d="M9 4.5V17M15 7v12.5"/></svg>Navigation</div>
+      <div class="edit-card">
+        <div class="erow"><label>Planned Course</label><input type="number" id="ed_course" placeholder="000.0" min="0" max="359.9" step="0.1" inputmode="decimal"><span class="eu">°T</span></div>
+        <div class="erow"><label>Dist to Go</label><input type="number" id="ed_dtg" placeholder="0.0" step="0.1" inputmode="decimal"><span class="eu">NM</span></div>
+        <div class="erow"><label>Dist Run</label><input type="number" id="ed_dist" placeholder="0.0" step="0.1" inputmode="decimal"><span class="eu">NM</span></div>
+      </div>
+      <div class="edit-sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 20.5V5.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v15"/><path d="M3.5 20.5h11"/><path d="M6.5 7h5v3.5h-5z"/><path d="M13.5 10h3a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 0 3 0V9l-2.5-2.5"/></svg>Bunkers</div>
+      <div class="edit-card">
+        <div class="erow"><label>FO ROB</label><input type="number" id="ed_foRob" placeholder="0.000" step="0.001" inputmode="decimal"><span class="eu">MT</span></div>
+        <div class="erow"><label>FO ME Cons</label><input type="number" id="ed_foMe" placeholder="0.000" step="0.001" inputmode="decimal"><span class="eu">MT</span></div>
+        <div class="erow"><label>FO AE Cons</label><input type="number" id="ed_foAe" placeholder="0.000" step="0.001" inputmode="decimal"><span class="eu">MT</span></div>
+        <div class="erow"><label>FO Boiler Cons</label><input type="number" id="ed_foBoiler" placeholder="0.000" step="0.001" inputmode="decimal"><span class="eu">MT</span></div>
+        <div class="erow"><label>MGO ROB</label><input type="number" id="ed_mgoRob" placeholder="0.000" step="0.001" inputmode="decimal"><span class="eu">MT</span></div>
+        <div class="erow"><label>MGO ME Cons</label><input type="number" id="ed_mgoMe" placeholder="0.000" step="0.001" inputmode="decimal"><span class="eu">MT</span></div>
+        <div class="erow"><label>MGO AE Cons</label><input type="number" id="ed_mgoAe" placeholder="0.000" step="0.001" inputmode="decimal"><span class="eu">MT</span></div>
+        <div class="erow"><label>MGO Boiler Cons</label><input type="number" id="ed_mgoBoiler" placeholder="0.000" step="0.001" inputmode="decimal"><span class="eu">MT</span></div>
+        <div class="erow"><label>FW ROB</label><input type="number" id="ed_fwRob" placeholder="0.000" step="0.001" inputmode="decimal"><span class="eu">MT</span></div>
+        <div class="erow"><label>FW Cons</label><input type="number" id="ed_fwCons" placeholder="0.000" step="0.001" inputmode="decimal"><span class="eu">MT</span></div>
+        <div class="erow"><label>FW Gen</label><input type="number" id="ed_fwGen" placeholder="0.000" step="0.001" inputmode="decimal"><span class="eu">MT</span></div>
+      </div>
+      <div class="edit-sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8q2.25-2.6 4.5 0t4.5 0 4.5 0 4.5 0"/><path d="M3 13q2.25-2.6 4.5 0t4.5 0 4.5 0 4.5 0"/><path d="M3 18q2.25-2.6 4.5 0t4.5 0 4.5 0 4.5 0"/></svg>Weather &amp; Sea</div>
+      <div class="edit-card">
+        <div class="erow"><label>Wind Dir.</label><input type="text" id="ed_wDir" placeholder="NE / SSW" autocomplete="off" style="text-transform:uppercase;"></div>
+        <div class="erow"><label>Wind Force</label><input type="number" id="ed_wBf" placeholder="0–12" min="0" max="12" inputmode="numeric"><span class="eu">BF</span></div>
+        <div class="erow"><label>Sea Height</label><input type="number" id="ed_seaHt" placeholder="0.0" step="0.1" inputmode="decimal"><span class="eu">m</span></div>
+        <div class="erow"><label>Swell</label><input type="number" id="ed_swell" placeholder="0.0" step="0.1" inputmode="decimal"><span class="eu">m</span></div>
+      </div>
+      <div class="edit-sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.8s6.8-6.4 6.8-11.3a6.8 6.8 0 1 0-13.6 0C5.2 14.4 12 20.8 12 20.8z"/><circle cx="12" cy="9.5" r="2.5"/></svg>ETA RPT</div>
+      <div class="edit-card">
+        <div class="erow"><label>Date</label><input type="date" id="ed_etaRptDate"></div>
+        <div class="erow"><label>Time</label><input type="time" id="ed_etaRptTime"></div>
+      </div>
+      <div class="edit-sec"><svg class="ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5H7A2.5 2.5 0 0 0 4.5 7v11A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5V7A2.5 2.5 0 0 0 17 4.5h-2"/><rect x="9" y="2.8" width="6" height="3.4" rx="1.2"/><path d="M8.5 11h7M8.5 15h4.5"/></svg>Remarks</div>
+      <div class="edit-card">
+        <div class="erow"><textarea id="ed_rem" placeholder="Remarks…"></textarea></div>
+      </div>
+    </div>
+    <div class="msheet-tall-ftr">
+      <button class="btn btn-primary" id="editSaveBtn"><svg class="ico" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h9L20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><path d="M8 4v5h7V4"/><rect x="7.5" y="13" width="9" height="7" rx="1"/></svg>Save Changes</button>
+      <button class="btn btn-ghost" id="editCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════
+   CONSTANTS
+═══════════════════════════════════════════ */
+var KEY_V    = 'ng_vessel_v1';
+var KEY_L    = 'ng_logs_v1';
+var KEY_SHIP = 'ng_tz_ship_v1';
+var KEY_ARR  = 'ng_tz_arr_v1';
+var KEY_DC   = 'ng_depcond_v1';
+var KEY_BB   = 'ng_bellbook_v1';
+var KEY_NS   = 'ng_noonstate_v1';
+var KEY_AR   = 'ng_archives_v1';   // completed voyages, kept in-app after Archive
+
+var BF = {
+  0:{desc:'Calm',kts:'< 1 kt',wave:0.0,sea:'Sea like a mirror'},
+  1:{desc:'Light Air',kts:'1–3 kts',wave:0.1,sea:'Ripples without crests'},
+  2:{desc:'Light Breeze',kts:'4–6 kts',wave:0.3,sea:'Small wavelets, glassy crests'},
+  3:{desc:'Gentle Breeze',kts:'7–10 kts',wave:0.6,sea:'Large wavelets, scattered whitecaps'},
+  4:{desc:'Moderate Breeze',kts:'11–16 kts',wave:1.0,sea:'Small waves, frequent whitecaps'},
+  5:{desc:'Fresh Breeze',kts:'17–21 kts',wave:2.0,sea:'Moderate long waves, many whitecaps'},
+  6:{desc:'Strong Breeze',kts:'22–27 kts',wave:3.0,sea:'Large waves, whitecaps, some spray'},
+  7:{desc:'Near Gale',kts:'28–33 kts',wave:4.0,sea:'Sea heaps up, white foam streaks'},
+  8:{desc:'Gale',kts:'34–40 kts',wave:5.5,sea:'High waves, long crests, spray'},
+  9:{desc:'Strong Gale',kts:'41–47 kts',wave:7.0,sea:'Very high waves, dense foam streaks'},
+  10:{desc:'Storm',kts:'48–55 kts',wave:9.0,sea:'Very high waves, sea white with foam'},
+  11:{desc:'Violent Storm',kts:'56–63 kts',wave:11.5,sea:'Exceptionally high waves, visibility affected'},
+  12:{desc:'Hurricane Force',kts:'>= 64 kts',wave:14.0,sea:'Air filled with foam and spray'}
+};
+
+/* ═══════════════════════════════════════════
+   BELL BOOK STATE
+═══════════════════════════════════════════ */
+var BB_MONTHS  = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+var BB_DEP_DEF = ['SBE','POB','LAST LINE','PILOT OFF'];
+var BB_ARR_DEF = ['SBE','POB','FIRST LINE','ALLFAST','PILOT OFF','FWE'];
+var bbState    = { dep:[], arr:[] };
+
+/** "2026-05-31" → "31-MAY-26" */
+function fmtBBDate(iso) {
+  if (!iso) return '';
+  var p = iso.split('-');
+  return p.length === 3 ? p[2]+'-'+BB_MONTHS[parseInt(p[1])-1]+'-'+p[0].slice(2) : '';
+}
+/** "23:45" → "2345" */
+function fmtBBTime(t) { return t ? t.replace(':','') : ''; }
+/** deg, min, hem → "12-45.00N" */
+function fmtBBCoord(d, m, h) {
+  if (!d && !m) return '';
+  return (d||'0') + '-' + (m||'0') + (h||'');
+}
+
+/* ═══════════════════════════════════════════
+   TZ STATE — all in minutes from UTC
+═══════════════════════════════════════════ */
+var shipTZ  = 0;
+var arrTZ   = 0;
+var cospTZ  = 0;
+var eospTZ  = 0;
+var tzDraft  = 0;   // working copy while picker open
+var tzTarget = '';  // 'ship'|'arr'|'cosp'|'eosp'
+var clockAdjMins = 0; // 0=none, +60=advance, -60=retard
+
+/* ═══════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════ */
+function g(id) { return document.getElementById(id); }
+function pad(n) { return String(n).padStart(2, '0'); }
+function ls(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
+function lr(k) { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }
+/* ═══════════════════════════════════════════
+   OUTLINE ICONS FOR JS-RENDERED MARKUP
+   Static literals only. Never interpolate user data into icon markup —
+   these strings bypass esc() by design, so anything variable must not
+   travel inside them.
+═══════════════════════════════════════════ */
+var ICO_SHIP = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 16.5h17l-2.2 4.5H5.7z"/><path d="M6 16.5V11h12v5.5"/><path d="M9.5 11V8h5v3"/><path d="M12 8V5"/></svg>';
+var ICO_BELL = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17.5V11a6 6 0 0 1 12 0v6.5"/><path d="M4 17.5h16"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>';
+var ICO_ANCHOR = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5.5" r="2.2"/><path d="M12 7.7v12.8"/><path d="M8 10.5h8"/><path d="M4.5 13.5a7.5 7.5 0 0 0 15 0"/><path d="M3 13.5h3M18 13.5h3"/></svg>';
+var ICO_COMPASS = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m14.8 9.2-1.6 4.4-4.4 1.6 1.6-4.4z"/></svg>';
+var ICO_WAVES = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8q2.25-2.6 4.5 0t4.5 0 4.5 0 4.5 0"/><path d="M3 13q2.25-2.6 4.5 0t4.5 0 4.5 0 4.5 0"/><path d="M3 18q2.25-2.6 4.5 0t4.5 0 4.5 0 4.5 0"/></svg>';
+var ICO_FUEL = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 20.5V5.5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v15"/><path d="M3.5 20.5h11"/><path d="M6.5 7h5v3.5h-5z"/><path d="M13.5 10h3a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 0 3 0V9l-2.5-2.5"/></svg>';
+var ICO_CLOCK = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.3l3.5 2"/></svg>';
+var ICO_SAVE = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h9L20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><path d="M8 4v5h7V4"/><rect x="7.5" y="13" width="9" height="7" rx="1"/></svg>';
+var ICO_CLIPBOARD = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5H7A2.5 2.5 0 0 0 4.5 7v11A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5V7A2.5 2.5 0 0 0 17 4.5h-2"/><rect x="9" y="2.8" width="6" height="3.4" rx="1.2"/><path d="M8.5 11h7M8.5 15h4.5"/></svg>';
+var ICO_DOCUMENT = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 3.5H7.5A2.5 2.5 0 0 0 5 6v12a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 19 18V9z"/><path d="M13.5 3.5V9H19"/><path d="M8.5 13h7M8.5 16.5h4.5"/></svg>';
+var ICO_EXPORT = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5V4.5"/><path d="M8 8.2 12 4.2l4 4"/><path d="M4.5 14.5v3A2.5 2.5 0 0 0 7 20h10a2.5 2.5 0 0 0 2.5-2.5v-3"/></svg>';
+var ICO_TRASH = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.5h15"/><path d="M9.5 6.5V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v1.5"/><path d="M6.5 6.5 7.4 19a1.5 1.5 0 0 0 1.5 1.4h6.2a1.5 1.5 0 0 0 1.5-1.4l.9-12.5"/><path d="M10.5 10v6.5M13.5 10v6.5"/></svg>';
+var ICO_EDIT = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 15.5 15 5a2.12 2.12 0 0 1 3 3L7.5 18.5l-4.3 1.3z"/><path d="m13.5 6.5 4 4"/></svg>';
+var ICO_RESET = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5A8 8 0 1 1 17.2 6"/><path d="M20 4v4.2h-4.2"/></svg>';
+var ICO_CHECK = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="m4.5 12.5 5 5 10-11"/></svg>';
+var ICO_ALERT = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8 21 19.5H3z"/><path d="M12 9.5v4.5M12 17.2v.1"/></svg>';
+var ICO_CLOSE = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>';
+var ICO_DOT = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.8" fill="currentColor" stroke="none"/></svg>';
+var ICO_CLOUD = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 19a4.5 4.5 0 0 1 .8-8.93 5.5 5.5 0 0 1 10.2-1.1A3.8 3.8 0 0 1 17.5 19z"/></svg>';
+var ICO_ARCHIVE = '<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1.2"/><path d="M5 8v10.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V8"/><path d="M10 12h4"/></svg>';
+var ICO_ARROW_LEFT ='<svg class="ico" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12h-15"/><path d="m10 6.5-5.5 5.5L10 17.5"/></svg>';
+/** Same icon at an arbitrary size — the markup is fixed, only w/h vary. */
+function icoAt(html, px) { return html.replace(/width="\d+" height="\d+"/, 'width="'+px+'" height="'+px+'"'); }
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/** Minutes → "+8 TZ" / "-5 TZ" / "+10 TZ" */
+function fmtTZ(m) {
+  var sign = m >= 0 ? '+' : '-';
+  var h = Math.floor(Math.abs(m) / 60);
+  return sign + h + ' TZ';
+}
+
+/** "YYYY-MM-DD" → "DD-MM-YY" */
+function fmtDate(iso) {
+  if (!iso) return '—';
+  var p = iso.split('-');
+  return p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0].slice(2) : iso;
+}
+
+/**
+ * Convert a local-time date+time string to UTC milliseconds.
+ * Appends 'Z' to force UTC interpretation, then subtracts the offset.
+ * This avoids iOS Safari's ambiguous local-time parsing of ISO strings.
+ * @param {string} dateStr "YYYY-MM-DD"
+ * @param {string} timeStr "HH:MM"
+ * @param {number} tzMins  offset in minutes (e.g. 480 for +8)
+ * @returns {number} UTC milliseconds
+ */
+function ltToUtcMs(dateStr, timeStr, tzMins) {
+  var ms = new Date(dateStr + 'T' + timeStr + ':00Z').getTime();
+  return ms - tzMins * 60000;
+}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+var _tt = null;
+function toast(msg, ms, ico) {
+  ms = ms || 2800;
+  var el  = g('toast');
+  var ela = el.querySelector('.t-ico'), elt = el.querySelector('.t-txt');
+  ela.innerHTML  = ico || '';   /* static ICO_* literal only */
+  elt.textContent = msg;        /* never innerHTML — msg carries user data */
+  el.classList.add('show');
+  if (_tt) clearTimeout(_tt);
+  _tt = setTimeout(function() { el.classList.remove('show'); }, ms);
+}
+
+/* ═══════════════════════════════════════════
+   MODAL HELPERS
+═══════════════════════════════════════════ */
+/* A sheet must stay mounted while its slide-down plays, so closing parks it in
+   .closing for the length of the transition instead of dropping it instantly. */
+function openBg(id) {
+  var el = g(id);
+  el.classList.remove('closing', 'dragging');
+  var sheet = el.querySelector('.msheet, .msheet-tall');
+  if (sheet) sheet.style.transform = '';
+  void el.offsetHeight;           // reflow, or the enter transform never animates
+  el.classList.add('open');
+}
+function closeBg(id) {
+  var el = g(id);
+  if (!el.classList.contains('open')) return;
+  el.classList.remove('open', 'dragging');
+  el.classList.add('closing');
+  var sheet = el.querySelector('.msheet, .msheet-tall');
+  if (sheet) sheet.style.transform = '';
+  setTimeout(function() { el.classList.remove('closing'); }, 300);
+}
+
+/* Grab handle: tap to dismiss, or drag down past the threshold. A timeout-free
+   spring-back keeps it on the CSS transition so it matches the open curve. */
+function wireGrabHandles() {
+  document.querySelectorAll('.mgrab').forEach(function(grab) {
+    var bg    = grab.closest('.mbg');
+    var sheet = bg && bg.querySelector('.msheet, .msheet-tall');
+    if (!bg || !sheet) return;
+    var y0 = 0, t0 = 0, dy = 0, moved = false, active = false;
+
+    function start(y) { active = true; moved = false; dy = 0; y0 = y; t0 = Date.now(); bg.classList.add('dragging'); }
+    function move(y) {
+      if (!active) return;
+      dy = Math.max(0, y - y0);
+      if (dy > 3) moved = true;
+      sheet.style.transform = 'translateY(' + dy + 'px)';
+    }
+    function end() {
+      if (!active) return;
+      active = false;
+      bg.classList.remove('dragging');
+      sheet.style.transform = '';
+      var flick = dy > 20 && (Date.now() - t0) < 250;
+      if (!moved || dy > 70 || flick) closeBg(bg.id);
+    }
+
+    grab.addEventListener('touchstart', function(e) { start(e.touches[0].clientY); }, { passive: true });
+    grab.addEventListener('touchmove',  function(e) { move(e.touches[0].clientY); }, { passive: true });
+    grab.addEventListener('touchend',   end);
+    grab.addEventListener('touchcancel', function() { active = false; bg.classList.remove('dragging'); sheet.style.transform = ''; });
+    grab.addEventListener('mousedown',  function(e) { start(e.clientY); e.preventDefault(); });
+    document.addEventListener('mousemove', function(e) { move(e.clientY); });
+    document.addEventListener('mouseup', end);
+  });
+}
+function showConfirm(title, msg, cb) {
+  g('confirmTitle').textContent = title;
+  g('confirmMsg').textContent   = msg;
+  g('confirmOk').onclick = function() { closeBg('confirmBg'); cb(); };
+  openBg('confirmBg');
+}
+
+/* ═══════════════════════════════════════════
+   CLOCK
+   Uses UTC ms + getUTC* only — zero device-TZ dependency
+═══════════════════════════════════════════ */
+function tickClock() {
+  var now = new Date();
+  var utcMs = now.getTime();
+  // UTC display
+  g('clkUtc').textContent =
+    pad(now.getUTCHours()) + ':' + pad(now.getUTCMinutes()) + ':' + pad(now.getUTCSeconds());
+  // Ship LT: shift UTC ms by shipTZ offset, read UTC fields of result
+  var ltD = new Date(utcMs + shipTZ * 60000);
+  g('clkLt').textContent =
+    pad(ltD.getUTCHours()) + ':' + pad(ltD.getUTCMinutes()) + ':' + pad(ltD.getUTCSeconds());
+}
+
+/* ═══════════════════════════════════════════
+   TIMEZONE PICKERS — shared adjTZ
+═══════════════════════════════════════════ */
+var TZ_DISPLAY_MAP = {
+  ship:'tzShipDisplay', arr:'tzArrDisplay',
+  cosp:'tzCospDisplay', eosp:'tzEospDisplay'
+};
+
+function adjTZ(step) {
+  tzDraft = Math.max(-720, Math.min(840, tzDraft + step * 60));
+  var elId = TZ_DISPLAY_MAP[tzTarget];
+  if (elId) g(elId).textContent = fmtTZ(tzDraft);
+}
+
+// Ship TZ
+function openShipTZ() {
+  tzTarget = 'ship'; tzDraft = shipTZ;
+  g('tzShipDisplay').textContent = fmtTZ(tzDraft);
+  openBg('tzShipBg');
+}
+function applyShipTZ() {
+  shipTZ = tzDraft;
+  ls(KEY_SHIP, shipTZ);
+  g('clkLtLbl').textContent = fmtTZ(shipTZ);
+  closeBg('tzShipBg');
+  toast('Ship LT: ' + fmtTZ(shipTZ), 0, ICO_CLOCK);
+}
+
+// Arrival TZ
+function openArrTZ() {
+  tzTarget = 'arr'; tzDraft = arrTZ;
+  g('tzArrDisplay').textContent = fmtTZ(tzDraft);
+  openBg('tzArrBg');
+}
+function applyArrTZ() {
+  arrTZ = tzDraft;
+  ls(KEY_ARR, arrTZ);
+  g('btnArrTZ').querySelector('.tzb-txt').textContent = fmtTZ(arrTZ);
+  closeBg('tzArrBg');
+  var spd = parseFloat(g('d_speed').textContent);
+  recalcETA(!isNaN(spd) && spd > 0 ? spd : undefined);
+  toast('Arrival TZ: ' + fmtTZ(arrTZ), 0, ICO_SHIP);
+}
+
+// COSP TZ
+function openCospTZ() {
+  tzTarget = 'cosp'; tzDraft = cospTZ;
+  g('tzCospDisplay').textContent = fmtTZ(tzDraft);
+  openBg('tzCospBg');
+}
+function applyCospTZ() {
+  cospTZ = tzDraft;
+  g('btnCospTZ').querySelector('.tzb-txt').textContent = fmtTZ(cospTZ);
+  closeBg('tzCospBg');
+  saveDepCond();
+  renderVoyageTracker();
+  toast('COSP TZ: ' + fmtTZ(cospTZ), 0, ICO_DOT);
+}
+
+// EOSP TZ
+function openEospTZ() {
+  tzTarget = 'eosp'; tzDraft = eospTZ;
+  g('tzEospDisplay').textContent = fmtTZ(tzDraft);
+  openBg('tzEospBg');
+}
+function applyEospTZ() {
+  eospTZ = tzDraft;
+  g('btnEospTZ').querySelector('.tzb-txt').textContent = fmtTZ(eospTZ);
+  closeBg('tzEospBg');
+  saveDepCond();
+  renderVoyageTracker();
+  toast('EOSP TZ: ' + fmtTZ(eospTZ), 0, ICO_DOT);
+}
+
+/* ═══════════════════════════════════════════
+   INIT TZ — loads saved values, seeds from device on first run
+═══════════════════════════════════════════ */
+function initAllTZ() {
+  // Ship TZ
+  var sv = lr(KEY_SHIP);
+  shipTZ = (typeof sv === 'number') ? sv : -new Date().getTimezoneOffset();
+  g('clkLtLbl').textContent = fmtTZ(shipTZ);
+  // Arrival TZ
+  var av = lr(KEY_ARR);
+  arrTZ = (typeof av === 'number') ? av : shipTZ;
+  g('btnArrTZ').querySelector('.tzb-txt').textContent = fmtTZ(arrTZ);
+  // COSP/EOSP TZ — from departure condition storage
+  var dc = lr(KEY_DC) || {};
+  cospTZ = (typeof dc.cospTZ === 'number') ? dc.cospTZ : shipTZ;
+  eospTZ = (typeof dc.eospTZ === 'number') ? dc.eospTZ : shipTZ;
+  g('btnCospTZ').querySelector('.tzb-txt').textContent = fmtTZ(cospTZ);
+  g('btnEospTZ').querySelector('.tzb-txt').textContent = fmtTZ(eospTZ);
+}
+
+/* ═══════════════════════════════════════════
+   TAB SWITCHING
+═══════════════════════════════════════════ */
+function switchTab(id) {
+  document.querySelectorAll('.tab-pane').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
+  var pane = g(id); if (pane) pane.classList.add('active');
+  var btn = document.querySelector('.nav-btn[data-tab="' + id + '"]');
+  if (btn) btn.classList.add('active');
+  g('main').scrollTop = 0;
+  if (id === 'tab-log') { renderLogs(); renderArchives(); }
+
+  /* Keep the native iOS glass tab bar's selection in step when the switch
+     originated here rather than from a tap on the native bar. */
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tabBridge) {
+    window.webkit.messageHandlers.tabBridge.postMessage(id);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   VESSEL
+═══════════════════════════════════════════ */
+function saveVessel() {
+  var d = {
+    name: g('v_name').value.trim(),
+    voy:  g('v_voy').value.trim(),  dep: g('v_dep').value.trim(),
+    dest: g('v_dest').value.trim()
+  };
+  ls(KEY_V, d); updateTopBar(d.name); renderVoyageTracker(); updateArchiveBtn();
+}
+function loadVessel() {
+  var d = lr(KEY_V); if (!d) return;
+  if (d.name) { g('v_name').value = d.name; updateTopBar(d.name); }
+  if (d.voy)  g('v_voy').value  = d.voy;
+  if (d.dep)  g('v_dep').value  = d.dep;
+  if (d.dest) g('v_dest').value = d.dest;
+}
+function updateTopBar(n) {
+  g('topVesselTxt').textContent = n ? n.toUpperCase() : 'NOON GUIDE';
+}
+
+/* ═══════════════════════════════════════════
+   DEPARTURE CONDITION
+═══════════════════════════════════════════ */
+var DC_IDS = ['dc_cosp_date','dc_cosp_time','dc_cosp_latD','dc_cosp_latM','dc_cosp_latH','dc_cosp_lonD','dc_cosp_lonM','dc_cosp_lonH','dc_cosp_mandist','dc_cosp_dtg',
+              'dc_fwd','dc_mid','dc_aft','dc_disp','dc_dwt',
+              'dc_roll','dc_dens','dc_gm','dc_bwt','dc_cargo',
+              'dc_eosp_date','dc_eosp_time','dc_eosp_latD','dc_eosp_latM','dc_eosp_latH','dc_eosp_lonD','dc_eosp_lonM','dc_eosp_lonH','dc_eosp_dtg','dc_eosp_mandist',
+              'dc_eosp_foRob','dc_eosp_mgoRob','dc_eosp_fwRob',
+              'dc_fwe_foRob','dc_fwe_mgoRob','dc_fwe_fwRob',
+              'dc_afwd','dc_amid','dc_aaft','dc_adens'];
+/* Bunkers ROB at FWE — the three inputs always exist in the DOM (saveDepCond writes '' for
+   any DC_IDS field it cannot find, so building/destroying them would blank stored figures);
+   only their wrapper is hidden. */
+var FWE_IDS = ['dc_fwe_foRob','dc_fwe_mgoRob','dc_fwe_fwRob'];
+var fweShown = false;
+function setFweShown(on) {
+  fweShown = !!on;
+  if (g('fwe-block'))   g('fwe-block').style.display   = fweShown ? '' : 'none';
+  if (g('btnAddFweRob'))g('btnAddFweRob').style.display= fweShown ? 'none' : '';
+}
+function saveDepCond() {
+  var d = lr(KEY_DC) || {};
+  DC_IDS.forEach(function(id) { d[id] = g(id) ? g(id).value.trim() : ''; });
+  d.cospTZ = cospTZ; d.eospTZ = eospTZ;
+  d.fweShown = fweShown;
+  ls(KEY_DC, d);
+}
+function loadDepCond() {
+  var d = lr(KEY_DC); if (!d) return;
+  DC_IDS.forEach(function(id) { if (d[id] !== undefined && g(id)) g(id).value = d[id]; });
+  // Never let stored FWE figures sit in a hidden block — any value forces it open
+  setFweShown(!!d.fweShown || FWE_IDS.some(function(id){ return !!(d[id]||'').trim(); }));
+  // Restore hemisphere button labels for COSP and EOSP
+  ['dc_cosp_latH','dc_cosp_lonH','dc_eosp_latH','dc_eosp_lonH'].forEach(function(id) {
+    var el=g(id); var btn=g(id+'_btn');
+    if (el && btn && el.value) btn.textContent = el.value;
+  });
+  renderEospExtra();
+}
+
+/** Render the freely-addable EOSP-side maneuvering distance entries (anchorage legs etc.) */
+function renderEospExtra() {
+  var el = g('eosp-extra-body'); if (!el) return;
+  var dc = lr(KEY_DC) || {};
+  var rows = dc.dc_eosp_extra || [];
+  el.innerHTML = rows.map(function(r, i) {
+    return '<div class="mano-row">'+
+      '<input type="text" class="mano-lbl" data-mi="'+i+'" data-mf="label" value="'+esc(r.label||'')+'" placeholder="e.g. EOSP to Anchorage">'+
+      '<input type="number" class="mano-dist" data-mi="'+i+'" data-mf="dist" value="'+esc(r.dist||'')+'" step="0.1" inputmode="decimal" placeholder="0.0">'+
+      '<span class="mano-unit">NM</span>'+
+      '<button class="bb-del" data-mdel="'+i+'">\u00d7</button>'+
+    '</div>';
+  }).join('');
+
+  el.querySelectorAll('[data-mi]').forEach(function(input) {
+    input.addEventListener('input', function() {
+      var dc2 = lr(KEY_DC) || {};
+      var arr = dc2.dc_eosp_extra || [];
+      var idx = parseInt(input.getAttribute('data-mi'));
+      var field = input.getAttribute('data-mf');
+      if (!arr[idx]) arr[idx] = {label:'', dist:''};
+      arr[idx][field] = input.value;
+      dc2.dc_eosp_extra = arr;
+      ls(KEY_DC, dc2);
+      renderVoyageTracker();
+    });
+  });
+  el.querySelectorAll('[data-mdel]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var dc2 = lr(KEY_DC) || {};
+      var arr = dc2.dc_eosp_extra || [];
+      arr.splice(parseInt(btn.getAttribute('data-mdel')), 1);
+      dc2.dc_eosp_extra = arr;
+      ls(KEY_DC, dc2);
+      renderEospExtra();
+      renderVoyageTracker();
+    });
+  });
+}
+
+/** Sum of all freely-added EOSP-side maneuvering distance entries */
+function sumEospExtra(dc) {
+  var rows = dc.dc_eosp_extra || [];
+  return rows.reduce(function(a,r){ var v=parseFloat(r.dist); return a+(isNaN(v)?0:v); }, 0);
+}
+
+/* ═══════════════════════════════════════════
+   NOON INIT & CLEAR
+═══════════════════════════════════════════ */
+var NS_IDS = [
+  'n_date','n_lastRepDate','n_lastRep',
+  'n_latD','n_latM','n_lonD','n_lonM',
+  'n_course','n_dtg','n_dist',
+  'n_foRob','n_foMe','n_foAe','n_foBoiler',
+  'n_mgoRob','n_mgoMe','n_mgoAe','n_mgoBoiler','n_fwRob','n_fwCons','n_fwGen',
+  'n_wDir','n_wBf','n_seaHt','n_swell','n_rem',
+  'n_etaRptDate','n_etaRptTime'
+];
+var NS_SELS = ['n_latH','n_lonH'];
+
+function saveNoonState() {
+  var s = {};
+  NS_IDS.forEach(function(id)  { var el=g(id); if(el) s[id]=el.value; });
+  NS_SELS.forEach(function(id) { var el=g(id); if(el) s[id]=el.value; });
+  s._clockAdj = clockAdjMins; // persist clock adjustment
+  ls(KEY_NS, s);
+}
+
+function loadNoonState() {
+  var s = lr(KEY_NS); if (!s) return false;
+  NS_IDS.forEach(function(id)  { var el=g(id); if(el && s[id]!==undefined) el.value=s[id]; });
+  NS_SELS.forEach(function(id) {
+    var el=g(id); if(el && s[id]!==undefined) {
+      el.value=s[id];
+      var btn=g(id+'_btn'); if(btn) btn.textContent=s[id];
+    }
+  });
+  g('n_noon').value = '12:00';
+  // Restore clock adjustment
+  if (typeof s._clockAdj === 'number') loadClockAdj(s._clockAdj);
+  return true;
+}
+
+function initNoon() {
+  var now = new Date();
+  if (!g('n_date').value)
+    g('n_date').value = now.getUTCFullYear() + '-' + pad(now.getUTCMonth()+1) + '-' + pad(now.getUTCDate());
+  g('n_noon').value = '12:00';
+  var logs = lr(KEY_L) || [];
+  if (!logs.length && !g('n_lastRepDate').value) {
+    var prev = new Date(now.getTime() - 86400000);
+    g('n_lastRepDate').value = prev.getUTCFullYear() + '-' + pad(prev.getUTCMonth()+1) + '-' + pad(prev.getUTCDate());
+    g('n_lastRep').value = '12:00';
+  }
+}
+
+/** Blank every noon-input field and its derived readouts. No confirmation — callers own
+    that (clearNoon asks; wipeVoyageData has already asked about the whole voyage). */
+function resetNoonInputs() {
+  NS_IDS.forEach(function(id) { var el=g(id); if(el) el.value=''; });
+  NS_SELS.forEach(function(id) {
+    var val = id==='n_latH' ? 'N' : 'E';
+    var el=g(id); if(el) el.value=val;
+    var btn=g(id+'_btn'); if(btn) btn.textContent=val;
+  });
+  g('n_noon').value           = '12:00';
+  g('n_foRob')._manualEdit    = false;
+  g('n_mgoRob')._manualEdit   = false;
+  g('n_fwRob')._manualEdit    = false;
+  clockAdjMins = 0; updateClockAdjUI();
+  g('d_speed').textContent    = '—'; g('d_eta').textContent    = '—';
+  g('d_etaLT').textContent    = '—'; g('d_foTotal').textContent  = '—';
+  g('d_mgoTotal').textContent = '—'; g('bfBadge').style.display = 'none';
+  g('hint_fo').style.display  = 'none'; g('hint_mgo').style.display = 'none';
+  g('hint_fw').style.display  = 'none';
+  g('hint_dtg').style.display = 'none'; g('hint_lastRep').style.display = 'none';
+  ls(KEY_NS, null);
+  initNoon(); loadPrevHints();
+  calcFO(); calcMGO(); calcFW();
+}
+
+function clearNoon() {
+  showConfirm('New Noon Report', 'Clear all fields and start fresh?', function() {
+    resetNoonInputs();
+    toast('Ready for new noon report', 0, ICO_RESET);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   CALCULATIONS
+═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   CLOCK ADJUSTMENT (+1h / -1h)
+═══════════════════════════════════════════ */
+function setClockAdj(mins) {
+  // Toggle: tap same button again → cancel
+  clockAdjMins = (clockAdjMins === mins) ? 0 : mins;
+  updateClockAdjUI();
+  saveNoonState();
+  recalcSpeed();
+}
+
+function updateClockAdjUI() {
+  var advBtn = g('btnAdvance');
+  var retBtn = g('btnRetard');
+  var label  = g('clockAdjLabel');
+  if (!advBtn) return;
+
+  // Reset both buttons to ghost style. Sizing comes from `.act-row .btn` \u2014 do NOT
+  // re-apply inline styles here or these two drift from every other button row.
+  advBtn.className = 'btn btn-ghost';
+  retBtn.className = 'btn btn-ghost';
+
+  if (clockAdjMins === 60) {
+    advBtn.className = 'btn btn-primary';
+    label.textContent   = '\u2191 +1h ADVANCE \u2014 23-hour day';
+    label.style.display = 'block';
+  } else if (clockAdjMins === -60) {
+    retBtn.className = 'btn btn-primary';
+    label.textContent   = '\u2193 \u22121h RETARD \u2014 25-hour day';
+    label.style.display = 'block';
+  } else {
+    label.style.display = 'none';
+  }
+}
+
+function loadClockAdj(val) {
+  clockAdjMins = (typeof val === 'number') ? val : 0;
+  updateClockAdjUI();
+}
+
+function recalcSpeed() {
+  var dist        = parseFloat(g('n_dist').value);
+  var noonDate    = g('n_date').value;
+  var lastRepDate = g('n_lastRepDate').value;
+  var lastRepTime = g('n_lastRep').value;
+  g('d_speed').textContent = '—';
+  if (!dist || !noonDate || !lastRepDate || !lastRepTime) { recalcETA(); return; }
+  // Both in LT → convert to UTC ms using shipTZ
+  var noonUTC    = ltToUtcMs(noonDate,    '12:00',    shipTZ);
+  var lastRepUTC = ltToUtcMs(lastRepDate, lastRepTime, shipTZ);
+  var diffMs     = noonUTC - lastRepUTC - clockAdjMins * 60000; // ADVANCE(-1h elapsed=23h), RETARD(+1h elapsed=25h)
+  if (diffMs <= 0) { recalcETA(); return; }
+  var speed = dist / (diffMs / 3600000);
+  g('d_speed').textContent = speed.toFixed(2);
+  recalcETA(speed);
+}
+
+function recalcETA(spd) {
+  var dtg   = parseFloat(g('n_dtg').value);
+  var speed = (spd !== undefined) ? spd : parseFloat(g('d_speed').textContent);
+  g('d_eta').textContent   = '—';
+  g('d_etaLT').textContent = '—';
+  if (!dtg || !speed || speed <= 0 || isNaN(speed)) return;
+  var ds = g('n_date').value; if (!ds) return;
+  var noonUTC  = ltToUtcMs(ds, '12:00', shipTZ);
+  var etaUTCms = noonUTC + (dtg / speed) * 3600000;
+  // ETA UTC
+  var eu = new Date(etaUTCms);
+  g('d_eta').textContent =
+    pad(eu.getUTCDate()) + '/' + pad(eu.getUTCMonth()+1) +
+    '  ' + pad(eu.getUTCHours()) + ':' + pad(eu.getUTCMinutes()) + ' UTC';
+  // ETA LT (arrival port TZ)
+  var etaArrMs = etaUTCms + arrTZ * 60000;
+  var el = new Date(etaArrMs);
+  g('d_etaLT').textContent =
+    pad(el.getUTCDate()) + '/' + pad(el.getUTCMonth()+1) +
+    '  ' + pad(el.getUTCHours()) + ':' + pad(el.getUTCMinutes());
+  // ETA RPT — round arrival LT to nearest hour
+  var mins = el.getUTCMinutes();
+  var rptMs = mins >= 30 ? etaArrMs + (60-mins)*60000 : etaArrMs - mins*60000;
+  var rpt = new Date(rptMs);
+  g('n_etaRptDate').value = rpt.getUTCFullYear() + '-' + pad(rpt.getUTCMonth()+1) + '-' + pad(rpt.getUTCDate());
+  g('n_etaRptTime').value = pad(rpt.getUTCHours()) + ':' + pad(rpt.getUTCMinutes());
+}
+
+/* Latest usable "previous DTG" baseline — a saved noon report, or on a fresh
+   voyage the COSP DTG off the Bell Book: Departure (stored in snapshot.dtg).
+   Arrival bell books are skipped: their EOSP DTG is end-of-passage (0). */
+function getPrevDtgRecord() {
+  var logs = lr(KEY_L) || [];
+  var best = null;
+  logs.forEach(function(r) {
+    if (r.bbType === 'arr') return;
+    var isNoon = !r.bbType;
+    if (!isNoon && r.bbType !== 'dep') return;
+    var raw = isNoon ? r.dtg : (r.snapshot && r.snapshot.dtg);
+    var dtg = parseFloat(raw);
+    if (isNaN(dtg)) return;
+    var cand = { dtg: dtg, date: r.date || '', isNoon: isNoon };
+    if (!best) { best = cand; return; }
+    var cmp = cand.date.localeCompare(best.date);
+    // Newer date wins; on a tie the noon report is the more specific observation.
+    if (cmp > 0 || (cmp === 0 && cand.isNoon)) best = cand;
+  });
+  return best;
+}
+
+function autoDistRun() {
+  var prev = getPrevDtgRecord();
+  var todayDtg = parseFloat(g('n_dtg').value);
+  if (prev && !isNaN(todayDtg)) {
+    if (prev.dtg > todayDtg)
+      g('n_dist').value = (prev.dtg - todayDtg).toFixed(1);
+  }
+  recalcSpeed();
+}
+
+function calcFO() {
+  var me     = parseFloat(g('n_foMe').value)     || 0;
+  var ae     = parseFloat(g('n_foAe').value)     || 0;
+  var boiler = parseFloat(g('n_foBoiler').value) || 0;
+  var total  = me + ae + boiler;
+  g('d_foTotal').textContent = total > 0 ? total.toFixed(3) : '—';
+  var noonLogs = (lr(KEY_L)||[]).filter(function(r){ return !r.bbType; });
+  if (!noonLogs.length || g('n_foRob')._manualEdit) return;
+  var prevRob = parseFloat(noonLogs[noonLogs.length-1].foRob);
+  if (!isNaN(prevRob)) g('n_foRob').value = Math.max(0, prevRob - total).toFixed(3);
+}
+
+function calcMGO() {
+  var me     = parseFloat(g('n_mgoMe').value)     || 0;
+  var ae     = parseFloat(g('n_mgoAe').value)     || 0;
+  var boiler = parseFloat(g('n_mgoBoiler').value) || 0;
+  var total  = me + ae + boiler;
+  g('d_mgoTotal').textContent = total > 0 ? total.toFixed(3) : '—';
+  var noonLogs = (lr(KEY_L)||[]).filter(function(r){ return !r.bbType; });
+  if (!noonLogs.length || g('n_mgoRob')._manualEdit) return;
+  var prevRob = parseFloat(noonLogs[noonLogs.length-1].mgoRob);
+  if (!isNaN(prevRob)) g('n_mgoRob').value = Math.max(0, prevRob - total).toFixed(3);
+}
+function calcFW() {
+  var cons = parseFloat(g('n_fwCons').value) || 0;
+  var gen  = parseFloat(g('n_fwGen').value)  || 0;
+  var noonLogs = (lr(KEY_L)||[]).filter(function(r){ return !r.bbType; });
+  if (!noonLogs.length || g('n_fwRob')._manualEdit) return;
+  var prevRob = parseFloat(noonLogs[noonLogs.length-1].fwRob);
+  if (!isNaN(prevRob)) g('n_fwRob').value = Math.max(0, prevRob - cons + gen).toFixed(3);
+}
+
+function updateBF() {
+  var bf = parseInt(g('n_wBf').value);
+  var el = g('bfBadge');
+  if (isNaN(bf) || bf < 0 || bf > 12) { el.style.display = 'none'; return; }
+  var r = BF[bf];
+  el.textContent   = 'BF ' + bf + ' \u2014 ' + r.kts + ' \u2014 ' + r.desc + ' \u2014 ' + r.sea;
+  el.style.display = 'block';
+  g('n_seaHt').value = r.wave.toFixed(1);
+  g('n_swell').value  = r.wave.toFixed(1);
+}
+
+/* ═══════════════════════════════════════════
+   HINTS & PREV ROB
+═══════════════════════════════════════════ */
+function loadPrevHints() {
+  // DTG can be seeded by the departure bell book, so it is resolved separately
+  // from the ROB hints (which only ever come from a saved noon report).
+  var prevDtg = getPrevDtgRecord();
+  if (prevDtg) showHint('hint_dtg', prevDtg.dtg, prevDtg.date, 'DTG', 'NM');
+
+  var logs = (lr(KEY_L)||[]).filter(function(r){ return !r.bbType; });
+  if (!logs.length) return;
+  var last = logs[logs.length-1];
+  showHint('hint_fo',  last.foRob,  last.date, 'FO ROB',  'MT');
+  showHint('hint_mgo', last.mgoRob, last.date, 'MGO ROB', 'MT');
+  showHint('hint_fw',  last.fwRob,  last.date, 'FW ROB',  'MT');
+  if (last.date) {
+    g('n_lastRepDate').value = last.date;
+    g('n_lastRep').value     = '12:00';
+    var h = g('hint_lastRep');
+    h.textContent   = '↑ Auto-filled: ' + fmtDate(last.date) + '  12:00 LT (prev noon)';
+    h.style.display = 'block';
+  }
+}
+function showHint(id, val, date, label, unit) {
+  var el = g(id); if (!el || !val) return;
+  el.textContent   = '\u2191 Prev ' + (label||'') + ': ' + val + ' ' + (unit||'MT') + '  (' + date + ')';
+  el.style.display = 'block';
+}
+
+/* ═══════════════════════════════════════════
+   COLLECT ALL NOON DATA
+═══════════════════════════════════════════ */
+function collect() {
+  var latD=g('n_latD').value, latM=g('n_latM').value, latH=g('n_latH').value;
+  var lonD=g('n_lonD').value, lonM=g('n_lonM').value, lonH=g('n_lonH').value;
+  var lat = (latD||latM) ? latD+'\u00b0 '+(latM||'0')+"' "+latH : '';
+  var lon = (lonD||lonM) ? lonD+'\u00b0 '+(lonM||'0')+"' "+lonH : '';
+  return {
+    date:g('n_date').value, lastRepDate:g('n_lastRepDate').value, lastRep:g('n_lastRep').value,
+    lat:lat, lon:lon, latD:latD, latM:latM, latH:latH, lonD:lonD, lonM:lonM, lonH:lonH,
+    course:g('n_course').value, dtg:g('n_dtg').value, dist:g('n_dist').value,
+    speed:g('d_speed').textContent, eta:g('d_eta').textContent, etaLT:g('d_etaLT').textContent,
+    etaRptDate:g('n_etaRptDate').value, etaRptTime:g('n_etaRptTime').value,
+    clockAdj: clockAdjMins === 60 ? '+1h ADVANCE (23h day)' : clockAdjMins === -60 ? '-1h RETARD (25h day)' : '',
+    foRob:g('n_foRob').value, foMe:g('n_foMe').value, foAe:g('n_foAe').value,
+    foBoiler:g('n_foBoiler').value,
+    foTotal:g('d_foTotal').textContent,
+    mgoRob:g('n_mgoRob').value, mgoMe:g('n_mgoMe').value, mgoAe:g('n_mgoAe').value,
+    mgoBoiler:g('n_mgoBoiler').value,
+    mgoTotal:g('d_mgoTotal').textContent, fwRob:g('n_fwRob').value,
+    fwCons:g('n_fwCons').value, fwGen:g('n_fwGen').value,
+    wDir:g('n_wDir').value, wBf:g('n_wBf').value,
+    seaHt:g('n_seaHt').value, swell:g('n_swell').value, rem:g('n_rem').value,
+    shipTZ:shipTZ, arrTZ:arrTZ
+  };
+}
+
+/* ═══════════════════════════════════════════
+   SUMMARY
+═══════════════════════════════════════════ */
+function goSummary() { buildSummary(); switchTab('tab-summary'); }
+
+function sr(lbl, val, cls) {
+  cls = cls || '';
+  return '<div class="srow"><span class="slbl">'+esc(lbl)+'</span>'+
+    '<span class="sval '+cls+'">'+(esc(val)||'—')+'</span></div>';
+}
+
+function buildSummary() {
+  var d = collect(), v = lr(KEY_V)||{};
+  var bfNum = parseInt(d.wBf);
+  var bfStr = (!isNaN(bfNum)&&BF[bfNum]) ?
+    'BF '+bfNum+' \u2014 '+BF[bfNum].kts+' \u2014 '+BF[bfNum].desc+' \u2014 '+BF[bfNum].sea : '';
+  var etaRptStr = (d.etaRptDate&&d.etaRptTime) ?
+    fmtDate(d.etaRptDate)+'  '+d.etaRptTime+' LT ('+fmtTZ(arrTZ)+')' : '';
+  var etaLTstr = d.etaLT!=='—' ? d.etaLT+'  '+fmtTZ(arrTZ) : '';
+
+  // Departure condition block
+  var dc = lr(KEY_DC)||{};
+  var u = function(v,unit){ return v?v+' '+unit:'—'; };
+  var cTZ = (typeof dc.cospTZ==='number') ? dc.cospTZ : 0;
+  var eTZ = (typeof dc.eospTZ==='number') ? dc.eospTZ : 0;
+  var dcHtml = '';
+  if (dc.dc_cosp_date||dc.dc_fwd||dc.dc_eosp_date) {
+    dcHtml = '<div class="scard"><div class="stitle">'+ICO_SHIP+'Voyage Condition</div>'+
+      (dc.dc_cosp_date||dc.dc_cosp_time ?
+        sr('COSP Date', fmtDate(dc.dc_cosp_date))+
+        sr('COSP Time', (dc.dc_cosp_time||'—')+'  '+fmtTZ(cTZ))+
+        sr('COSP LAT',  dc.dc_cosp_latD?(dc.dc_cosp_latD+'\u00b0 '+(dc.dc_cosp_latM||'0')+"' "+(dc.dc_cosp_latH||'N')):'')+
+        sr('COSP LON',  dc.dc_cosp_lonD?(dc.dc_cosp_lonD+'\u00b0 '+(dc.dc_cosp_lonM||'0')+"' "+(dc.dc_cosp_lonH||'E')):'')+
+        sr('DMG (Dep)', u(dc.dc_cosp_mandist,'NM'))+
+        '<div class="divider"></div>' : '')+
+      sr('Dep. Draft FWD', u(dc.dc_fwd,'m'))+
+      sr('Dep. Draft MID', u(dc.dc_mid,'m'))+
+      sr('Dep. Draft AFT', u(dc.dc_aft,'m'))+
+      '<div class="divider"></div>'+
+      sr('Displacement', u(dc.dc_disp,'MT'))+sr('Deadweight', u(dc.dc_dwt,'MT'))+
+      sr('Rolling Period', u(dc.dc_roll,'s'))+sr('Water Density', dc.dc_dens||'—')+
+      sr('GM', u(dc.dc_gm,'m'))+sr('Ballast Water', u(dc.dc_bwt,'MT'))+
+      sr('Total Cargo', u(dc.dc_cargo,'MT'))+
+      '<div class="divider"></div>'+
+      (dc.dc_eosp_date||dc.dc_eosp_time ?
+        sr('EOSP Date', fmtDate(dc.dc_eosp_date))+
+        sr('EOSP Time', (dc.dc_eosp_time||'—')+'  '+fmtTZ(eTZ))+
+        sr('EOSP LAT',  dc.dc_eosp_latD?(dc.dc_eosp_latD+'\u00b0 '+(dc.dc_eosp_latM||'0')+"' "+(dc.dc_eosp_latH||'N')):'')+
+        sr('EOSP LON',  dc.dc_eosp_lonD?(dc.dc_eosp_lonD+'\u00b0 '+(dc.dc_eosp_lonM||'0')+"' "+(dc.dc_eosp_lonH||'E')):'')+
+        sr('DMG (Arr)', u(dc.dc_eosp_mandist,'NM'))+
+        '<div class="divider"></div>' : '')+
+      sr('Arr. Draft FWD', u(dc.dc_afwd,'m'))+
+      sr('Arr. Draft MID', u(dc.dc_amid,'m'))+
+      sr('Arr. Draft AFT', u(dc.dc_aaft,'m'))+
+      sr('Dock Water Density', dc.dc_adens||'—')+
+      '</div>';
+  }
+
+  var noonUTCd = new Date(ltToUtcMs(d.date, '12:00', shipTZ));
+  var noonUTCstr = pad(noonUTCd.getUTCHours())+':'+pad(noonUTCd.getUTCMinutes())+' UTC';
+
+  var html = [
+    '<div class="vbanner">',
+      '<div class="vr">'+esc(v.dep||'—')+' \u2192 '+esc(v.dest||'—')+' &nbsp;|&nbsp; Voy. '+esc(v.voy||'—')+'</div>',
+      '<div class="vd">NOON &nbsp; '+fmtDate(d.date)+'&nbsp; 12:00 LT &nbsp;/&nbsp; '+noonUTCstr+'</div>',
+    '</div>',
+    '<div class="scard"><div class="stitle">'+ICO_COMPASS+'Position &amp; Navigation</div>',
+      sr('GPS LAT', d.lat, 'blue'), sr('GPS LON', d.lon, 'blue'),
+      sr('Planned Course', d.course?d.course+'\u00b0T':''),
+      sr('Dist to Go',  d.dtg ?d.dtg +' NM':''),
+      sr('Dist Run',    d.dist?d.dist+' NM':''),
+      sr('Avg Speed',   d.speed!=='—'?d.speed+' kts':'', 'green'),
+      d.clockAdj ? sr('Clock Change', d.clockAdj, 'amber') : '',
+      sr('ETA (UTC)',   d.eta  !=='—'?d.eta  :'',        'green'),
+      sr('ETA (LT)',    etaLTstr,                         'green'),
+      sr('ETA RPT',     etaRptStr,                        'yellow-val'),
+    '</div>',
+    '<div class="scard"><div class="stitle">'+ICO_WAVES+'Weather &amp; Sea State</div>',
+      sr('Wind Direction', d.wDir||''),
+      sr('Wind Force', d.wBf?'BF '+d.wBf:''),
+      bfStr?'<div class="bfbadge" style="display:block;margin:0 0 10px;">'+esc(bfStr)+'</div>':'',
+      sr('Sea Height', d.seaHt?d.seaHt+' m':''),
+      sr('Swell', d.swell?d.swell+' m':''),
+    '</div>',
+    '<div class="scard"><div class="stitle">'+ICO_FUEL+'Bunkers ROB &amp; Consumption</div>',
+      sr('FO ROB',        d.foRob  ?d.foRob  +' MT':''),
+      sr('FO ME Cons',    d.foMe   ?d.foMe   +' MT':'','amber'),
+      sr('FO AE Cons',    d.foAe   ?d.foAe   +' MT':'','amber'),
+      d.foBoiler&&parseFloat(d.foBoiler)>0 ? sr('FO Boiler',  d.foBoiler+' MT','amber') : '',
+      sr('FO Total Cons', d.foTotal!=='—'?d.foTotal+' MT':'','amber'),
+      '<div class="divider"></div>',
+      sr('MGO ROB',       d.mgoRob ?d.mgoRob +' MT':''),
+      sr('MGO ME Cons',   d.mgoMe  ?d.mgoMe  +' MT':'','amber'),
+      sr('MGO AE Cons',   d.mgoAe  ?d.mgoAe  +' MT':'','amber'),
+      d.mgoBoiler&&parseFloat(d.mgoBoiler)>0 ? sr('MGO Boiler', d.mgoBoiler+' MT','amber') : '',
+      sr('MGO Total Cons',d.mgoTotal!=='—'?d.mgoTotal+' MT':'','amber'),
+      '<div class="divider"></div>',
+      sr('FW Cons',   d.fwCons ? d.fwCons+' MT' : '', 'amber'),
+      d.fwGen  ? sr('FW Gen',  d.fwGen +' MT', 'green') : '',
+      sr('FW ROB',   d.fwRob  ? d.fwRob +' MT' : ''),
+    '</div>',
+    d.rem?'<div class="scard"><div class="stitle">'+ICO_CLIPBOARD+'Remarks</div><p style="font-size:15px;color:var(--text2);line-height:1.7;">'+esc(d.rem)+'</p></div>':'',
+    dcHtml,
+    '<button class="btn btn-green" id="btnSaveLog">'+icoAt(ICO_SAVE,17)+'Save This Report</button>',
+    '<button class="btn btn-outline" id="btnCopyText">'+icoAt(ICO_CLIPBOARD,17)+'Copy as Plain Text</button>',
+    '<button class="btn btn-ghost" id="btnBackNoon">'+icoAt(ICO_ARROW_LEFT,17)+'Back to Input</button>',
+    '<div style="height:8px;"></div>'
+  ].join('');
+
+  g('sumContent').innerHTML = html;
+  g('btnSaveLog').addEventListener('click',  saveLog);
+  g('btnCopyText').addEventListener('click', copyText);
+  g('btnBackNoon').addEventListener('click', function(){ switchTab('tab-noon'); });
+}
+
+/* ═══════════════════════════════════════════
+   SAVE LOG
+═══════════════════════════════════════════ */
+function saveLog() {
+  var d = collect(), v = lr(KEY_V)||{};
+  if (!d.date) { toast('Set report date first', 0, ICO_ALERT); return; }
+  var rec = {}; Object.keys(d).forEach(function(k){ rec[k]=d[k]; });
+  rec.vessel = v.name||''; rec.voyage = v.voy||'';
+  rec.savedAt = new Date().toISOString();
+  var logs = (lr(KEY_L)||[]).filter(function(x){ return x.date!==d.date; });
+  logs.push(rec);
+  logs.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  ls(KEY_L, logs); loadPrevHints(); renderVoyageTracker();
+  toast('Saved \u2014 '+d.date, 0, ICO_CHECK);
+}
+
+/* ═══════════════════════════════════════════
+   COPY PLAIN TEXT
+═══════════════════════════════════════════ */
+function copyText() {
+  var d = collect(), v = lr(KEY_V)||{};
+  var bfNum = parseInt(d.wBf);
+  var bfLine = (!isNaN(bfNum)&&BF[bfNum]) ?
+    BF[bfNum].kts+' \u2014 '+BF[bfNum].desc+' \u2014 '+BF[bfNum].sea : '—';
+  var u = function(val,unit){ return val?val+' '+unit:'—'; };
+  var etaRptStr = (d.etaRptDate&&d.etaRptTime) ?
+    fmtDate(d.etaRptDate)+'  '+d.etaRptTime+' LT ('+fmtTZ(arrTZ)+')' : '—';
+  var dc = lr(KEY_DC)||{};
+  var uc = function(val,unit){ return val?val+' '+unit:'—'; };
+  var cTZ = (typeof dc.cospTZ==='number')?dc.cospTZ:0;
+  var eTZ = (typeof dc.eospTZ==='number')?dc.eospTZ:0;
+
+  var lines = [
+    '=========== NOON REPORT ===========',
+    'Vessel   : '+(v.name||'—'),
+    'Voyage   : '+(v.voy||'—'),
+    'Route    : '+(v.dep||'—')+' -> '+(v.dest||'—'),
+    'Date     : '+fmtDate(d.date)+'  12:00 LT ('+fmtTZ(shipTZ)+')',
+    '',
+    '--- POSITION & NAVIGATION ---',
+    'LAT      : '+(d.lat||'—'), 'LON      : '+(d.lon||'—'),
+    'Course   : '+u(d.course,'\u00b0T'),
+    'DTG      : '+u(d.dtg,'NM'), 'Dist Run : '+u(d.dist,'NM'),
+    'Speed    : '+(d.speed!=='—'?d.speed+' kts':'—'),
+    d.clockAdj ? 'Clk Chg  : '+d.clockAdj : '',
+    'ETA(UTC) : '+(d.eta!=='—'?d.eta:'—'),
+    'ETA(LT)  : '+(d.etaLT!=='—'?d.etaLT+'  '+fmtTZ(arrTZ):'—'),
+    'ETA RPT  : '+etaRptStr,
+    '',
+    '--- BUNKERS ---',
+    'FO ROB   : '+u(d.foRob,'MT'), 'FO ME    : '+u(d.foMe,'MT'), 'FO AE    : '+u(d.foAe,'MT'),
+    d.foBoiler&&parseFloat(d.foBoiler)>0 ? 'FO Boiler: '+u(d.foBoiler,'MT') : '',
+    'FO Total : '+(d.foTotal!=='—'?d.foTotal+' MT':'—'),
+    'MGO ROB  : '+u(d.mgoRob,'MT'), 'MGO ME   : '+u(d.mgoMe,'MT'), 'MGO AE   : '+u(d.mgoAe,'MT'),
+    d.mgoBoiler&&parseFloat(d.mgoBoiler)>0 ? 'MGO Boil.: '+u(d.mgoBoiler,'MT') : '',
+    'MGO Total: '+(d.mgoTotal!=='—'?d.mgoTotal+' MT':'—'),
+    'FW Cons  : '+u(d.fwCons,'MT'),
+    'FW Gen   : '+u(d.fwGen, 'MT'),
+    'FW ROB   : '+u(d.fwRob,'MT'),
+    '',
+    '--- WEATHER ---',
+    'Wind     : '+(d.wDir||'—')+' / BF '+(d.wBf||'—'),
+    'BF       : '+bfLine,
+    'Sea Ht   : '+u(d.seaHt,'m'), 'Swell    : '+u(d.swell,'m'),
+    d.rem?'\n--- REMARKS ---\n'+d.rem:'',
+    (dc.dc_cosp_date||dc.dc_fwd||dc.dc_eosp_date) ? [
+      '', '--- VOYAGE CONDITION ---',
+      'COSP Date   : '+fmtDate(dc.dc_cosp_date),
+      'COSP Time   : '+(dc.dc_cosp_time||'—')+'  '+fmtTZ(cTZ),
+      'COSP LAT    : '+(dc.dc_cosp_latD?dc.dc_cosp_latD+'\u00b0 '+(dc.dc_cosp_latM||'0')+"' "+(dc.dc_cosp_latH||'N'):'—'),
+      'COSP LON    : '+(dc.dc_cosp_lonD?dc.dc_cosp_lonD+'\u00b0 '+(dc.dc_cosp_lonM||'0')+"' "+(dc.dc_cosp_lonH||'E'):'—'),
+      'Man.Dist(D) : '+uc(dc.dc_cosp_mandist,'NM'),
+      'Dep.Draft F : '+uc(dc.dc_fwd,'m'), 'Dep.Draft M : '+uc(dc.dc_mid,'m'), 'Dep.Draft A : '+uc(dc.dc_aft,'m'),
+      'Displacement: '+uc(dc.dc_disp,'MT'), 'Deadweight  : '+uc(dc.dc_dwt,'MT'),
+      'Roll Period : '+uc(dc.dc_roll,'s'), 'Water Dens. : '+(dc.dc_dens||'—'),
+      'GM          : '+uc(dc.dc_gm,'m'), 'Ballast W.  : '+uc(dc.dc_bwt,'MT'), 'Total Cargo : '+uc(dc.dc_cargo,'MT'),
+      'EOSP Date   : '+fmtDate(dc.dc_eosp_date),
+      'EOSP Time   : '+(dc.dc_eosp_time||'—')+'  '+fmtTZ(eTZ),
+      'EOSP LAT    : '+(dc.dc_eosp_latD?dc.dc_eosp_latD+'\u00b0 '+(dc.dc_eosp_latM||'0')+"' "+(dc.dc_eosp_latH||'N'):'—'),
+      'EOSP LON    : '+(dc.dc_eosp_lonD?dc.dc_eosp_lonD+'\u00b0 '+(dc.dc_eosp_lonM||'0')+"' "+(dc.dc_eosp_lonH||'E'):'—'),
+      'Man.Dist(A) : '+uc(dc.dc_eosp_mandist,'NM'),
+      'Arr.Draft F : '+uc(dc.dc_afwd,'m'), 'Arr.Draft M : '+uc(dc.dc_amid,'m'), 'Arr.Draft A : '+uc(dc.dc_aaft,'m'),
+      'DWD         : '+(dc.dc_adens||'—')
+    ].join('\n') : '',
+    '', '========== END OF REPORT =========='
+  ].join('\n');
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(lines)
+      .then(function(){ toast('Copied to clipboard', 0, ICO_CLIPBOARD); })
+      .catch(function(){ toast('Copy failed', 0, ICO_ALERT); });
+  } else { toast('Clipboard not available', 0, ICO_ALERT); }
+}
+
+/* ═══════════════════════════════════════════
+   LOG RENDERING
+═══════════════════════════════════════════ */
+function renderLogs() {
+  var allLogs = (lr(KEY_L)||[]).slice().reverse();
+  var el = g('logList');
+  if (!allLogs.length) {
+    el.innerHTML = '<div class="empty">'+icoAt(ICO_DOCUMENT,48).replace('class="ico"','class="ico empty-ico"')+'<p>No saved reports yet.</p></div>';
+    return;
+  }
+
+  var noonLogs = allLogs.filter(function(r){ return !r.bbType; });
+  var bbLogs   = allLogs.filter(function(r){ return  r.bbType; });
+
+  function buildCard(r, i) {
+    var rShipTZ = (typeof r.shipTZ==='number') ? r.shipTZ : 0;
+    var rArrTZ  = (typeof r.arrTZ ==='number') ? r.arrTZ  : rShipTZ;
+    var voy     = r.voyage ? '&nbsp;&nbsp;<span style="font-size:13px;font-weight:700;color:var(--text2);">'+esc(r.voyage)+'</span>' : '';
+
+    if (r.bbType) {
+      var bbTitle  = r.bbType==='dep' ? 'DEP' : 'ARR';
+      var evtCount = (r.bbRows||[]).filter(function(x){ return x.time||x.event; }).length;
+      var bbSnap   = r.snapshot || {};
+      return [
+        '<div class="log-card" id="lc'+i+'">',
+          '<div class="log-hdr" data-i="'+i+'">',
+            '<div>',
+              '<div class="log-date">'+fmtDate(r.date)+'&nbsp;&nbsp;<span style="font-size:12px;font-weight:700;color:var(--green);background:var(--green-light);padding:2px 8px;border-radius:4px;vertical-align:middle;">'+esc(bbTitle)+'</span>'+voy+'</div>',
+              '<div class="log-meta">'+evtCount+' event'+(evtCount!==1?'s':'')+(r.vessel?' &nbsp;|&nbsp; '+esc(r.vessel):'')+'</div>',
+            '</div>',
+            '<svg class="ico chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg>',
+          '</div>',
+          '<div class="log-body">',
+            (function(){
+              // Departure: the events happen FIRST and COSP closes them, so the COSP block
+              // is emitted BELOW the event rows and fenced off from ABOVE (border-top),
+              // the same way the red ROB block fences itself on arrival cards.
+              // Arrival: EOSP starts the sequence, so its block stays at the TOP with the
+              // separator BELOW it; the ROB bunkers block still follows the event rows.
+              var isDep = r.bbType==='dep';
+              var snap = bbSnap;
+              var evtLabel = isDep ? 'COSP' : 'EOSP';
+              var lat = fmtBBCoord(snap.latD, snap.latM, snap.latH);
+              var lon = fmtBBCoord(snap.lonD, snap.lonM, snap.lonH);
+              var pos = (lat&&lon) ? lat+' '+lon : (lat||lon||'');
+              var snapDate = snap.date ? fmtBBDate(snap.date) : '';
+              var snapTime = snap.time ? fmtBBTime(snap.time) : '';
+              var base  = 'display:flex;align-items:baseline;gap:10px;font-size:14px;background:var(--accent-light);margin:0 -16px;';
+              var sTop  = base+'padding:7px 16px 2px;';
+              var sMid  = base+'padding:2px 16px;';
+              var sBot  = base+'padding:2px 16px 7px;';
+              var rule  = 'border-'+(isDep?'top':'bottom')+':2px solid var(--accent);';
+              var d1 = 'flex:0 0 88px;font-weight:700;color:var(--accent2);';
+              var d2 = 'flex:0 0 46px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text1);';
+              var d3 = 'flex:1;font-weight:800;color:var(--accent);';
+              var b = '<span style="'+d1+'"></span><span style="'+d2+'"></span>';
+              var hasPos = !!pos, hasDtg = !!(snap.dtg), hasDmg = !!(snap.mandist);
+              var row3Content = (hasDtg?'DTG '+esc(snap.dtg)+'NM':'')+(hasDmg?' DMG '+esc(snap.mandist)+'NM':'');
+              var hasRow3 = hasDtg||hasDmg;
+              // The accent rule goes on the FIRST row when the block sits at the bottom
+              // (dep), on the LAST row when it sits at the top (arr).
+              var hdrStyle = ((hasPos||hasRow3) ? sTop : sBot) + (isDep ? rule : (hasPos||hasRow3 ? '' : rule));
+              var posStyle = (hasRow3 ? sMid : sBot) + (!isDep && !hasRow3 ? rule : '');
+              var r3Style  = sBot + (isDep ? '' : rule);
+              var block = '<div style="'+hdrStyle+'">'+
+                  '<span style="'+d1+'">'+esc(snapDate)+'</span>'+
+                  '<span style="'+d2+'">'+esc(snapTime)+'</span>'+
+                  '<span style="'+d3+'">'+esc(evtLabel)+'</span></div>'+
+                (hasPos ? '<div style="'+posStyle+'">'+b+'<span style="'+d3+'">'+esc(pos)+'</span></div>' : '')+
+                (hasRow3 ? '<div style="'+r3Style+'">'+b+'<span style="'+d3+'">'+row3Content+'</span></div>' : '');
+              var evtRows = (r.bbRows||[]).filter(function(x){return x.time||x.event;}).map(function(row,ri,arr){
+                var showDate = ri===0 || row.date!==arr[ri-1].date;
+                // On dep the block's own 2px rule closes the list, so the last event row
+                // drops its 1px line — otherwise the two dividers stack.
+                var lastDep = isDep && ri===arr.length-1;
+                return '<div style="display:flex;align-items:baseline;padding:7px 0;'+(lastDep?'':'border-bottom:1px solid var(--border);')+'gap:10px;font-size:14px;">'+
+                  '<span style="flex:0 0 88px;font-weight:600;color:var(--accent2);">'+(showDate&&row.date?esc(fmtBBDate(row.date)):'')+'</span>'+
+                  '<span style="flex:0 0 46px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text1);">'+esc(fmtBBTime(row.time))+'</span>'+
+                  '<span style="flex:1;font-weight:600;color:var(--text1);">'+esc(row.event||'')+'</span></div>';
+              }).join('');
+              return isDep ? (evtRows + block) : (block + evtRows);
+            }()),
+            (r.bbType==='arr' ? bunkersRowsHtml(bbSnap) : ''),
+            '<div class="act-row in-card">',
+              '<button class="btn btn-primary" data-bbview-log="'+esc(r.date)+'" data-bbview-type="'+esc(r.bbType)+'">'+ICO_CLIPBOARD+'View</button>',
+              '<button class="btn btn-danger" data-del="'+esc(r.date)+'">'+ICO_TRASH+'Del</button>',
+            '</div>',
+          '</div>',
+        '</div>'
+      ].join('');
+    }
+
+    // Standard noon report
+    var etaLTval  = (r.etaLT&&r.etaLT!=='—') ? r.etaLT+'  '+fmtTZ(rArrTZ) : '—';
+    var etaRptVal = (r.etaRptDate&&r.etaRptTime) ? fmtDate(r.etaRptDate)+'  '+r.etaRptTime+'  '+fmtTZ(rArrTZ) : '—';
+    var logNoonUTCd = new Date(ltToUtcMs(r.date,'12:00',rShipTZ));
+    var logNoonUTC  = pad(logNoonUTCd.getUTCHours())+':'+pad(logNoonUTCd.getUTCMinutes())+' UTC';
+    return [
+      '<div class="log-card" id="lc'+i+'">',
+        '<div class="log-hdr" data-i="'+i+'">',
+          '<div>',
+            '<div class="log-date">'+fmtDate(r.date)+'&nbsp;&nbsp;<span style="font-size:12px;font-weight:700;color:var(--textm);">'+logNoonUTC+'</span>&nbsp;&nbsp;<span style="font-size:13px;font-weight:600;color:var(--accent);background:var(--accent-light);padding:2px 8px;border-radius:4px;vertical-align:middle;">'+fmtTZ(rShipTZ)+'</span>'+voy+'</div>',
+            '<div class="log-meta">'+(r.lat||'—')+' / '+(r.lon||'—')+(r.wBf?' | W BF '+r.wBf:'')+(r.seaHt?' | WV '+r.seaHt:'')+'</div>',
+            '<div class="log-meta">'+(r.course?'COG '+r.course+'\u00b0T | ':'')+
+              'DTG '+(r.dtg||'—')+' NM | DR '+(r.dist||'—')+' NM | '+(r.speed&&r.speed!=='—'?r.speed+' kts':'—')+'</div>',
+          '</div>',
+          '<svg class="ico chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg>',
+        '</div>',
+        '<div class="log-body">',
+          liR('Position',  (r.lat||'—')+' / '+(r.lon||'—')),
+          liR('Course',     r.course?r.course+'\u00b0T':'—'),
+          liR('DTG',        r.dtg?r.dtg+' NM':'—'),
+          liR('Dist Run',   r.dist?r.dist+' NM':'—'),
+          liR('Speed',      r.speed&&r.speed!=='—'?r.speed+' kts':'—'),
+          liR('ETA UTC',    r.eta&&r.eta!=='—'?r.eta:'—'),
+          liR('ETA LT',     etaLTval),
+          liR('ETA RPT',    etaRptVal),
+          liR('FO ROB',     r.foRob?r.foRob+' MT':'—'),
+          liR('FO ME Cons', r.foMe ?r.foMe +' MT':'—'),
+          liR('FO AE Cons', r.foAe ?r.foAe +' MT':'—'),
+          r.foBoiler&&parseFloat(r.foBoiler)>0 ? liR('FO Boiler',r.foBoiler+' MT') : '',
+          liR('FO Total',   r.foTotal&&r.foTotal!=='—'?r.foTotal+' MT':'—'),
+          liR('MGO ROB',    r.mgoRob?r.mgoRob+' MT':'—'),
+          liR('MGO ME Cons',r.mgoMe ?r.mgoMe +' MT':'—'),
+          liR('MGO AE Cons',r.mgoAe ?r.mgoAe +' MT':'—'),
+          r.mgoBoiler&&parseFloat(r.mgoBoiler)>0 ? liR('MGO Boiler',r.mgoBoiler+' MT') : '',
+          liR('MGO Total',  r.mgoTotal&&r.mgoTotal!=='—'?r.mgoTotal+' MT':'—'),
+          liR('FW ROB',     r.fwRob?r.fwRob+' MT':'—'),
+          liR('FW Cons',    r.fwCons?r.fwCons+' MT':'—'),
+          liR('FW Gen',     r.fwGen ?r.fwGen +' MT':'—'),
+          liR('Wind',       (r.wDir||'—')+' BF'+(r.wBf||'—')),
+          liR('Sea/Swell',  (r.seaHt||'—')+'m / '+(r.swell||'—')+'m'),
+          r.rem?liR('Remarks',r.rem):'',
+          '<div class="act-row in-card">',
+            '<button class="btn btn-primary" data-view="'+esc(r.date)+'">'+ICO_CLIPBOARD+'View</button>',
+            '<button class="btn btn-outline" data-edit="'+esc(r.date)+'">'+ICO_EDIT+'Edit</button>',
+            '<button class="btn btn-danger" data-del="'+esc(r.date)+'">'+ICO_TRASH+'Del</button>',
+          '</div>',
+        '</div>',
+      '</div>'
+    ].join('');
+  }
+
+  var idx = 0;
+  var noonHtml = noonLogs.length
+    ? '<div class="sec" style="margin-top:4px;">'+icoAt(ICO_CLOUD,14)+'Saved Noon Reports</div>' +
+      noonLogs.map(function(r){ return buildCard(r, idx++); }).join('')
+    : '';
+  var bbHtml = bbLogs.length
+    ? '<div class="sec">'+icoAt(ICO_BELL,14)+'Saved Bell Book Logs</div>' +
+      bbLogs.map(function(r){ return buildCard(r, idx++); }).join('')
+    : '';
+
+  el.innerHTML = noonHtml + bbHtml;
+
+  el.querySelectorAll('.log-hdr').forEach(function(h) {
+    h.addEventListener('click', function() { g('lc'+h.getAttribute('data-i')).classList.toggle('open'); });
+  });
+  el.querySelectorAll('[data-bbview-log]').forEach(function(b) {
+    b.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var date = b.getAttribute('data-bbview-log');
+      var type = b.getAttribute('data-bbview-type');
+      var logs = lr(KEY_L)||[], rec=null;
+      logs.forEach(function(r){ if(r.date===date&&r.bbType===type) rec=r; });
+      if (rec&&rec.bbRows) viewBBSummary(type, rec.bbRows, rec.snapshot||null);
+    });
+  });
+  el.querySelectorAll('[data-view]').forEach(function(b) {
+    b.addEventListener('click', function(e){ e.stopPropagation(); viewLogSummary(b.getAttribute('data-view')); });
+  });
+  el.querySelectorAll('[data-edit]').forEach(function(b) {
+    b.addEventListener('click', function(e){ e.stopPropagation(); editLog(b.getAttribute('data-edit')); });
+  });
+  el.querySelectorAll('[data-del]').forEach(function(b) {
+    b.addEventListener('click', function(e){ e.stopPropagation(); delLog(b.getAttribute('data-del')); });
+  });
+}
+
+function liR(k, v) {
+  return '<div class="li"><span class="k">'+esc(k)+'</span><span class="v">'+esc(String(v||''))+'</span></div>';
+}
+function delLog(date) {
+  showConfirm('Delete Record', 'Delete noon report for '+date+'? Cannot be undone.', function() {
+    ls(KEY_L, (lr(KEY_L)||[]).filter(function(x){ return x.date!==date; }));
+    renderLogs(); renderVoyageTracker(); toast('Deleted '+date, 0, ICO_TRASH);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   EDIT LOG RECORD
+═══════════════════════════════════════════ */
+var _editDate = '';
+
+function parsePos(str) {
+  if (!str) return null;
+  var m = str.match(/(\d+)[°\u00b0]\s*([\d.]+)['\u2019]?\s*([NSEWnsew])/);
+  return m ? {deg:m[1], min:m[2], hem:m[3].toUpperCase()} : null;
+}
+
+function editLog(date) {
+  var logs = lr(KEY_L)||[], rec = null;
+  logs.forEach(function(r) { if (r.date===date) rec=r; });
+  if (!rec) return;
+  _editDate = date;
+  // Position — raw fields first, fallback to parsing string
+  var latRaw = (rec.latD||rec.latM) ? {deg:rec.latD||'',min:rec.latM||'',hem:rec.latH||'N'} : parsePos(rec.lat);
+  var lonRaw = (rec.lonD||rec.lonM) ? {deg:rec.lonD||'',min:rec.lonM||'',hem:rec.lonH||'E'} : parsePos(rec.lon);
+  if (latRaw) { g('ed_latD').value=latRaw.deg; g('ed_latM').value=latRaw.min; g('ed_latH').value=latRaw.hem; }
+  else        { g('ed_latD').value=''; g('ed_latM').value=''; g('ed_latH').value='N'; }
+  if (lonRaw) { g('ed_lonD').value=lonRaw.deg; g('ed_lonM').value=lonRaw.min; g('ed_lonH').value=lonRaw.hem; }
+  else        { g('ed_lonD').value=''; g('ed_lonM').value=''; g('ed_lonH').value='E'; }
+  // Other fields
+  ['course','dtg','dist','foRob','foMe','foAe','foBoiler','mgoRob','mgoMe','mgoAe','mgoBoiler','fwRob','fwCons','fwGen','wDir','wBf','seaHt','swell','etaRptDate','etaRptTime','rem']
+    .forEach(function(k) { g('ed_'+k).value = rec[k]||''; });
+  g('editModalDate').textContent = fmtDate(date);
+  g('editBg').querySelector('.msheet-tall-body').scrollTop = 0;
+  openBg('editBg');
+}
+
+function saveEditLog() {
+  var logs = lr(KEY_L)||[], idx=-1;
+  logs.forEach(function(r,i){ if(r.date===_editDate) idx=i; });
+  if (idx<0) { closeBg('editBg'); return; }
+  var rec = logs[idx];
+  // Position — preserve if blank
+  var nLD=g('ed_latD').value, nLM=g('ed_latM').value, nLH=g('ed_latH').value;
+  var nOD=g('ed_lonD').value, nOM=g('ed_lonM').value, nOH=g('ed_lonH').value;
+  if (nLD||nLM) { rec.latD=nLD; rec.latM=nLM; rec.latH=nLH; rec.lat=nLD+'\u00b0 '+(nLM||'0')+"' "+nLH; }
+  if (nOD||nOM) { rec.lonD=nOD; rec.lonM=nOM; rec.lonH=nOH; rec.lon=nOD+'\u00b0 '+(nOM||'0')+"' "+nOH; }
+  // Other fields
+  ['course','dtg','dist','foRob','foMe','foAe','foBoiler','mgoRob','mgoMe','mgoAe','mgoBoiler','fwRob','fwCons','fwGen','wDir','wBf','seaHt','swell','etaRptDate','etaRptTime','rem']
+    .forEach(function(k) { rec[k]=g('ed_'+k).value; });
+  // Recalc totals (incl. boiler cons)
+  var foT = (parseFloat(rec.foMe)||0)+(parseFloat(rec.foAe)||0)+(parseFloat(rec.foBoiler)||0);
+  rec.foTotal  = foT >0 ? foT.toFixed(3)  : '—';
+  var mgoT = (parseFloat(rec.mgoMe)||0)+(parseFloat(rec.mgoAe)||0)+(parseFloat(rec.mgoBoiler)||0);
+  rec.mgoTotal = mgoT>0 ? mgoT.toFixed(3) : '—';
+  logs[idx] = rec;
+  ls(KEY_L, logs); closeBg('editBg'); renderLogs(); renderVoyageTracker();
+  toast('Updated \u2014 '+_editDate, 0, ICO_CHECK);
+}
+
+/* ═══════════════════════════════════════════
+   EXPORT / IMPORT
+═══════════════════════════════════════════ */
+/** The complete app state, in the shape importLogs() reads back. Shared by Export JSON
+    and Archive Voyage so the two can never drift apart. */
+function buildBackupPayload() {
+  return {
+    version:   3,
+    exportedAt: new Date().toISOString(),
+    vessel:    lr(KEY_V)    || {},
+    logs:      lr(KEY_L)    || [],
+    depcond:   lr(KEY_DC)   || {},
+    bellbook:  lr(KEY_BB)   || { dep:[], arr:[] },
+    tzShip:    lr(KEY_SHIP) !== null ? lr(KEY_SHIP) : shipTZ,
+    tzArr:     lr(KEY_ARR)  !== null ? lr(KEY_ARR)  : arrTZ,
+    noonState: lr(KEY_NS)   || {}
+  };
+}
+
+/** Hand a JSON file to the user. iOS wrapper: WKWebView ignores <a download> / blob:
+    URLs, so the payload goes to the native share sheet instead. */
+function deliverJSON(fname, json, done) {
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iosBridge) {
+    window.webkit.messageHandlers.iosBridge.postMessage({
+      filename: fname, mime: 'application/json', base64: b64FromText(json)
+    });
+    toast(done, 0, ICO_EXPORT);
+    return;
+  }
+  var blob = new Blob([json], {type:'application/json'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url;
+  a.download = fname;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast(done, 0, ICO_EXPORT);
+}
+
+/** yyyymmdd stamp in UTC, for export filenames */
+function fileStamp() {
+  var now = new Date();
+  return now.getUTCFullYear()+pad(now.getUTCMonth()+1)+pad(now.getUTCDate());
+}
+
+function exportLogs() {
+  var pay  = buildBackupPayload();
+  var name = (pay.vessel.name||'backup').replace(/\s+/g,'_');
+  deliverJSON('NoonGuide_'+name+'_'+fileStamp()+'.json',
+              JSON.stringify(pay,null,2),
+              'Full backup exported (' + pay.logs.length + ' logs)');
+}
+
+/* UTF-8 safe text -> base64, for the native export bridges. */
+function b64FromText(str) {
+  var bytes = new TextEncoder().encode(str), bin = '';
+  for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function importLogs(ev) {
+  var file = ev.target.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var pay = JSON.parse(e.target.result);
+
+      // ── LOGS (merge by date, backward-compatible) ──
+      var inc   = Array.isArray(pay) ? pay : (pay.logs || []);
+      var exist = lr(KEY_L) || [];
+      inc.forEach(function(r) {
+        var idx=-1; exist.forEach(function(x,i){ if(x.date===r.date) idx=i; });
+        if(idx>=0) exist[idx]=r; else exist.push(r);
+      });
+      exist.sort(function(a,b){ return a.date.localeCompare(b.date); });
+      ls(KEY_L, exist);
+
+      // ── VESSEL ──
+      if (!Array.isArray(pay) && pay.vessel && pay.vessel.name) {
+        ls(KEY_V, pay.vessel); loadVessel();
+      }
+
+      // ── DEPARTURE CONDITION (v3+) ──
+      if (pay.depcond && typeof pay.depcond === 'object') {
+        ls(KEY_DC, pay.depcond); loadDepCond(); initAllTZ();
+      }
+
+      // ── BELL BOOK (v3+) ──
+      if (pay.bellbook && Array.isArray(pay.bellbook.dep) && Array.isArray(pay.bellbook.arr)) {
+        ls(KEY_BB, pay.bellbook);
+        bbState = pay.bellbook;
+        renderBBRows('dep'); renderBBRows('arr');
+      }
+
+      // ── TIMEZONES (v3+) ──
+      if (typeof pay.tzShip === 'number') {
+        shipTZ = pay.tzShip; ls(KEY_SHIP, shipTZ);
+        g('clkLtLbl').textContent = fmtTZ(shipTZ);
+      }
+      if (typeof pay.tzArr === 'number') {
+        arrTZ = pay.tzArr; ls(KEY_ARR, arrTZ);
+        g('btnArrTZ').querySelector('.tzb-txt').textContent = fmtTZ(arrTZ);
+      }
+
+      // ── NOON STATE (v3+) ──
+      if (pay.noonState && typeof pay.noonState === 'object') {
+        ls(KEY_NS, pay.noonState);
+        loadNoonState();
+        calcFO(); calcMGO(); calcFW(); updateBF(); recalcSpeed();
+      }
+
+      renderLogs(); loadPrevHints(); renderVoyageTracker();
+      toast('Restored ' + inc.length + ' logs + all settings', 0, ICO_CHECK);
+    } catch(err) { toast('Import failed \u2014 invalid file', 0, ICO_CLOSE); }
+    ev.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+/* ═══════════════════════════════════════════
+   ARCHIVE VOYAGE
+   Closes out a voyage: writes a full JSON archive to a file AND to an in-app
+   Archived Voyages list, then clears the working data so the next voyage starts
+   fresh. Only the vessel name survives — voyage no. and ports belong to the voyage.
+═══════════════════════════════════════════ */
+
+/** What is currently sitting in the app, for the button label and the confirm text. */
+function voyageContents() {
+  var logs = lr(KEY_L) || [];
+  var bb   = lr(KEY_BB) || { dep:[], arr:[] };
+  var dc   = lr(KEY_DC) || {};
+  var bbRows = ['dep','arr'].reduce(function(n, t) {
+    return n + (bb[t]||[]).filter(function(r){ return r.time || r.date; }).length;
+  }, 0);
+  var dates = logs.map(function(r){ return r.date; }).filter(Boolean).sort();
+  return {
+    noon:  logs.filter(function(r){ return !r.bbType; }).length,
+    bb:    logs.filter(function(r){ return  r.bbType; }).length,
+    first: dates[0] || '',
+    last:  dates[dates.length-1] || '',
+    // Anything at all worth keeping? Unsaved bell-book rows and a filled-in
+    // departure condition count, even with no saved logs yet.
+    any:   logs.length > 0 || bbRows > 0 || Object.keys(dc).length > 0
+  };
+}
+
+function updateArchiveBtn() {
+  var v = lr(KEY_V) || {};
+  var voy = (v.voy||'').trim();
+  var c = voyageContents();
+  var txt = g('archiveBtnTxt'), hint = g('archiveHint');
+  if (txt)  txt.textContent = voy ? 'Archive Voyage ' + voy : 'Archive Voyage';
+  if (hint) hint.textContent = c.any
+    ? c.noon + ' noon report' + (c.noon!==1?'s':'') + ' · ' + c.bb + ' bell book' + (c.bb!==1?'s':'')
+    : 'Nothing to archive yet';
+}
+
+function archiveVoyage() {
+  var v   = lr(KEY_V) || {};
+  var voy = (v.voy||'').trim();
+  var c   = voyageContents();
+  if (!c.any) { toast('Nothing to archive', 0, ICO_ALERT); return; }
+
+  var title = voy ? 'Archive Voyage ' + voy : 'Archive Voyage';
+  var msg = c.noon + ' noon report' + (c.noon!==1?'s':'') + ' and ' + c.bb + ' bell book' +
+    (c.bb!==1?'s':'') + ' will be saved to a file and to Archived Voyages, then cleared so ' +
+    'you can start the next voyage. Vessel name stays.';
+
+  showConfirm(title, msg, function() {
+    var pay = buildBackupPayload();
+    pay.voyage = voy;
+    var rec = {
+      id:         'ar' + Date.now(),
+      voyage:     voy,
+      vessel:     v.name || '',
+      dep:        v.dep  || '',
+      dest:       v.dest || '',
+      archivedAt: new Date().toISOString(),
+      firstDate:  c.first,
+      lastDate:   c.last,
+      noonCount:  c.noon,
+      bbCount:    c.bb,
+      payload:    pay
+    };
+    var arch = lr(KEY_AR) || [];
+    arch.push(rec);
+    ls(KEY_AR, arch);
+
+    /* ls() swallows quota errors, so the in-app copy is only real once it reads
+       back. Never clear a voyage on the strength of a write that may not have landed. */
+    var saved = (lr(KEY_AR)||[]).some(function(x){ return x.id === rec.id; });
+    if (!saved) {
+      toast('Archive failed — nothing was cleared', 0, ICO_ALERT);
+      return;
+    }
+
+    var nameSlug = (v.name||'backup').replace(/\s+/g,'_');
+    var voySlug  = voy ? voy.replace(/\s+/g,'_') + '_' : '';
+    deliverJSON('NoonGuide_'+nameSlug+'_'+voySlug+fileStamp()+'.json',
+                JSON.stringify(pay,null,2),
+                voy ? 'Voyage '+voy+' archived' : 'Voyage archived');
+
+    wipeVoyageData();
+    renderLogs(); renderArchives(); renderVoyageTracker();
+  });
+}
+
+/** Clear every store that belongs to the voyage just archived. Ship/arrival clock
+    settings and the vessel name are deliberately kept. */
+function wipeVoyageData() {
+  // Saved logs (noon reports + bell book records)
+  ls(KEY_L, null);
+
+  // Bell book working rows — loadBellBook() re-seeds the default DEP/ARR templates
+  ls(KEY_BB, null);
+  loadBellBook();
+
+  // Departure condition — COSP/EOSP, drafts, ROB, added EOSP legs
+  ls(KEY_DC, null);
+  DC_IDS.forEach(function(id) { var el=g(id); if(el) el.value=''; });
+  ['dc_cosp_latH','dc_eosp_latH'].forEach(function(id) {
+    var el=g(id), btn=g(id+'_btn'); if(el) el.value='N'; if(btn) btn.textContent='N';
+  });
+  ['dc_cosp_lonH','dc_eosp_lonH'].forEach(function(id) {
+    var el=g(id), btn=g(id+'_btn'); if(el) el.value='E'; if(btn) btn.textContent='E';
+  });
+  setFweShown(false);
+  renderEospExtra();
+  initAllTZ();   // COSP/EOSP TZ came from KEY_DC — snap them back to ship TZ
+
+  // Noon input tab
+  resetNoonInputs();
+
+  // Vessel — keep the ship, drop the voyage
+  var v = lr(KEY_V) || {};
+  ['v_voy','v_dep','v_dest'].forEach(function(id){ var el=g(id); if(el) el.value=''; });
+  ls(KEY_V, { name: v.name||'', voy:'', dep:'', dest:'' });
+  updateTopBar(v.name||'');
+}
+
+function renderArchives() {
+  var el = g('archiveList'); if (!el) return;
+  updateArchiveBtn();
+  var arch = (lr(KEY_AR) || []).slice().reverse();   // newest first
+  if (!arch.length) { el.innerHTML = ''; return; }
+
+  el.innerHTML = '<div class="sec">'+icoAt(ICO_ARCHIVE,14)+'Archived Voyages</div>' +
+    arch.map(function(r, i) {
+      var range = (r.firstDate && r.lastDate)
+        ? fmtDate(r.firstDate) + ' → ' + fmtDate(r.lastDate) : '—';
+      var when = r.archivedAt ? fmtDate(r.archivedAt.slice(0,10)) : '—';
+      return [
+        '<div class="log-card" id="ac'+i+'">',
+          '<div class="log-hdr" data-ai="'+i+'">',
+            '<div>',
+              '<div class="log-date">'+esc(r.voyage||'—')+'&nbsp;&nbsp;<span style="font-size:12px;font-weight:700;color:var(--yellow-dark);background:var(--yellow-light);padding:2px 8px;border-radius:4px;vertical-align:middle;">ARCHIVED</span></div>',
+              '<div class="log-meta">'+esc(r.vessel||'—')+'</div>',
+              '<div class="log-meta">'+r.noonCount+' noon · '+r.bbCount+' bell book · '+range+'</div>',
+            '</div>',
+            '<svg class="ico chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9.5 6 6 6-6"/></svg>',
+          '</div>',
+          '<div class="log-body">',
+            liR('Vessel',        r.vessel||'—'),
+            liR('Voyage',        r.voyage||'—'),
+            liR('Route',         (r.dep||'—')+' → '+(r.dest||'—')),
+            liR('Reports',       r.noonCount+' noon · '+r.bbCount+' bell book'),
+            liR('Period',        range),
+            liR('Archived',      when),
+            '<div class="act-row in-card">',
+              '<button class="btn btn-primary" data-arexp="'+esc(r.id)+'">'+ICO_EXPORT+'Export JSON</button>',
+              '<button class="btn btn-danger" data-ardel="'+esc(r.id)+'">'+ICO_TRASH+'Del</button>',
+            '</div>',
+          '</div>',
+        '</div>'
+      ].join('');
+    }).join('');
+
+  el.querySelectorAll('.log-hdr').forEach(function(h) {
+    h.addEventListener('click', function() { g('ac'+h.getAttribute('data-ai')).classList.toggle('open'); });
+  });
+  el.querySelectorAll('[data-arexp]').forEach(function(b) {
+    b.addEventListener('click', function(e){ e.stopPropagation(); exportArchive(b.getAttribute('data-arexp')); });
+  });
+  el.querySelectorAll('[data-ardel]').forEach(function(b) {
+    b.addEventListener('click', function(e){ e.stopPropagation(); delArchive(b.getAttribute('data-ardel')); });
+  });
+}
+
+/** Re-save an archived voyage's JSON — same file the archive itself wrote. */
+function exportArchive(id) {
+  var rec = null;
+  (lr(KEY_AR)||[]).forEach(function(x){ if (x.id === id) rec = x; });
+  if (!rec) { toast('Archive not found', 0, ICO_ALERT); return; }
+  var nameSlug = (rec.vessel||'backup').replace(/\s+/g,'_');
+  var voySlug  = rec.voyage ? rec.voyage.replace(/\s+/g,'_') + '_' : '';
+  var stamp    = (rec.archivedAt||'').slice(0,10).replace(/-/g,'') || fileStamp();
+  deliverJSON('NoonGuide_'+nameSlug+'_'+voySlug+stamp+'.json',
+              JSON.stringify(rec.payload,null,2),
+              'Exported '+(rec.voyage||'archive'));
+}
+
+function delArchive(id) {
+  var rec = null;
+  (lr(KEY_AR)||[]).forEach(function(x){ if (x.id === id) rec = x; });
+  var label = rec && rec.voyage ? rec.voyage : 'this archive';
+  showConfirm('Delete Archive', 'Delete the archived voyage '+label+'? Cannot be undone — export it first if you need the file.', function() {
+    ls(KEY_AR, (lr(KEY_AR)||[]).filter(function(x){ return x.id !== id; }));
+    renderArchives();
+    toast('Archive deleted', 0, ICO_TRASH);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   BELL BOOK FUNCTIONS
+═══════════════════════════════════════════ */
+function renderBBRows(type) {
+  var rows = bbState[type];
+  var container = g('bb-'+type+'-body');
+  if (!container) return;
+
+  var html = rows.map(function(r, i) {
+    var sameDt = i > 0 && r.date && r.date === rows[i-1].date;
+    return [
+      '<div class="bb-row">',
+        '<input type="date" class="bb-date'+(sameDt?' dim':'')+'"',
+          ' data-bbtype="'+type+'" data-bbrow="'+i+'" data-bbfield="date"',
+          ' value="'+esc(r.date||'')+'">',
+        '<input type="time" class="bb-time"',
+          ' data-bbtype="'+type+'" data-bbrow="'+i+'" data-bbfield="time"',
+          ' value="'+esc(r.time||'')+'" placeholder="--:--">',
+        '<input type="text" class="bb-evt"',
+          ' data-bbtype="'+type+'" data-bbrow="'+i+'" data-bbfield="event"',
+          ' value="'+esc(r.event||'')+'" placeholder="Event">',
+        rows.length > 1
+          ? '<button class="bb-del" data-bbtype="'+type+'" data-bbrow="'+i+'">\u00d7</button>'
+          : '<span class="bb-del-ph"></span>',
+      '</div>'
+    ].join('');
+  }).join('');
+  container.innerHTML = html;  // rows only — buttons are static HTML outside this div
+
+  // Wire inputs
+  container.querySelectorAll('[data-bbfield]').forEach(function(el) {
+    var tp    = el.getAttribute('data-bbtype');
+    var idx   = parseInt(el.getAttribute('data-bbrow'));
+    var field = el.getAttribute('data-bbfield');
+    var evtName = field === 'date' ? 'change' : 'input';
+    el.addEventListener(evtName, function() {
+      bbState[tp][idx][field] = el.value;
+      if (field === 'date') {
+        // Fill all rows BELOW the changed row with the same date
+        bbState[tp].forEach(function(row, j) { if (j > idx) row.date = el.value; });
+        saveBellBook();
+        renderBBRows(tp);
+      } else {
+        saveBellBook();
+      }
+    });
+  });
+
+  // Wire delete buttons
+  container.querySelectorAll('.bb-del[data-bbrow]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var tp  = btn.getAttribute('data-bbtype');
+      var idx = parseInt(btn.getAttribute('data-bbrow'));
+      bbState[tp].splice(idx, 1);
+      saveBellBook();
+      renderBBRows(tp);
+    });
+  });
+}
+
+function loadBellBook() {
+  var saved = lr(KEY_BB);
+  if (saved && Array.isArray(saved.dep) && Array.isArray(saved.arr)) {
+    bbState = saved;
+  } else {
+    bbState.dep = BB_DEP_DEF.map(function(e) { return {date:'',time:'',event:e}; });
+    bbState.arr = BB_ARR_DEF.map(function(e) { return {date:'',time:'',event:e}; });
+  }
+  renderBBRows('dep');
+  renderBBRows('arr');
+}
+
+function saveBellBook() {
+  ls(KEY_BB, bbState);
+}
+
+/** Build Bell Book summary HTML block */
+function buildBBBlock(type, title) {
+  var rows = (bbState[type]||[]).filter(function(r){ return r.time || r.event; });
+  if (!rows.length) return '';
+  var prevDate = null;
+  var rowsHtml = rows.map(function(r) {
+    var showDate = r.date !== prevDate;
+    if (r.date) prevDate = r.date;
+    var dateStr = (showDate && r.date) ? fmtBBDate(r.date) : '';
+    return '<div style="display:flex;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--border);gap:10px;font-size:14px;">'+
+      '<span style="flex:0 0 88px;font-weight:600;color:var(--accent2);'+(!dateStr?'visibility:hidden;':'')+'">'+esc(fmtBBDate(r.date))+'</span>'+
+      '<span style="flex:0 0 46px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text1);">'+esc(fmtBBTime(r.time))+'</span>'+
+      '<span style="flex:1;font-weight:600;color:var(--text1);">'+esc(r.event||'')+'</span>'+
+    '</div>';
+  }).join('');
+  return '<div class="scard"><div class="stitle">'+esc(title)+'</div>'+rowsHtml+'</div>';
+}
+
+/** View Bell Book (dep or arr) in Summary tab */
+function viewBBSummary(type, rows, snapshot) {
+  rows = rows || bbState[type];
+  var title = type==='dep' ? 'Bell Book — Departure' : 'Bell Book — Arrival';
+  var v = lr(KEY_V) || {};
+  // Build snapshot from live DC data if not passed
+  if (!snapshot) {
+    var dc = lr(KEY_DC) || {};
+    snapshot = type==='dep' ? {
+      date:dc.dc_cosp_date, time:dc.dc_cosp_time,
+      latD:dc.dc_cosp_latD, latM:dc.dc_cosp_latM, latH:dc.dc_cosp_latH,
+      lonD:dc.dc_cosp_lonD, lonM:dc.dc_cosp_lonM, lonH:dc.dc_cosp_lonH,
+      dtg:dc.dc_cosp_dtg
+    } : {
+      date:dc.dc_eosp_date, time:dc.dc_eosp_time,
+      latD:dc.dc_eosp_latD, latM:dc.dc_eosp_latM, latH:dc.dc_eosp_latH,
+      lonD:dc.dc_eosp_lonD, lonM:dc.dc_eosp_lonM, lonH:dc.dc_eosp_lonH,
+      dtg:dc.dc_eosp_dtg,
+      foRob:dc.dc_eosp_foRob, mgoRob:dc.dc_eosp_mgoRob, fwRob:dc.dc_eosp_fwRob,
+      fweFo:dc.dc_fwe_foRob,  fweMgo:dc.dc_fwe_mgoRob,  fweFw:dc.dc_fwe_fwRob
+    };
+  }
+  var snap = snapshot || {};
+  var isDep = type === 'dep';
+  var evtLabel = isDep ? 'COSP' : 'EOSP';
+  var lat = fmtBBCoord(snap.latD, snap.latM, snap.latH);
+  var lon = fmtBBCoord(snap.lonD, snap.lonM, snap.lonH);
+  var pos = (lat && lon) ? lat+' '+lon : (lat||lon||'');
+  var prevDate = null;
+  var filtered = rows.filter(function(r){ return r.time||r.event; });
+  var rowsHtml = filtered.map(function(r, ri) {
+    var showDate = r.date !== prevDate;
+    if (r.date) prevDate = r.date;
+    // On dep the COSP block follows with its own 2px rule, so the last event row
+    // drops its 1px line to avoid a doubled divider.
+    var lastDep = isDep && ri === filtered.length-1;
+    return rowBBHtml(showDate&&r.date?fmtBBDate(r.date):'', fmtBBTime(r.time), r.event||'', lastDep);
+  }).join('');
+  if (!rowsHtml) rowsHtml = '<p style="color:var(--textm);font-size:14px;padding:12px 0;">No events recorded.</p>';
+  // Departure: COSP closes the events, so the block is rendered BELOW them with the
+  // separator ABOVE it. Arrival: EOSP starts the sequence — block at TOP, separator
+  // BELOW, and the ROB bunkers block still appended after the event rows.
+  var snapDateStr = snap.date ? fmtBBDate(snap.date) : '';
+  var snapTimeStr = snap.time ? fmtBBTime(snap.time) : '';
+  var sBase = 'display:flex;align-items:baseline;gap:10px;font-size:14px;background:var(--accent-light);margin:0 -16px;';
+  var sTop  = sBase+'padding:7px 16px 2px;';
+  var sMid  = sBase+'padding:2px 16px;';
+  var sBot  = sBase+'padding:2px 16px 7px;';
+  var rule  = 'border-'+(isDep?'top':'bottom')+':2px solid var(--accent);';
+  var c1 = 'flex:0 0 92px;font-weight:700;color:var(--accent2);';
+  var c2 = 'flex:0 0 50px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text1);';
+  var c3 = 'flex:1;font-weight:800;color:var(--accent);';
+  var b = '<span style="'+c1+'"></span><span style="'+c2+'"></span>';
+  var hasPos = !!pos;
+  var hasDtg = !!(snap.dtg);
+  var hasDmg = !!(snap.mandist);
+  var hasRow3 = hasDtg||hasDmg;
+  var row3Content = (hasDtg?'DTG '+esc(snap.dtg)+'NM':'')+(hasDmg?' DMG '+esc(snap.mandist)+'NM':'');
+  // The accent rule goes on the FIRST row when the block sits at the bottom (dep),
+  // on the LAST row when it sits at the top (arr).
+  var hdrStyle = ((hasPos||hasRow3) ? sTop : sBot) + (isDep ? rule : (hasPos||hasRow3 ? '' : rule));
+  var posStyle = (hasRow3 ? sMid : sBot) + (!isDep && !hasRow3 ? rule : '');
+  var r3Style  = sBot + (isDep ? '' : rule);
+  var hardcoded =
+    '<div style="'+hdrStyle+'">'+
+      '<span style="'+c1+'">'+esc(snapDateStr)+'</span>'+
+      '<span style="'+c2+'">'+esc(snapTimeStr)+'</span>'+
+      '<span style="'+c3+'">'+esc(evtLabel)+'</span></div>'+
+    (hasPos ? '<div style="'+posStyle+'">'+b+'<span style="'+c3+'">'+esc(pos)+'</span></div>' : '')+
+    (hasRow3 ? '<div style="'+r3Style+'">'+b+'<span style="'+c3+'">'+row3Content+'</span></div>' : '');
+  var robHtml = (type==='arr') ? bunkersRowsHtml(snap) : '';
+  var html = [
+    '<div class="vbanner">',
+      '<div class="vr">'+esc(v.dep||'—')+' → '+esc(v.dest||'—')+'</div>',
+      '<div class="vd">'+ICO_BELL+esc(title)+'</div>',
+    '</div>',
+    '<div class="scard"><div class="stitle">'+icoAt(ICO_BELL,14)+esc(title)+'</div>'+(isDep ? rowsHtml+hardcoded : hardcoded+rowsHtml+robHtml)+'</div>',
+    '<button class="btn btn-green"   id="btnBBSaveLog">'+icoAt(ICO_SAVE,17)+'Save to Log</button>',
+    '<button class="btn btn-outline" id="btnBBCopy">'+icoAt(ICO_CLIPBOARD,17)+'Copy Text</button>',
+    '<button class="btn btn-ghost"   id="btnBBBackVessel">'+icoAt(ICO_ARROW_LEFT,17)+'Back to Vessel</button>',
+    '<div style="height:8px;"></div>'
+  ].join('');
+  g('sumContent').innerHTML = html;
+  g('btnBBSaveLog').addEventListener('click', function(){ saveBBLog(type,rows); });
+  g('btnBBCopy').addEventListener('click',    function(){ copyBBText(type,rows); });
+  g('btnBBBackVessel').addEventListener('click', function(){ switchTab('tab-vessel'); });
+  switchTab('tab-summary');
+}
+
+/** Bunkers ROB lines for an arrival snapshot — one shared renderer so the live summary and
+    the saved-log card cannot drift apart. Returns '' when nothing was entered. */
+function bunkersRowsHtml(snap) {
+  snap = snap || {};
+  var sets = [
+    ['EOSP', snap.foRob, snap.mgoRob, snap.fwRob],
+    ['FWE',  snap.fweFo, snap.fweMgo, snap.fweFw]
+  ].filter(function(s){ return s[1] || s[2] || s[3]; });
+  if (!sets.length) return '';
+  var wrap = 'display:flex;align-items:baseline;padding:3px 16px;gap:10px;font-size:13px;background:#FFF5F5;margin:0 -16px;';
+  return sets.map(function(s, i) {
+    var parts = [];
+    if (s[1]) parts.push('FO '+esc(s[1]));
+    if (s[2]) parts.push('MGO '+esc(s[2]));
+    if (s[3]) parts.push('FW '+esc(s[3]));
+    var last = (i === sets.length-1);
+    // Block sits BELOW the event list, so the heavy red rule fences it off at the TOP.
+    return '<div style="'+wrap+(i===0?'padding-top:7px;border-top:2px solid var(--red);':'')+(last?'padding-bottom:7px;':'')+'">'+
+      '<span style="flex:0 0 92px;font-weight:800;color:var(--red);">ROB @ '+s[0]+'</span>'+
+      '<span style="flex:1;font-weight:700;color:var(--text1);font-variant-numeric:tabular-nums;">'+parts.join('  ')+' MT</span></div>';
+  }).join('');
+}
+
+function rowBBHtml(dateStr, timeStr, evtStr, noRule) {
+  return '<div style="display:flex;align-items:baseline;padding:8px 0;'+(noRule?'':'border-bottom:1px solid var(--border);')+'gap:10px;font-size:14px;">'+
+    '<span style="flex:0 0 92px;font-weight:600;color:var(--accent2);">'+esc(dateStr)+'</span>'+
+    '<span style="flex:0 0 50px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text1);">'+esc(timeStr)+'</span>'+
+    '<span style="flex:1;font-weight:600;color:var(--text1);">'+esc(evtStr)+'</span>'+
+  '</div>';
+}
+
+/** Save Bell Book as standalone log record */
+function saveBBLog(type, rows) {
+  rows = rows || bbState[type];
+  var firstDate = '';
+  for (var i = 0; i < rows.length; i++) {
+    if (rows[i].date) { firstDate = rows[i].date; break; }
+  }
+  if (!firstDate) {
+    var now = new Date();
+    firstDate = now.getUTCFullYear()+'-'+pad(now.getUTCMonth()+1)+'-'+pad(now.getUTCDate());
+  }
+  var v   = lr(KEY_V) || {};
+  var dc  = lr(KEY_DC) || {};
+  // Build COSP/EOSP snapshot at time of save
+  var snap = type === 'dep' ? {
+    date:dc.dc_cosp_date, time:dc.dc_cosp_time,
+    latD:dc.dc_cosp_latD, latM:dc.dc_cosp_latM, latH:dc.dc_cosp_latH,
+    lonD:dc.dc_cosp_lonD, lonM:dc.dc_cosp_lonM, lonH:dc.dc_cosp_lonH,
+    dtg:dc.dc_cosp_dtg,   mandist:dc.dc_cosp_mandist
+  } : {
+    date:dc.dc_eosp_date, time:dc.dc_eosp_time,
+    latD:dc.dc_eosp_latD, latM:dc.dc_eosp_latM, latH:dc.dc_eosp_latH,
+    lonD:dc.dc_eosp_lonD, lonM:dc.dc_eosp_lonM, lonH:dc.dc_eosp_lonH,
+    dtg:dc.dc_eosp_dtg,   mandist:dc.dc_eosp_mandist,
+    foRob:dc.dc_eosp_foRob, mgoRob:dc.dc_eosp_mgoRob, fwRob:dc.dc_eosp_fwRob,
+    fweFo:dc.dc_fwe_foRob,  fweMgo:dc.dc_fwe_mgoRob,  fweFw:dc.dc_fwe_fwRob
+  };
+  var rec = {
+    date:    firstDate,
+    bbType:  type,
+    bbRows:  JSON.parse(JSON.stringify(rows)),
+    snapshot: snap,
+    vessel:  v.name || '',
+    voyage:  v.voy  || '',
+    savedAt: new Date().toISOString()
+  };
+  var logs = (lr(KEY_L)||[]).filter(function(x){
+    return !(x.date === firstDate && x.bbType === type);
+  });
+  logs.push(rec);
+  logs.sort(function(a,b){ return a.date.localeCompare(b.date); });
+  ls(KEY_L, logs);
+  renderVoyageTracker();
+  toast('Bell Book saved \u2014 '+fmtDate(firstDate), 0, ICO_CHECK);
+}
+
+/** Copy Bell Book as plain text */
+function copyBBText(type, rows) {
+  rows = rows || bbState[type];
+  var title = type === 'dep' ? 'BELL BOOK — DEPARTURE' : 'BELL BOOK — ARRIVAL';
+  var text  = bbTextBlock(type === 'dep' ? 'dep' : 'arr', title, rows);
+  if (!text) { toast('No events to copy', 0, ICO_ALERT); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(function(){ toast('Copied to clipboard', 0, ICO_CLIPBOARD); })
+      .catch(function(){ toast('Copy failed', 0, ICO_ALERT); });
+  } else { toast('Clipboard not available', 0, ICO_ALERT); }
+}
+function bbTextBlock(type, title, rowsOverride) {
+  var rows = (rowsOverride || (bbState[type]||[])).filter(function(r){ return r.time||r.event; });
+  if (!rows.length) return '';
+  var prevDate = null;
+  var lines = ['--- '+title+' ---'];
+  rows.forEach(function(r) {
+    var showDate = r.date !== prevDate;
+    if (r.date) prevDate = r.date;
+    var dateCol  = (showDate && r.date) ? fmtBBDate(r.date) : '';
+    var timeCol  = fmtBBTime(r.time);
+    var pad10 = function(s){ while(s.length<10) s+=' '; return s; };
+    lines.push(pad10(dateCol) + '  ' + timeCol + '  ' + (r.event||''));
+  });
+  if (type === 'arr') {
+    var dc = lr(KEY_DC) || {};
+    [['EOSP', dc.dc_eosp_foRob, dc.dc_eosp_mgoRob, dc.dc_eosp_fwRob],
+     ['FWE',  dc.dc_fwe_foRob,  dc.dc_fwe_mgoRob,  dc.dc_fwe_fwRob]].forEach(function(s) {
+      if (!(s[1] || s[2] || s[3])) return;
+      var parts = [];
+      if (s[1]) parts.push('FO '+s[1]);
+      if (s[2]) parts.push('MGO '+s[2]);
+      if (s[3]) parts.push('FW '+s[3]);
+      lines.push('ROB @ '+s[0]+'  '+parts.join('  ')+' MT');
+    });
+  }
+  return lines.join('\n');
+}
+
+/** Toggle hemisphere button: N↔S or E↔W */
+function toggleHem(btn) {
+  var hiddenId = btn.getAttribute('data-hidden');
+  var a = btn.getAttribute('data-a');
+  var b = btn.getAttribute('data-b');
+  var hidden = g(hiddenId);
+  var next = (hidden.value === a) ? b : a;
+  hidden.value   = next;
+  btn.textContent = next;
+  // Programmatic .value changes don't fire input/change events, so route
+  // to the correct save function manually based on which field this is.
+  if (DC_IDS.indexOf(hiddenId) !== -1) {
+    saveDepCond();
+  } else {
+    saveNoonState();
+  }
+  renderVoyageTracker();
+}
+
+/* ═══════════════════════════════════════════
+   VIEW SAVED LOG IN SUMMARY TAB
+═══════════════════════════════════════════ */
+function viewLogSummary(date) {
+  var logs = lr(KEY_L) || [];
+  var rec  = null;
+  logs.forEach(function(r) { if (r.date === date) rec = r; });
+  if (!rec) return;
+
+  var v     = lr(KEY_V) || {};
+  var bfNum = parseInt(rec.wBf);
+  var bfStr = (!isNaN(bfNum) && BF[bfNum]) ?
+    'BF '+bfNum+' \u2014 '+BF[bfNum].kts+' \u2014 '+BF[bfNum].desc+' \u2014 '+BF[bfNum].sea : '';
+  var rArrTZ   = (typeof rec.arrTZ  === 'number') ? rec.arrTZ  : 0;
+  var rShipTZ  = (typeof rec.shipTZ === 'number') ? rec.shipTZ : 0;
+  var etaLTstr = (rec.etaLT && rec.etaLT !== '—') ? rec.etaLT + '  ' + fmtTZ(rArrTZ) : '';
+  var etaRptStr = (rec.etaRptDate && rec.etaRptTime) ?
+    fmtDate(rec.etaRptDate) + '  ' + rec.etaRptTime + ' LT (' + fmtTZ(rArrTZ) + ')' : '';
+
+  var rNoonUTCd  = new Date(ltToUtcMs(rec.date, '12:00', rShipTZ));
+  var rNoonUTCstr = pad(rNoonUTCd.getUTCHours())+':'+pad(rNoonUTCd.getUTCMinutes())+' UTC';
+
+  var html = [
+    '<div class="vbanner">',
+      '<div class="vr">'+esc(v.dep||'—')+' \u2192 '+esc(v.dest||'—')+' &nbsp;|&nbsp; Voy. '+esc(rec.voyage||v.voy||'—')+'</div>',
+      '<div class="vd">NOON &nbsp; '+fmtDate(rec.date)+'&nbsp; 12:00 LT &nbsp;/&nbsp; '+rNoonUTCstr+'</div>',
+    '</div>',
+
+    '<div class="scard"><div class="stitle">'+ICO_COMPASS+'Position &amp; Navigation</div>',
+      sr('GPS LAT', rec.lat, 'blue'), sr('GPS LON', rec.lon, 'blue'),
+      sr('Planned Course', rec.course ? rec.course+'\u00b0T' : ''),
+      sr('Dist to Go',     rec.dtg    ? rec.dtg  +' NM' : ''),
+      sr('Dist Run',       rec.dist   ? rec.dist +' NM' : ''),
+      sr('Avg Speed',      rec.speed && rec.speed!=='—' ? rec.speed+' kts' : '', 'green'),
+      rec.clockAdj ? sr('Clock Change', rec.clockAdj, 'amber') : '',
+      sr('ETA (UTC)',      rec.eta   && rec.eta  !=='—' ? rec.eta   : '',         'green'),
+      sr('ETA (LT)',       etaLTstr,  'green'),
+      sr('ETA RPT',        etaRptStr, 'yellow-val'),
+    '</div>',
+
+    '<div class="scard"><div class="stitle">'+ICO_WAVES+'Weather &amp; Sea State</div>',
+      sr('Wind Direction', rec.wDir||''),
+      sr('Wind Force',     rec.wBf ? 'BF '+rec.wBf : ''),
+      bfStr ? '<div class="bfbadge" style="display:block;margin:0 0 10px;">'+esc(bfStr)+'</div>' : '',
+      sr('Sea Height',     rec.seaHt ? rec.seaHt+' m' : ''),
+      sr('Swell',          rec.swell  ? rec.swell +' m' : ''),
+    '</div>',
+
+    '<div class="scard"><div class="stitle">'+ICO_FUEL+'Bunkers ROB &amp; Consumption</div>',
+      sr('FO ROB',         rec.foRob  ? rec.foRob  +' MT' : ''),
+      sr('FO ME Cons',     rec.foMe   ? rec.foMe   +' MT' : '', 'amber'),
+      sr('FO AE Cons',     rec.foAe   ? rec.foAe   +' MT' : '', 'amber'),
+      rec.foBoiler&&parseFloat(rec.foBoiler)>0 ? sr('FO Boiler', rec.foBoiler+' MT','amber') : '',
+      sr('FO Total Cons',  rec.foTotal && rec.foTotal!=='—' ? rec.foTotal+' MT' : '', 'amber'),
+      '<div class="divider"></div>',
+      sr('MGO ROB',        rec.mgoRob ? rec.mgoRob +' MT' : ''),
+      sr('MGO ME Cons',    rec.mgoMe  ? rec.mgoMe  +' MT' : '', 'amber'),
+      sr('MGO AE Cons',    rec.mgoAe  ? rec.mgoAe  +' MT' : '', 'amber'),
+      rec.mgoBoiler&&parseFloat(rec.mgoBoiler)>0 ? sr('MGO Boiler', rec.mgoBoiler+' MT','amber') : '',
+      sr('MGO Total Cons', rec.mgoTotal && rec.mgoTotal!=='—' ? rec.mgoTotal+' MT' : '', 'amber'),
+      '<div class="divider"></div>',
+      sr('FW Cons',   rec.fwCons ? rec.fwCons+' MT' : '', 'amber'),
+      rec.fwGen  ? sr('FW Gen',  rec.fwGen +' MT', 'green') : '',
+      sr('FW ROB',   rec.fwRob  ? rec.fwRob  +' MT' : ''),
+    '</div>',
+
+    rec.rem ? '<div class="scard"><div class="stitle">'+ICO_CLIPBOARD+'Remarks</div>'+
+      '<p style="font-size:15px;color:var(--text2);line-height:1.7;">'+esc(rec.rem)+'</p></div>' : '',
+
+    '<div style="background:var(--accent-light);border-radius:var(--rx);padding:10px 14px;margin-bottom:10px;font-size:12px;font-weight:700;color:var(--accent2);">',
+      icoAt(ICO_SAVE,12)+' Saved '+fmtDate(rec.savedAt?rec.savedAt.slice(0,10):'')+'  &nbsp;|&nbsp; Ship TZ: '+fmtTZ(rShipTZ)+'  &nbsp;|&nbsp; Arr TZ: '+fmtTZ(rArrTZ),
+    '</div>',
+
+    '<button class="btn btn-ghost" id="btnBackToLog">'+icoAt(ICO_ARROW_LEFT,17)+'Back to Log</button>',
+    '<div style="height:8px;"></div>'
+  ].join('');
+
+  g('sumContent').innerHTML = html;
+  g('btnBackToLog').addEventListener('click', function() { switchTab('tab-log'); });
+  switchTab('tab-summary');
+}
+
+/* ═══════════════════════════════════════════
+   VOYAGE PROGRESS TRACKER
+═══════════════════════════════════════════ */
+/** Convert decimal hours to "Xd Xh Xm" format */
+function toDHM(hrs) {
+  var totalMins = Math.round(hrs * 60);
+  var dd = Math.floor(totalMins / 1440);
+  var hh = Math.floor((totalMins % 1440) / 60);
+  var mm = totalMins % 60;
+  return dd+'d '+hh+'h '+mm+'m';
+}
+
+/** Round to at most 2 decimals, dropping cosmetic trailing zeros.
+    1020.164 → "1020.16", 1179.90 → "1179.9", 1180.00 → "1180", 0.204 → "0.2" */
+function fmtN(v) {
+  var n = parseFloat(v);
+  if (isNaN(n)) return '';
+  return n.toFixed(2).replace(/\.?0+$/, '');
+}
+
+function renderVoyageTracker() {
+  var el = g('voyageTracker'); if (!el) return;
+  var v  = lr(KEY_V)  || {};
+  var dc = lr(KEY_DC) || {};
+  var noonLogs = (lr(KEY_L)||[]).filter(function(r){ return !r.bbType; });
+
+  // ── EOSP confirmation check (moved up — needed for currentDtg/hrs below) ──
+  var eospConfirmed = !!(dc.dc_eosp_date && dc.dc_eosp_time);
+
+  // ── Maneuvering distances (DMG) — dep is COSP-side, arr is EOSP-side ──
+  // EOSP DMG is real distance physically sailed to reach berth, so it belongs in
+  // Distance Sailed (and therefore the progress bar/dots), NOT in Mano Dist.
+  var depDmg = parseFloat(dc.dc_cosp_mandist) || 0;
+  var arrDmg = parseFloat(dc.dc_eosp_mandist) || 0;
+
+  // ── Total voyage distance — built forward from real telemetry, never back-calculated ──
+  // sailed = sum of every noon report's Dist Run + EOSP DMG (final approach to berth)
+  // totalDist = sailed + latest DTG (whatever port the officer is currently reporting DTG to)
+  // Once EOSP is confirmed, the open-sea passage is complete: DTG snaps to 0 so the
+  // progress bar correctly reaches 100% instead of freezing at the last noon report.
+  var latest      = noonLogs.length ? noonLogs[noonLogs.length-1] : null;
+  var currentDtg  = eospConfirmed ? 0 : (latest ? (parseFloat(latest.dtg)||0) : 0);
+  var noonSailed  = noonLogs.reduce(function(a,r){ return a+(parseFloat(r.dist)||0); },0);
+  var sailed      = noonSailed + arrDmg;
+  var totalDist   = sailed + currentDtg;
+  var progress    = totalDist > 0 ? Math.min(100, sailed/totalDist*100) : 0;
+
+  // ── Time sailed (COSP → EOSP if confirmed, else COSP → latest noon, in hours) ──
+  // Using EOSP as the end-point once confirmed gives the true total passage duration —
+  // the last noon report may be many hours stale by the time EOSP is actually recorded.
+  var timeSailedStr = '';
+  var hrs = 0;
+  if (eospConfirmed && dc.dc_cosp_date) {
+    var cospTzMin2 = (typeof dc.cospTZ==='number') ? dc.cospTZ : (typeof shipTZ==='number'?shipTZ:0);
+    var eospTzMin2 = (typeof dc.eospTZ==='number') ? dc.eospTZ : 0;
+    var cospMs2 = ltToUtcMs(dc.dc_cosp_date, dc.dc_cosp_time||'00:00', cospTzMin2);
+    var eospMs2 = ltToUtcMs(dc.dc_eosp_date, dc.dc_eosp_time, eospTzMin2);
+    hrs = (eospMs2 - cospMs2)/3600000;
+    if (hrs > 0) timeSailedStr = fmtN(hrs)+" hrs";
+  } else if (dc.dc_cosp_date && latest) {
+    var cospTzMin = (typeof dc.cospTZ==='number') ? dc.cospTZ : (typeof shipTZ==='number'?shipTZ:0);
+    var rShipTz   = (typeof latest.shipTZ==='number') ? latest.shipTZ : 0;
+    var cospMs    = ltToUtcMs(dc.dc_cosp_date, dc.dc_cosp_time||'00:00', cospTzMin);
+    var noonMs    = ltToUtcMs(latest.date, '12:00', rShipTz);
+    hrs           = (noonMs - cospMs)/3600000;
+    if (hrs > 0) timeSailedStr = fmtN(hrs)+" hrs";
+  }
+
+  // ── Convert hrs to "Xd Xh Xm" format ──
+  var dhmStr = hrs > 0 ? toDHM(hrs) : '';
+
+  // ── Total average speed = Dist Sailed ÷ Time Sailed ──
+  var avgSpd = '';
+  if (sailed > 0 && hrs > 0) avgSpd = fmtN(sailed/hrs)+" kts";
+
+  // ── ETA: manual EOSP → ETA RPT → ETA LT from latest noon ──
+  var etaStr = '', etaDate = '', etaMs = 0;
+  if (eospConfirmed) {
+    etaDate = dc.dc_eosp_date;
+    var eospTzMin = (typeof dc.eospTZ==='number') ? dc.eospTZ : 0;
+    etaStr  = fmtDate(dc.dc_eosp_date)+' '+fmtBBTime(dc.dc_eosp_time)+' LT '+fmtTZ(eospTzMin);
+    etaMs   = ltToUtcMs(dc.dc_eosp_date, dc.dc_eosp_time, eospTzMin);
+  } else if (latest && latest.etaRptDate) {
+    etaDate = latest.etaRptDate;
+    var rArrTzMin = (typeof latest.arrTZ==='number') ? latest.arrTZ : 0;
+    etaStr  = fmtDate(latest.etaRptDate)+(latest.etaRptTime?' '+latest.etaRptTime.replace(':','')+' LT '+fmtTZ(rArrTzMin):'');
+    etaMs   = ltToUtcMs(latest.etaRptDate, latest.etaRptTime||'00:00', rArrTzMin);
+  } else if (latest && latest.eta && latest.eta !== '—') {
+    etaStr = latest.eta;
+  }
+
+  // ── Remaining time to ETA (same ETA shown below Yangpu) ──
+  var remainDhmStr = '';
+  if (etaMs > 0) {
+    var remainHrs = (etaMs - Date.now()) / 3600000;
+    if (remainHrs > 0) remainDhmStr = toDHM(remainHrs);
+  }
+
+  // ── Bunker ROB & Total Consumption (VLSFO/MGO) ──
+  // ROB at EOSP (hand-entered in the Bell Book: Arrival card) wins over the last noon
+  // log, since it is the actual figure on arrival; the difference is the final leg burn.
+  var noonFo  = latest && latest.foRob  ? parseFloat(latest.foRob)  : NaN;
+  var noonMgo = latest && latest.mgoRob ? parseFloat(latest.mgoRob) : NaN;
+  var noonFw  = latest && latest.fwRob  ? parseFloat(latest.fwRob)  : NaN;
+  var eospFo  = dc.dc_eosp_foRob  ? parseFloat(dc.dc_eosp_foRob)  : NaN;
+  var eospMgo = dc.dc_eosp_mgoRob ? parseFloat(dc.dc_eosp_mgoRob) : NaN;
+  var eospFw  = dc.dc_eosp_fwRob  ? parseFloat(dc.dc_eosp_fwRob)  : NaN;
+  var fweFo   = dc.dc_fwe_foRob   ? parseFloat(dc.dc_fwe_foRob)   : NaN;
+  var fweMgo  = dc.dc_fwe_mgoRob  ? parseFloat(dc.dc_fwe_mgoRob)  : NaN;
+  var fweFw   = dc.dc_fwe_fwRob   ? parseFloat(dc.dc_fwe_fwRob)   : NaN;
+  var robAtEosp = !isNaN(eospFo) || !isNaN(eospMgo) || !isNaN(eospFw);
+  var robAtFwe  = !isNaN(fweFo)  || !isNaN(fweMgo)  || !isNaN(fweFw);
+  // FWE (engines finished alongside) is the true final ROB, so it outranks EOSP
+  var vlsfoRob = !isNaN(fweFo)  ? fweFo  : (!isNaN(eospFo)  ? eospFo  : noonFo);
+  var mgoRob   = !isNaN(fweMgo) ? fweMgo : (!isNaN(eospMgo) ? eospMgo : noonMgo);
+  var fwRob    = !isNaN(fweFw)  ? fweFw  : (!isNaN(eospFw)  ? eospFw  : noonFw);
+  // Guard with >= so bunkering at EOSP (ROB went up) reads as 0 burn, never negative
+  var legFo  = (!isNaN(eospFo)  && !isNaN(noonFo)  && noonFo  >= eospFo)  ? noonFo  - eospFo  : 0;
+  var legMgo = (!isNaN(eospMgo) && !isNaN(noonMgo) && noonMgo >= eospMgo) ? noonMgo - eospMgo : 0;
+  // Maneuvering burn EOSP → FWE, same >= guard so bunkering at anchor never reads negative
+  var manoFo  = (!isNaN(fweFo)  && !isNaN(eospFo)  && eospFo  >= fweFo)  ? eospFo  - fweFo  : 0;
+  var manoMgo = (!isNaN(fweMgo) && !isNaN(eospMgo) && eospMgo >= fweMgo) ? eospMgo - fweMgo : 0;
+  // Sailing = COSP → EOSP only. Avg Per Day is a steaming figure and must never include the
+  // maneuvering burn, since `hrs` (its denominator) is COSP → EOSP.
+  var vlsfoSailCons = noonLogs.reduce(function(a,r){ var t=parseFloat(r.foTotal); return a+(isNaN(t)?0:t); },0) + legFo;
+  var mgoSailCons   = noonLogs.reduce(function(a,r){ var t=parseFloat(r.mgoTotal); return a+(isNaN(t)?0:t); },0) + legMgo;
+  var vlsfoTtlCons = vlsfoSailCons + manoFo;
+  var mgoTtlCons   = mgoSailCons   + manoMgo;
+  var avgPerDayVlsfo = (vlsfoSailCons>0 && hrs>0) ? (vlsfoSailCons/(hrs/24)) : 0;
+  var eospSfx = robAtFwe ? ' @ FWE' : (robAtEosp ? ' @ EOSP' : '');
+
+  // ── Mano Dist = COSP DMG + freely-added EOSP-side legs (anchorage etc.) ──
+  // (Single EOSP DMG field lives in Distance Sailed instead — see above.)
+  // TTL Dist = sailed (already includes arrDmg) + manoDist = full pier-to-pier, no double count
+  var extraManoDist = sumEospExtra(dc);
+  var manoDist = depDmg + extraManoDist;
+  var ttlDist  = sailed + manoDist;
+
+  // ── No-data state ──
+  if (!v.name && !dc.dc_cosp_date && !noonLogs.length) {
+    el.innerHTML = '<div class="vt-empty">'+icoAt(ICO_ANCHOR,14)+'Fill in Vessel Setup &amp; COSP to see voyage progress</div>';
+    return;
+  }
+
+  // ── Noon report dots ──
+  // Positioned by cumulative sailed distance (destination-agnostic, always consistent
+  // with the ship icon's own position) — NEVER by each report's own DTG value, since
+  // DTG references whichever port was active at the time and breaks if destination changes.
+  var dotsHtml = '';
+  if (totalDist > 0) {
+    var cumSailed = 0;
+    var hasEospDot = arrDmg > 0;
+    dotsHtml = noonLogs.map(function(r,i){
+      cumSailed += parseFloat(r.dist) || 0;
+      var pct = Math.min(100, Math.max(0, cumSailed/totalDist*100));
+      var isLast = (i===noonLogs.length-1) && !hasEospDot;
+      return '<div class="vt-dot'+(isLast?' active':'')+'" '+
+        'style="left:'+pct.toFixed(1)+'%" data-vti="'+i+'"></div>';
+    }).join('');
+    // Extra dot marking the EOSP point — includes the final maneuvering distance to berth
+    if (hasEospDot) {
+      var eospPct = Math.min(100, Math.max(0, (cumSailed+arrDmg)/totalDist*100));
+      dotsHtml += '<div class="vt-dot active" style="left:'+eospPct.toFixed(1)+'%" data-vti="eosp" title="EOSP"></div>';
+    }
+  }
+
+  // ── Progress bar ──
+  var barHtml = totalDist > 0
+    ? '<div class="vt-bar-wrap">'+
+        '<div class="vt-bar-fill" style="width:'+progress.toFixed(1)+'%"></div>'+
+        dotsHtml+
+      '</div>'
+    : '<div class="vt-bar-wrap"><div class="vt-bar-fill" style="width:0"></div></div>';
+
+  el.innerHTML = [
+    '<button class="vt-export-btn" id="vtExportBtn" title="Export voyage report">'+ICO_EXPORT+'</button>',
+    '<div class="vt-route">'+
+      esc(v.dep||'—')+' \u2192 '+esc(v.dest||'—')+
+      (v.voy?' &nbsp;|&nbsp; Voy. <strong>'+esc(v.voy)+'</strong>':'')+
+    '</div>',
+    barHtml,
+    (dhmStr || remainDhmStr) ? '<div style="display:flex;justify-content:space-between;font-size:10px;font-weight:600;color:rgba(255,255,255,.55);margin:-18px 0 14px;">'+
+      '<span>'+esc(dhmStr)+'</span><span>'+esc(remainDhmStr)+'</span></div>' : '',
+    '<div class="vt-labels">',
+      '<div class="vt-lbl">'+esc(v.dep||'DEP')+
+        (depDmg>0?' <span style="font-weight:600;color:rgba(255,255,255,.7);">'+fmtN(depDmg)+'nm</span>':'')+
+        (dc.dc_cosp_date?'<small>COSP '+fmtDate(dc.dc_cosp_date)+
+          (dc.dc_cosp_time?' '+fmtBBTime(dc.dc_cosp_time):'')+' LT '+
+          fmtTZ((typeof dc.cospTZ==='number')?dc.cospTZ:0)+'</small>':'')+'</div>',
+      '<div class="vt-lbl" style="text-align:right;">'+
+        (extraManoDist>0?'<span style="font-weight:600;color:rgba(255,255,255,.7);">'+fmtN(extraManoDist)+'nm</span> ':'')+
+        esc(v.dest||'DEST')+
+        (etaStr?'<small>'+(eospConfirmed?'EOSP ':'ETA ')+esc(etaStr)+'</small>':'')+'</div>',
+    '</div>',
+    '<div class="vt-stats">',
+      '<div class="vt-stat"><div class="vt-stat-lbl">Time Sailed</div>'+
+        '<div class="vt-stat-val">'+(timeSailedStr||'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl">DTG Remaining</div>'+
+        '<div class="vt-stat-val yl">'+(currentDtg>0?fmtN(currentDtg)+' NM':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl">Dist Sailed</div>'+
+        '<div class="vt-stat-val">'+(sailed>0?fmtN(sailed)+' NM':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl">TTL Avg Speed</div>'+
+        '<div class="vt-stat-val yl">'+(avgSpd||'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl">TTL Dist</div>'+
+        '<div class="vt-stat-val">'+(ttlDist>0?fmtN(ttlDist)+' NM':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl">Mano Dist</div>'+
+        '<div class="vt-stat-val">'+(manoDist>0?fmtN(manoDist)+' NM':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl rd">VLSFO ROB'+eospSfx+'</div>'+
+        '<div class="vt-stat-val rd">'+(!isNaN(vlsfoRob)?fmtN(vlsfoRob)+' MT':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl gn">MGO ROB'+eospSfx+'</div>'+
+        '<div class="vt-stat-val gn">'+(!isNaN(mgoRob)?fmtN(mgoRob)+' MT':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl rd">TTL Cons VLSFO</div>'+
+        '<div class="vt-stat-val rd">'+(vlsfoTtlCons>0?fmtN(vlsfoTtlCons)+' MT':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl gn">TTL Cons MGO</div>'+
+        '<div class="vt-stat-val gn">'+(mgoTtlCons>0?fmtN(mgoTtlCons)+' MT':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl rd">Avg Per Day</div>'+
+        '<div class="vt-stat-val rd">'+(avgPerDayVlsfo>0?fmtN(avgPerDayVlsfo)+' MT/day':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl cy">FW ROB'+eospSfx+'</div>'+
+        '<div class="vt-stat-val cy">'+(!isNaN(fwRob)?fmtN(fwRob)+' MT':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl rd">Cons to EOSP VLSFO</div>'+
+        '<div class="vt-stat-val rd">'+(legFo>0?fmtN(legFo)+' MT':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl gn">Cons to EOSP MGO</div>'+
+        '<div class="vt-stat-val gn">'+(legMgo>0?fmtN(legMgo)+' MT':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl rd">Cons EOSP→FWE VLSFO</div>'+
+        '<div class="vt-stat-val rd">'+(manoFo>0?fmtN(manoFo)+' MT':'—')+'</div></div>',
+      '<div class="vt-stat"><div class="vt-stat-lbl gn">Cons EOSP→FWE MGO</div>'+
+        '<div class="vt-stat-val gn">'+(manoMgo>0?fmtN(manoMgo)+' MT':'—')+'</div></div>',
+    '</div>'
+  ].join('');
+
+  // Dot tap → quick summary toast
+  el.querySelectorAll('.vt-dot[data-vti]').forEach(function(dot) {
+    dot.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var vti = dot.getAttribute('data-vti');
+      if (vti === 'eosp') {
+        toast('EOSP \u2022 Mano (arr) '+fmtN(arrDmg)+' NM', 0, ICO_ANCHOR);
+        return;
+      }
+      var r = noonLogs[parseInt(vti)];
+      if (!r) return;
+      toast(fmtDate(r.date)+' \u2022 DTG '+r.dtg+' NM \u2022 '+(r.speed&&r.speed!=='—'?r.speed+' kts':'—'));
+    });
+  });
+
+  // Export button → build WeChat-style plain text report and copy
+  var exportBtn = g('vtExportBtn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', function() {
+      var lines = [
+        '\ud83d\udea2 VOYAGE PROGRESS REPORT',
+        (v.name||'VESSEL')+(v.voy?' | Voy. '+v.voy:''),
+        (v.dep||'\u2014')+' \u2192 '+(v.dest||'\u2014'),
+        '',
+        (eospConfirmed?'EOSP: ':'ETA: ')+(etaStr||'\u2014'),
+        dc.dc_cosp_date ? 'COSP: '+fmtDate(dc.dc_cosp_date)+
+          (dc.dc_cosp_time?' '+fmtBBTime(dc.dc_cosp_time):'')+' LT '+
+          fmtTZ((typeof dc.cospTZ==='number')?dc.cospTZ:0) : '',
+        '',
+        'Time Sailed: '+(dhmStr||'\u2014')+(timeSailedStr?' ('+timeSailedStr+')':''),
+        remainDhmStr ? 'Remaining: '+remainDhmStr : '',
+        '',
+        'Dist Sailed: '+(sailed>0?fmtN(sailed)+' NM':'\u2014'),
+        'DTG Remaining: '+(currentDtg>0?fmtN(currentDtg)+' NM':'\u2014'),
+        'TTL Dist: '+(ttlDist>0?fmtN(ttlDist)+' NM':'\u2014'),
+        'Mano Dist: '+(manoDist>0?fmtN(manoDist)+' NM':'\u2014'),
+        'TTL Avg Speed: '+(avgSpd||'\u2014'),
+        '',
+        'VLSFO ROB'+eospSfx+': '+(!isNaN(vlsfoRob)?fmtN(vlsfoRob)+' MT':'\u2014'),
+        'MGO ROB'+eospSfx+': '+(!isNaN(mgoRob)?fmtN(mgoRob)+' MT':'\u2014'),
+        'TTL Cons VLSFO: '+(vlsfoTtlCons>0?fmtN(vlsfoTtlCons)+' MT':'\u2014'),
+        'TTL Cons MGO: '+(mgoTtlCons>0?fmtN(mgoTtlCons)+' MT':'\u2014'),
+        legFo>0  ? 'Cons to EOSP VLSFO: '+fmtN(legFo)+' MT'  : '',
+        legMgo>0 ? 'Cons to EOSP MGO: '+fmtN(legMgo)+' MT' : '',
+        'Avg/Day VLSFO: '+(avgPerDayVlsfo>0?fmtN(avgPerDayVlsfo)+' MT/day':'\u2014'),
+        'FW ROB'+eospSfx+': '+(!isNaN(fwRob)?fmtN(fwRob)+' MT':'\u2014')
+      ].filter(function(l){ return l!==''; }).join('\n');
+
+      navigator.clipboard.writeText(lines).then(function() {
+        exportBtn.innerHTML = ICO_CHECK;
+        exportBtn.classList.add('done');
+        toast('Voyage report copied', 0, ICO_EXPORT);
+        setTimeout(function() {
+          exportBtn.innerHTML = ICO_EXPORT;
+          exportBtn.classList.remove('done');
+        }, 1000);
+      }).catch(function() {
+        toast('Copy failed', 0, ICO_ALERT);
+      });
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════
+   WIRE ALL LISTENERS
+═══════════════════════════════════════════ */
+function wireAll() {
+  /* On iOS the bottom nav is drawn natively (real Liquid Glass), so hide the
+     HTML one. Everywhere else it stays, and the file still works in a browser. */
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.tabBridge) {
+    document.body.classList.add('native-tabs');
+
+    /* The native bar is a sibling of the web view, so it floats ABOVE any HTML
+       modal — a .mbg sheet cannot cover it. Tell native to hide it while a sheet
+       is open. .mbg.open/.closing is the single choke point for every modal in this
+       app — .closing counts too, so the bar waits out the slide-down. */
+    var chrome = window.webkit.messageHandlers.chromeBridge;
+    if (chrome) {
+      var syncChrome = function() {
+        chrome.postMessage(document.querySelector('.mbg.open, .mbg.closing') ? 'modal-open' : 'modal-closed');
+      };
+      var obs = new MutationObserver(syncChrome);
+      document.querySelectorAll('.mbg').forEach(function(m) {
+        obs.observe(m, { attributes: true, attributeFilter: ['class'] });
+      });
+      syncChrome();
+    }
+
+    /* Drop the glass tab bar the instant a field is tapped, and stop reserving
+       --navbar-h so the field sits higher.
+
+       focusin fires synchronously on the tap — well before iOS posts keyboardWillShow,
+       which has to round-trip through WKWebView's out-of-process input session. Waiting
+       for the notification is what made the bar look like it was lagging behind the tap,
+       so the hide is driven from here instead and native cuts it away unanimated.
+
+       This may only ever HIDE the bar. Native's keyboardWillHide is the authoritative
+       restore, so a dropped or out-of-order event here can cost at most stale padding —
+       it can never strand a hidden bar. The delay lets the ▲/▼ accessory buttons carry
+       focus between fields without the padding flashing back in between. */
+    var kbTimer = null;
+    var isField = function(el) {
+      if (!el) return false;
+      if (el.isContentEditable) return true;
+      if (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA') return false;
+      return !el.readOnly && !el.disabled;   // these raise no keyboard
+    };
+    document.addEventListener('focusin', function(e) {
+      if (!isField(e.target)) return;
+      clearTimeout(kbTimer);
+      document.body.classList.add('kb-open');
+      if (chrome) chrome.postMessage('kb-open');
+    });
+    document.addEventListener('focusout', function(e) {
+      if (!isField(e.target)) return;
+      clearTimeout(kbTimer);
+      kbTimer = setTimeout(function() {
+        document.body.classList.remove('kb-open');
+        if (chrome) chrome.postMessage('kb-closed');
+      }, 50);
+    });
+  }
+
+  wireGrabHandles();
+
+  // Hemisphere toggle buttons (all instances in the page)
+  document.querySelectorAll('.hem-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { toggleHem(btn); });
+  });
+
+  // Nav tabs
+  document.querySelectorAll('.nav-btn').forEach(function(b) {
+    b.addEventListener('click', function() {
+      switchTab(b.getAttribute('data-tab'));
+      if (b.getAttribute('data-tab') === 'tab-vessel') renderVoyageTracker();
+    });
+  });
+
+  // Vessel tab
+  // Static BB buttons (now outside renderBBRows)
+  g('bb-dep-add').addEventListener('click',  function(){ bbState.dep.push({date:bbState.dep.length?bbState.dep[0].date:'',time:'',event:''}); saveBellBook(); renderBBRows('dep'); });
+  g('bb-dep-view').addEventListener('click', function(){ viewBBSummary('dep', bbState.dep); });
+  g('bb-dep-save').addEventListener('click', function(){ saveBBLog('dep', bbState.dep); });
+  g('bb-arr-add').addEventListener('click',  function(){ bbState.arr.push({date:bbState.arr.length?bbState.arr[0].date:'',time:'',event:''}); saveBellBook(); renderBBRows('arr'); });
+  g('bb-arr-view').addEventListener('click', function(){ viewBBSummary('arr', bbState.arr); });
+  g('bb-arr-save').addEventListener('click', function(){ saveBBLog('arr', bbState.arr); });
+  g('btnAddFweRob').addEventListener('click', function() {
+    setFweShown(true); saveDepCond();
+    g('dc_fwe_foRob').focus();
+  });
+  g('btnDelFweRob').addEventListener('click', function() {
+    FWE_IDS.forEach(function(id){ if (g(id)) g(id).value = ''; });
+    setFweShown(false); saveDepCond(); renderVoyageTracker();
+  });
+  g('btnAddManoDist').addEventListener('click', function() {
+    var dc2 = lr(KEY_DC) || {};
+    var arr = dc2.dc_eosp_extra || [];
+    arr.push({label:'', dist:''});
+    dc2.dc_eosp_extra = arr;
+    ls(KEY_DC, dc2);
+    renderEospExtra();
+    renderVoyageTracker();
+  });
+  ['v_name','v_voy','v_dep','v_dest'].forEach(function(id) {
+    var el = g(id); if (!el) return;
+    el.addEventListener('input', saveVessel);
+  });
+
+  // Departure condition auto-save on every field change
+  DC_IDS.forEach(function(id) {
+    var el = g(id); if (!el) return;
+    var evt = (el.type === 'date' || el.type === 'time') ? 'change' : 'input';
+    el.addEventListener(evt, function() { saveDepCond(); renderVoyageTracker(); });
+  });
+
+  g('btnGoNoon').addEventListener('click', function() { switchTab('tab-noon'); });
+
+  // Noon tab
+  g('btnClearNoon').addEventListener('click',    clearNoon);
+  g('btnGoSummaryTop').addEventListener('click', goSummary);
+  g('btnGoSummaryBot').addEventListener('click', goSummary);
+  g('btnAdvance').addEventListener('click', function() { setClockAdj(60); });
+  g('btnRetard').addEventListener('click',  function() { setClockAdj(-60); });
+
+  // Calc + auto-save wrapper
+  function ns(fn) { return function() { if(fn) fn(); saveNoonState(); }; }
+  g('n_dist').addEventListener('input',         ns(recalcSpeed));
+  g('n_lastRepDate').addEventListener('change', ns(recalcSpeed));
+  g('n_lastRep').addEventListener('change',     ns(recalcSpeed));
+  g('n_date').addEventListener('change',        ns(recalcSpeed));
+  g('n_dtg').addEventListener('input',          ns(autoDistRun));
+  g('n_foMe').addEventListener('input',         ns(calcFO));
+  g('n_foAe').addEventListener('input',         ns(calcFO));
+  g('n_foBoiler').addEventListener('input',     ns(calcFO));
+  g('n_mgoMe').addEventListener('input',        ns(calcMGO));
+  g('n_mgoAe').addEventListener('input',        ns(calcMGO));
+  g('n_mgoBoiler').addEventListener('input',    ns(calcMGO));
+  g('n_fwCons').addEventListener('input',       ns(calcFW));
+  g('n_fwGen').addEventListener('input',        ns(calcFW));
+  g('n_wBf').addEventListener('input',          ns(updateBF));
+  // FO/MGO/FW ROB — mark as manually edited if officer types directly
+  g('n_foRob').addEventListener('input',  function() { g('n_foRob')._manualEdit  = true; saveNoonState(); });
+  g('n_mgoRob').addEventListener('input', function() { g('n_mgoRob')._manualEdit = true; saveNoonState(); });
+  g('n_fwRob').addEventListener('input',  function() { g('n_fwRob')._manualEdit  = true; saveNoonState(); });
+  // Plain save-only fields
+  ['n_latD','n_latM','n_lonD','n_lonM','n_course','n_fwCons','n_fwGen',
+   'n_wDir','n_seaHt','n_swell','n_rem','n_etaRptDate','n_etaRptTime'].forEach(function(id) {
+    var el=g(id); if(!el) return;
+    var evt = (el.type==='text'||el.type==='number'||el.tagName==='TEXTAREA') ? 'input' : 'change';
+    el.addEventListener(evt, saveNoonState);
+  });
+  // Note: n_latH / n_lonH are hidden inputs — state saved via toggleHem()
+
+  // Ship TZ
+  g('ltRow').addEventListener('click',       openShipTZ);
+  g('tzShipMinus').addEventListener('click', function(){ adjTZ(-1); });
+  g('tzShipPlus').addEventListener('click',  function(){ adjTZ(+1); });
+  g('tzShipApply').addEventListener('click', applyShipTZ);
+  g('tzShipCancel').addEventListener('click',function(){ closeBg('tzShipBg'); });
+  g('tzShipBg').addEventListener('click',    function(e){ if(e.target===g('tzShipBg')) closeBg('tzShipBg'); });
+
+  // Arrival TZ
+  g('btnArrTZ').addEventListener('click',   openArrTZ);
+  g('tzArrMinus').addEventListener('click', function(){ adjTZ(-1); });
+  g('tzArrPlus').addEventListener('click',  function(){ adjTZ(+1); });
+  g('tzArrApply').addEventListener('click', applyArrTZ);
+  g('tzArrCancel').addEventListener('click',function(){ closeBg('tzArrBg'); });
+  g('tzArrBg').addEventListener('click',    function(e){ if(e.target===g('tzArrBg')) closeBg('tzArrBg'); });
+
+  // COSP TZ
+  g('btnCospTZ').addEventListener('click',    openCospTZ);
+  g('tzCospMinus').addEventListener('click',  function(){ adjTZ(-1); });
+  g('tzCospPlus').addEventListener('click',   function(){ adjTZ(+1); });
+  g('tzCospApply').addEventListener('click',  applyCospTZ);
+  g('tzCospCancel').addEventListener('click', function(){ closeBg('tzCospBg'); });
+  g('tzCospBg').addEventListener('click',     function(e){ if(e.target===g('tzCospBg')) closeBg('tzCospBg'); });
+
+  // EOSP TZ
+  g('btnEospTZ').addEventListener('click',    openEospTZ);
+  g('tzEospMinus').addEventListener('click',  function(){ adjTZ(-1); });
+  g('tzEospPlus').addEventListener('click',   function(){ adjTZ(+1); });
+  g('tzEospApply').addEventListener('click',  applyEospTZ);
+  g('tzEospCancel').addEventListener('click', function(){ closeBg('tzEospBg'); });
+  g('tzEospBg').addEventListener('click',     function(e){ if(e.target===g('tzEospBg')) closeBg('tzEospBg'); });
+
+  // Edit modal
+  g('editSaveBtn').addEventListener('click',   saveEditLog);
+  g('editCancelBtn').addEventListener('click', function(){ closeBg('editBg'); });
+  g('editBg').addEventListener('click',        function(e){ if(e.target===g('editBg')) closeBg('editBg'); });
+
+  // Confirm modal
+  g('confirmCancel').addEventListener('click', function(){ closeBg('confirmBg'); });
+  g('confirmBg').addEventListener('click',     function(e){ if(e.target===g('confirmBg')) closeBg('confirmBg'); });
+
+  // Log tab
+  g('btnExport').addEventListener('click',        exportLogs);
+  g('btnImportTrigger').addEventListener('click', function(){ g('importInput').click(); });
+  g('importInput').addEventListener('change',     importLogs);
+  g('btnArchive').addEventListener('click',       archiveVoyage);
+}
+
+/* ═══════════════════════════════════════════
+   INIT — strict ordered boot sequence
+═══════════════════════════════════════════ */
+(function init() {
+  wireAll();                      // 1. wire all buttons first
+  initAllTZ();                    // 2. load all 4 TZ values, update badges/labels
+  tickClock();                    // 3. first clock tick — immediate display
+  setInterval(tickClock, 1000);   // 4. tick every second
+  loadVessel();                   // 5. restore vessel fields
+  loadDepCond();                  // 6. restore departure condition fields
+  loadBellBook();                 // 7. render bell book rows from saved state
+  loadNoonState();                // 7. restore noon input state (fills fields)
+  initNoon();                     // 8. set defaults only for still-empty fields
+  loadPrevHints();                // 9. amber hints + last rep auto-fill
+  // 10. Trigger calcs from restored state
+  updateClockAdjUI();
+  calcFO(); calcMGO(); calcFW(); updateBF(); recalcSpeed(); renderVoyageTracker();
+  renderArchives();               // 11. archived voyages list + Archive button label
+}());
+</script>
+</body>
+</html>

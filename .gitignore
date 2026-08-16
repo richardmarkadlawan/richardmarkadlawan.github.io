@@ -2,7 +2,8 @@
 .DS_Store
 Thumbs.db
 
-# IDE
+# IDE / local tooling
+.claude/
 .vscode/
 .idea/
 *.swp

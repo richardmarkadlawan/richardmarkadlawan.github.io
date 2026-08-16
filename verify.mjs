@@ -165,8 +165,15 @@ for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
 /* ---------- offline guarantee ---------- */
 
 for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
-  const remote = src.match(/(?:src|href)\s*=\s*["']https?:\/\/[^"']+/gi) || [];
-  if (remote.length) fail(`${file} loads ${remote.length} remote resource(s) — breaks offline use`);
+  /* rel="canonical" and rel="alternate" carry an absolute URL but are declarative
+     metadata — the browser never fetches them, so they cost nothing offline. Drop those
+     tags before scanning; everything else with an http(s) src/href does get fetched. */
+  const scanned = src.replace(/<link\b[^>]*\brel\s*=\s*["'](?:canonical|alternate)["'][^>]*>/gi, '');
+  const remote = scanned.match(/(?:src|href)\s*=\s*["']https?:\/\/[^"']+/gi) || [];
+  if (remote.length){
+    fail(`${file} loads ${remote.length} remote resource(s) — breaks offline use: ` +
+         remote.map(r => r.slice(0, 60)).join(', '));
+  }
 }
 
 /* ---------- report ---------- */

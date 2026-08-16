@@ -1,12 +1,16 @@
 # Richard Mark H. Adlawan — Deck Officer CV
 
-Personal career website and matching PDF CV. Three files, no build step, no dependencies.
+Personal career website, matching PDF CV, and five working shipboard apps. No build step,
+no dependencies.
+
+Live at **https://vonreese14.github.io**
 
 | File | What it is |
 |---|---|
 | `index.html` | The website. Single file, dark by default with a light toggle. |
 | `cv_print.html` | The print layout the PDF is made from. A4, two pages. |
 | `ADLAWAN_RICHARD_CV.pdf` | The downloadable CV. `index.html` links to it. |
+| `apps/` | The shipboard apps, one folder each. Linked from the Tools section. |
 
 Everything is vanilla HTML, CSS and JavaScript with a system font stack — no frameworks, no CDNs,
 no web fonts. Open `index.html` straight from disk and it works offline, including on a phone
@@ -14,8 +18,44 @@ with no signal.
 
 ## Publishing to GitHub Pages
 
-Push to `main`, then in the repository settings under Pages choose **Deploy from a branch** →
-`main` / `root`. The site is served as-is; there is nothing to compile.
+The repo is `vonreese14/vonreese14.github.io`. Because the name matches the account, GitHub
+serves it at the bare `https://vonreese14.github.io` with no path.
+
+Push to `main` and it redeploys — the site is served as-is, nothing compiles. The repo must stay
+**public**; serving Pages from a private repo needs a paid plan.
+
+```bash
+node verify.mjs && git push
+```
+
+Deploys take a minute or two to appear. A hard refresh clears the old copy if you still see it.
+
+## The apps
+
+Each app is one self-contained HTML file served from its own folder, linked from the Tools
+section of the CV. They are copies — edit the source, then copy the new version in.
+
+| Folder | Source of truth |
+|---|---|
+| `apps/draft-survey/` | `~/XCODE IOS BUILDS/Draft survey/index.html` |
+| `apps/cargo-ops/` | `~/XCODE IOS BUILDS/Cargo/index.html` |
+| `apps/ballast/` | `~/XCODE IOS BUILDS/Ballast/index.html` |
+| `apps/noon-guide/` | `~/XCODE IOS BUILDS/Noon guide/NOON_GUIDE-31.html` |
+| `apps/egc-reader/` | `~/Desktop/EGC READER/EGC_WARNING_READER_1_19.html` |
+
+**Ship Weather Routing is not here and cannot be.** It is 23 GB, 13 GB of that map tiles, which
+is far past what GitHub Pages will host.
+
+### One thing to watch when adding an app
+
+`localStorage` is scoped to the **origin**, not the path. On disk each app is its own `file://`
+document with its own storage; on the live site all of them share one store. Today that is safe —
+every app namespaces its keys (`fge-`, `bvp_`, `ng_`, `EGC_`, `cargo-`) and none of them overlap.
+
+Cargo Ops is the fragile one: alongside its `cargo-` keys it also writes bare `sp`, `sp-total`,
+`sp1`…`sp6` and `dis_*`. Nothing collides with those now, but they are generic enough that a
+future app easily could — and the symptom would be one app silently overwriting another's saved
+work. Give any new app a distinct prefix.
 
 ## Regenerating the PDF
 
@@ -72,11 +112,11 @@ The website lists certificates as a plain two-column list under a single **ALL V
 the heading, rather than repeating a status against every row. If a certificate ever stops being
 valid, that badge is no longer true — split the list or drop the badge rather than leaving it.
 
-## Still to do once the site has a URL
+## Still to do
 
-`og:image`, `og:url` and `<link rel="canonical">` all need an absolute host, so they are not in
-`index.html` yet — there is a comment in `<head>` marking the spot. Everything else, including the
-`schema.org/Person` structured data, is inline and works from `file://`.
+`og:image` is the last tag that needs a hosted file — a social preview card, referenced by
+absolute URL. `og:url` and `<link rel="canonical">` are now set to the live address. Everything
+else, including the `schema.org/Person` structured data, is inline and works from `file://`.
 
 ## Contact details
 

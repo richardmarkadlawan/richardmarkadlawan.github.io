@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Richard Mark H. Adlawan — Deck Officer</title>
 <meta name="description" content="Richard Mark H. Adlawan — Management-level Deck Officer (STCW II/2). Chief Mate CoC, bulk carrier & container experience, shipboard software builder.">
-<!-- Anchor mark, inline so the tab icon survives offline and file:// like the rest of the page.
-     og:image, og:url and <link rel="canonical"> all need an absolute host, so they go in
-     once the site has its GitHub Pages URL. Everything else here works from file://. -->
+<!-- Anchor mark, inline so the tab icon survives offline and file:// like the rest of the page. -->
+<link rel="canonical" href="https://vonreese14.github.io/">
+<meta property="og:url" content="https://vonreese14.github.io/">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230B1220'/><g fill='none' stroke='%2322C55E' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><circle cx='16' cy='7.4' r='2.4'/><path d='M16 10v14'/><path d='M10.5 13.2h11'/><path d='M7 18.6a9 9 0 0 0 18 0'/></g></svg>">
 <meta name="theme-color" content="#0B1220">
 <meta property="og:type" content="profile">
@@ -771,8 +771,30 @@ h1{
   flex-direction:column;
   gap:8px;
 }
-/* No :hover accent here — these cards carry no link, so lighting up under the cursor
-   promised a click that never existed. */
+/* Only the hosted apps are links. The remaining cards are descriptive, so the hover
+   accent and cursor stay off them — lighting up under the cursor would promise a click
+   that does not exist. */
+a.tool-card{
+  text-decoration:none;
+  color:inherit;
+  cursor:pointer;
+}
+a.tool-card:hover{ border-color:var(--signal); }
+a.tool-card:focus-visible{ outline:2px solid var(--signal); outline-offset:2px; }
+.tool-open{
+  margin-top:auto;
+  padding-top:4px;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-family:var(--font-mono);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--signal);
+}
+.tool-open svg{ width:13px; height:13px; }
 .tool-card .t-icon{
   width:34px; height:34px;
   display:flex; align-items:center; justify-content:center;
@@ -1075,21 +1097,36 @@ footer .mono{ font-size:11.5px; }
         <p class="eyebrow">Shipboard Software</p>
         <h2 id="tools-h" class="reveal">Tools &amp; Projects</h2>
         <div class="tools-grid">
-          <div class="tool-card reveal">
+          <a class="tool-card reveal" href="apps/cargo-ops/">
             <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l9 4 9-4"/><path d="M3 12l9 4 9-4"/><path d="M12 3L3 7l9 4 9-4-9-4Z"/></svg></div>
             <h3>Cargo Loading/Discharge Suite</h3>
-            <p>Offline single-file apps in active bridge use: stowage calculator, DPR with period-based rates, draft readings, heeling calculator, daily cargo log with messaging-app report export.</p>
-          </div>
-          <div class="tool-card reveal">
+            <p>Stowage calculator, DPR with period-based rates, heeling calculator, daily cargo log with messaging-app report export.</p>
+            <span class="tool-open">Open app <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
+          </a>
+          <a class="tool-card reveal" href="apps/draft-survey/">
+            <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15h18"/><path d="M6 15V9m6 6V5m6 10v-4"/><path d="M3 19h18"/></svg></div>
+            <h3>Draft Survey</h3>
+            <p>Full survey engine to 0.5&nbsp;cm precision: draft corrections, heeling and trim, hydrostatic interpolation, initial/intermediate/final with document export.</p>
+            <span class="tool-open">Open app <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
+          </a>
+          <a class="tool-card reveal" href="apps/ballast/">
+            <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M4 18c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M12 3v8M8.5 6.5 12 3l3.5 3.5"/></svg></div>
+            <h3>Ballast Voyage Planner</h3>
+            <p>Tank-by-tank ballast planning with sounding interpolation, fore and aft distribution, and condition summaries.</p>
+            <span class="tool-open">Open app <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
+          </a>
+          <a class="tool-card reveal" href="apps/noon-guide/">
             <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
             <h3>Noon Report Guide</h3>
             <p>Live voyage progress tracker: DTG, average speed, ROB, consumption.</p>
-          </div>
-          <div class="tool-card reveal">
+            <span class="tool-open">Open app <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
+          </a>
+          <a class="tool-card reveal" href="apps/egc-reader/">
             <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v14H4z"/><path d="M8 8h8M8 12h6"/><path d="M2 21h20"/></svg></div>
             <h3>EGC Warning Reader</h3>
             <p>Automated parser/organizer for Inmarsat-C SafetyNET printouts — 7-tier categorization, ZIP import.</p>
-          </div>
+            <span class="tool-open">Open app <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
+          </a>
           <div class="tool-card reveal">
             <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg></div>
             <h3>MSI Index Log Pipeline</h3>

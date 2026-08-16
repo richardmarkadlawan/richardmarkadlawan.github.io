@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EGC Warning Reader — Inmarsat-C</title>
+<style>
+/* ============================================================================
+   EGC WARNING READER  —  Inmarsat-C EGC / SafetyNET viewer
+   Single-file · offline · zero dependencies · desktop · dark-mode console
+   ========================================================================== */
+:root{
+  --bg:#0a0f16; --bg2:#0e151f; --panel:#121b27; --panel2:#16212f;
+  --line:#22303f; --line2:#2c3d50;
+  --ink:#e7eef5; --ink-dim:#9fb0c0; --ink-faint:#6b7d8e;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* status palette */
+  --inforce:#f0b429; --inforce-bg:rgba(240,180,41,.10);
+  --superseded:#7b8aa0; --cancelled:#5a6b7d; --duplicate:#6a7a8c;
+  --corrupt:#ff5a5a; --corrupt-bg:rgba(255,90,90,.10);
+  --met:#37c7c7; --nav:#a98bff; --unparsed:#8896a6; --forecast:#5b9bff; --coastal:#ff8c42;
+  --expired:#5c7a99;
+  --ok:#3ddc84;
+  --radius:10px; --shadow:0 1px 0 rgba(255,255,255,.03), 0 8px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:
+    radial-gradient(1200px 600px at 80% -10%, #11202f 0%, transparent 60%),
+    var(--bg);
+  color:var(--ink); font-family:var(--sans); font-size:14px; line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit; cursor:pointer}
+input,select{font-family:inherit}
+
+/* ---------- top console bar ---------- */
+.console{
+  position:sticky; top:0; z-index:30; background:linear-gradient(180deg,#0f1825,#0c131d);
+  border-bottom:1px solid var(--line); box-shadow:0 6px 18px rgba(0,0,0,.3);
+}
+.console-row{display:flex; align-items:center; gap:14px; padding:10px 18px; flex-wrap:wrap}
+.brand{display:flex; align-items:baseline; gap:10px; margin-right:6px}
+.brand .led{width:9px; height:9px; border-radius:50%; background:var(--ok); box-shadow:0 0 8px var(--ok); align-self:center}
+.led.save-led{background:var(--line2); box-shadow:none; opacity:.45; transition:.2s; margin-left:-2px}
+.led.save-led.on{background:var(--corrupt); box-shadow:0 0 8px var(--corrupt); opacity:1}
+.brand h1{font-size:15px; letter-spacing:.14em; font-weight:700; margin:0; text-transform:uppercase}
+.brand small{font-family:var(--mono); color:var(--ink-faint); font-size:11px; letter-spacing:.06em}
+
+.btn{
+  background:var(--panel2); color:var(--ink); border:1px solid var(--line2);
+  padding:7px 13px; border-radius:8px; font-size:13px; font-weight:600;
+  display:inline-flex; align-items:center; gap:7px; transition:.12s;
+}
+.btn:hover{background:#1c2a3a; border-color:#3a4f66}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--inforce); color:#1a1300; border-color:var(--inforce)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent}
+.btn.danger{color:#ffb4b4; border-color:#5a2c2c}
+.btn.danger:hover{background:#2a1414}
+
+.spacer{flex:1}
+.field{display:flex; align-items:center; gap:7px; background:var(--panel); border:1px solid var(--line);
+  border-radius:8px; padding:5px 10px}
+.field svg{opacity:.55}
+.field input{background:transparent; border:0; color:var(--ink); outline:none; font-size:13px; width:190px}
+.field input::placeholder{color:var(--ink-faint)}
+select.sel{background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:8px;
+  padding:6px 9px; font-size:13px; outline:none}
+
+.filters{display:flex; align-items:center; gap:7px; padding:0 18px 10px; flex-wrap:wrap}
+.chip-toggle{
+  font-family:var(--mono); font-size:11px; letter-spacing:.04em; padding:5px 10px; border-radius:20px;
+  border:1px solid var(--line2); background:transparent; color:var(--ink-dim); text-transform:uppercase;
+}
+.chip-toggle[data-on="1"]{color:#0b1018; font-weight:700}
+.chip-toggle.f-all[data-on="1"]{background:#cdd9e6; border-color:#cdd9e6}
+.chip-toggle.f-met[data-on="1"]{background:var(--met); border-color:var(--met); color:#04201f}
+.chip-toggle.f-nav[data-on="1"]{background:var(--nav); border-color:var(--nav); color:#1c1030}
+.chip-toggle.f-forecast[data-on="1"]{background:var(--forecast); border-color:var(--forecast); color:#04122b}
+.chip-toggle.f-coastal[data-on="1"]{background:var(--coastal); border-color:var(--coastal); color:#2b1300}
+.chip-toggle.f-inforce[data-on="1"]{background:var(--inforce); border-color:var(--inforce)}
+.chip-toggle.f-superseded[data-on="1"]{background:var(--superseded); border-color:var(--superseded)}
+.chip-toggle.f-cancelled[data-on="1"]{background:var(--cancelled); border-color:var(--cancelled)}
+.chip-toggle.f-duplicate[data-on="1"]{background:var(--duplicate); border-color:var(--duplicate)}
+.chip-toggle.f-expired[data-on="1"]{background:var(--expired); border-color:var(--expired)}
+.chip-toggle.f-corrupt[data-on="1"]{background:var(--corrupt); border-color:var(--corrupt)}
+.divider-v{width:1px; height:22px; background:var(--line2); margin:0 4px}
+.counts{font-family:var(--mono); font-size:11px; color:var(--ink-faint); letter-spacing:.04em}
+.counts b{color:var(--inforce)}
+
+/* ---------- filing header (prints) ---------- */
+.filing{display:none; padding:14px 18px; border-bottom:1px solid var(--line); background:var(--bg2)}
+.filing.show{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end}
+.filing label{display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--ink-faint);
+  text-transform:uppercase; letter-spacing:.08em}
+.filing input{background:var(--panel); border:1px solid var(--line); color:var(--ink); border-radius:6px;
+  padding:6px 9px; font-size:13px; min-width:200px}
+
+/* ---------- card wall ---------- */
+.wall{padding:18px; display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(380px, 1fr)); align-content:start}
+.card{
+  background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line);
+  border-left:4px solid var(--superseded); border-radius:var(--radius); box-shadow:var(--shadow);
+  display:flex; flex-direction:column; overflow:hidden; animation:rise .22s ease both;
+}
+@keyframes rise{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+.card.s-inforce{border-left-color:var(--inforce)}
+.card.s-corrupt{border-left-color:var(--corrupt)}
+.card.s-superseded,.card.s-cancelled,.card.s-duplicate,.card.s-expired{opacity:.72}
+.card.s-cancelled .body{text-decoration:line-through; text-decoration-color:rgba(255,90,90,.25)}
+
+.chead{display:flex; align-items:center; gap:8px; padding:9px 12px; border-bottom:1px solid var(--line);
+  background:rgba(255,255,255,.012); flex-wrap:wrap}
+.statusdot{width:8px; height:8px; border-radius:50%; flex:none}
+.s-inforce .statusdot{background:var(--inforce); box-shadow:0 0 8px var(--inforce)}
+.s-corrupt .statusdot{background:var(--corrupt); box-shadow:0 0 8px var(--corrupt)}
+.s-superseded .statusdot{background:var(--superseded)}
+.s-cancelled .statusdot{background:var(--cancelled)}
+.s-duplicate .statusdot{background:var(--duplicate)}
+.s-expired .statusdot{background:var(--expired)}
+.statustext{font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase}
+.s-inforce .statustext{color:var(--inforce)} .s-corrupt .statustext{color:var(--corrupt)}
+.s-superseded .statustext{color:var(--superseded)} .s-cancelled .statustext{color:var(--cancelled)}
+.s-duplicate .statustext{color:var(--duplicate)}
+
+.chips{display:flex; gap:6px; flex-wrap:wrap; margin-left:auto; align-items:center}
+.chip{font-family:var(--mono); font-size:10px; letter-spacing:.04em; padding:3px 7px; border-radius:5px;
+  border:1px solid var(--line2); color:var(--ink-dim); text-transform:uppercase; white-space:nowrap}
+.chip.fam-met{color:var(--met); border-color:rgba(55,199,199,.4)}
+.chip.fam-nav{color:var(--nav); border-color:rgba(169,139,255,.4)}
+.chip.fam-forecast{color:var(--forecast); border-color:rgba(91,155,255,.4)}
+.chip.fam-coastal{color:var(--coastal); border-color:rgba(255,140,66,.4)}
+.chip.fam-unparsed{color:var(--unparsed)}
+.chip.area{color:#e7eef5; border-color:var(--line2)}
+.chip.corrupt{color:#1a0000; background:var(--corrupt); border-color:var(--corrupt); font-weight:700}
+.age-badge{font-family:var(--mono); font-size:10px; letter-spacing:.03em; padding:2px 6px; border-radius:4px; border:1px solid; white-space:nowrap; flex:none}
+.age-badge.age-ok{color:var(--ink-faint); border-color:var(--line2)}
+.age-badge.age-warn{color:var(--inforce); border-color:rgba(240,180,41,.4)}
+.age-badge.age-old{color:var(--corrupt); border-color:rgba(255,90,90,.4); background:rgba(255,90,90,.06)}
+
+.meta{padding:7px 12px; font-family:var(--mono); font-size:11px; color:var(--ink-faint);
+  display:flex; gap:6px 14px; flex-wrap:wrap; border-bottom:1px solid var(--line)}
+.meta .k{color:var(--ink-dim)}
+.note{padding:6px 12px; font-size:11.5px; color:var(--inforce); background:var(--inforce-bg);
+  border-bottom:1px solid var(--line); display:flex; align-items:center; gap:6px}
+.note.warn{color:var(--corrupt); background:var(--corrupt-bg)}
+.note.dim{color:var(--ink-dim); background:transparent}
+
+.body{font-family:var(--mono); font-size:12px; line-height:1.5; color:var(--ink); white-space:pre-wrap;
+  word-break:break-word; padding:11px 13px; max-height:230px; overflow:auto; tab-size:2}
+.body::-webkit-scrollbar{width:9px} .body::-webkit-scrollbar-thumb{background:var(--line2); border-radius:9px}
+.card.expanded .body{max-height:none}
+.print-raw{display:none} /* literal-original print text — screen never shows this, print-only (see @media print) */
+
+.ack-row{display:flex; align-items:center; gap:14px; padding:7px 12px; border-top:1px solid var(--line);
+  background:rgba(0,0,0,.08); flex-wrap:wrap; margin-top:auto}
+.ack-label{font-family:var(--mono); font-size:10px; letter-spacing:.08em; color:var(--ink-faint);
+  text-transform:uppercase; flex:none; line-height:1}
+.ack-item{display:flex; align-items:center; gap:5px; font-family:var(--mono); font-size:11.5px;
+  font-weight:600; color:var(--ink-dim); cursor:pointer; user-select:none; letter-spacing:.04em}
+.ack-item input[type=checkbox]{accent-color:var(--ok); width:14px; height:14px; cursor:pointer; flex:none}
+.ack-item:has(input:checked){color:var(--ok)}
+.print-ack{display:none}
+@media print{
+  .ack-row{display:none !important}
+  .print-ack{display:block !important; font-family:var(--mono); font-size:10px; margin-top:6px;
+    letter-spacing:.06em; color:#333}
+}
+.cfoot{display:flex; align-items:center; gap:10px; padding:8px 12px; border-top:1px solid var(--line);
+  background:rgba(0,0,0,.12)}
+.inc{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--ink-dim); cursor:pointer; user-select:none}
+.inc input{accent-color:var(--inforce); width:15px; height:15px; margin:0}
+.foot-btn{background:transparent; border:1px solid var(--line2); color:var(--ink-dim); border-radius:6px;
+  font-size:11px; padding:4px 9px}
+.foot-btn:hover{color:var(--ink); border-color:#3a4f66}
+.foot-btn.ck-exp{font-size:13px; padding:5px 18px; font-weight:600; color:var(--ink); border-color:var(--accent)}
+.foot-btn.ck-exp:hover{background:rgba(50,130,200,.12); border-color:var(--accent)}
+.close-x{margin-left:auto; background:transparent; border:1px solid var(--line2); color:var(--ink-faint);
+  padding:3px 8px; border-radius:6px; font-size:10px; font-weight:500; letter-spacing:.04em;
+  display:inline-flex; align-items:center; gap:4px; white-space:nowrap}
+.close-x:hover{color:#ffb4b4; border-color:#5a2c2c; background:#2a1414}
+.file-all-btn{background:transparent; border:1px solid rgba(50,200,100,.4); color:var(--ok);
+  border-radius:6px; font-size:10px; font-weight:500; padding:3px 8px; cursor:pointer;
+  white-space:nowrap; display:inline-flex; align-items:center; gap:4px; letter-spacing:.04em}
+.file-all-btn:hover{background:rgba(50,200,100,.12); border-color:var(--ok)}
+
+/* ---------- watermark (own row below filter chips) ---------- */
+.watermark{
+  width:100%; text-align:center; padding:4px 0 6px;
+  pointer-events:none; user-select:none; opacity:.5;
+  border-top:1px solid var(--line);
+}
+.watermark .wm-main{
+  font-family:var(--mono); font-size:10.5px; font-weight:600;
+  letter-spacing:.13em; text-transform:uppercase; color:var(--ink-dim);
+  white-space:nowrap;
+}
+@media print{ .watermark{display:none} }
+
+/* ---------- empty / drop ---------- */
+.empty{padding:80px 20px; text-align:center; color:var(--ink-faint)}
+.empty h2{color:var(--ink-dim); font-weight:600; letter-spacing:.02em; margin:0 0 8px}
+.empty .big{font-size:46px; margin-bottom:14px; opacity:.5}
+.empty code{font-family:var(--mono); color:var(--met); background:var(--panel); padding:2px 6px; border-radius:5px}
+.dropzone-hint{margin-top:18px; font-size:12px}
+
+/* drag overlay */
+#drop{position:fixed; inset:0; z-index:80; display:none; align-items:center; justify-content:center;
+  background:rgba(8,12,18,.86); backdrop-filter:blur(2px)}
+#drop.on{display:flex}
+#drop .box{border:2px dashed var(--inforce); border-radius:16px; padding:46px 70px; text-align:center;
+  background:rgba(240,180,41,.05)}
+#drop .box .big{font-size:40px; margin-bottom:8px}
+#drop .box h3{margin:0; color:var(--inforce); letter-spacing:.06em}
+#drop .box p{margin:6px 0 0; color:var(--ink-dim); font-family:var(--mono); font-size:12px}
+
+/* toast */
+#toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:#16212f; border:1px solid var(--line2); color:var(--ink); padding:10px 16px; border-radius:9px;
+  font-size:13px; box-shadow:var(--shadow); opacity:0; pointer-events:none; transition:.25s; z-index:90}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+/* ---------- clear-all confirmation overlay ---------- */
+#confirmClear{position:fixed; inset:0; z-index:85; display:none; align-items:center; justify-content:center;
+  background:rgba(8,12,18,.86); backdrop-filter:blur(2px)}
+#confirmClear.on{display:flex}
+#confirmClear .box{border:2px solid var(--corrupt); border-radius:16px; padding:36px 50px; text-align:center;
+  background:rgba(10,15,22,.97); max-width:380px}
+#confirmClear .box h3{margin:0 0 8px; color:var(--corrupt); font-size:16px; letter-spacing:.04em}
+#confirmClear .box p{margin:0 0 22px; color:var(--ink-dim); font-size:13px}
+#confirmClear .box .btns{display:flex; gap:10px; justify-content:center}
+
+/* ---------- desktop-only expand modal (full-page card view) ---------- */
+.cmodal{position:fixed; inset:0; z-index:95; display:none; align-items:center; justify-content:center;
+  background:rgba(5,8,12,.72); backdrop-filter:blur(3px); padding:40px}
+.cmodal.show{display:flex}
+.cmodal-sheet{background:linear-gradient(180deg,var(--panel),var(--panel2)); border:1px solid var(--line2);
+  border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.5); width:min(820px,100%); max-height:88vh;
+  display:flex; flex-direction:column; overflow:hidden; animation:rise .18s ease both}
+.cmodal-head{display:flex; align-items:center; justify-content:space-between; padding:12px 16px;
+  border-bottom:1px solid var(--line); background:rgba(255,255,255,.02); flex:none}
+.cmodal-title{font-family:var(--mono); font-size:11px; letter-spacing:.1em; color:var(--ink-faint); text-transform:uppercase}
+.cmodal-x{background:transparent; border:1px solid var(--line2); color:var(--ink-dim);
+  padding:4px 10px; border-radius:7px; font-size:11px; font-weight:700; letter-spacing:.06em;
+  display:inline-flex; align-items:center; gap:5px; white-space:nowrap}
+.cmodal-x:hover{color:#ffb4b4; border-color:#5a2c2c; background:#2a1414}
+.modal-close-btn{background:transparent; border:1px solid var(--line2); color:var(--ink-dim);
+  padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600; letter-spacing:.04em}
+.modal-close-btn:hover{color:var(--ink); border-color:#3a4f66}
+.cmodal-body{overflow-y:auto; flex:1; display:flex; flex-direction:column}
+.cmodal-body .body{max-height:none; font-size:13.5px; line-height:1.6; padding:18px 20px}
+/* belt-and-suspenders: JS already gates this to window.innerWidth>=768, this just backs it up
+   so the popup can never visually appear on an iPhone-width viewport even if triggered somehow */
+@media (max-width:767px){ .cmodal{display:none !important} }
+
+/* ============================ PRINT ============================ */
+@media print{
+  @page{size:A4 portrait; margin:14mm}
+  :root{--ink:#000; --ink-dim:#333; --ink-faint:#555}
+  body{background:#fff; color:#000; font-size:11px}
+  .console,#drop,#toast,#cardModal,.cfoot,.close-x,.foot-btn{display:none !important}
+  .filing.show{display:block; border:0; padding:0 0 8px; background:#fff; margin-bottom:8px;
+    border-bottom:2px solid #000}
+  .filing label{color:#000; flex-direction:row; gap:6px; display:inline-flex; margin-right:18px}
+  .filing input{border:0; background:#fff; color:#000; min-width:0; padding:0; font-weight:700}
+  .filing input::placeholder{color:transparent}
+  .wall{display:block; padding:0}
+  /* card "design" (status dot/text, chips, meta strip, note line, parsed/clamped body, and the
+     bordered box around each card) is entirely suppressed for print — only the literal original
+     text prints, per the officer's "nothing else" instruction. A plain bottom rule replaces the
+     box, just enough to separate one message from the next on the page. */
+  .card{border:0; border-left:0; border-radius:0; box-shadow:none; background:#fff;
+    margin:0 0 16px; padding:0 0 12px; border-bottom:1px solid #000;
+    break-inside:avoid; page-break-inside:avoid; opacity:1 !important}
+  .card.print-hide{display:none !important}
+  .card.print-pagebreak{ break-before:page; page-break-before:always; }
+  .chead,.meta,.note,.body{display:none !important}
+  .print-raw{display:block !important; font-family:var(--mono); white-space:pre-wrap;
+    word-break:break-word; font-size:11px; line-height:1.5; color:#000; padding:0}
+}
+
+/* ---------- trash panel (per-card reopen) ---------- */
+.trash{display:none; padding:10px 18px; border-bottom:1px solid var(--line); background:var(--bg2); max-height:260px; overflow-y:auto}
+.trash.show{display:block}
+.trash-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:8px}
+.trash-title{font-family:var(--mono); font-size:12px; letter-spacing:.06em; color:var(--ink-dim); text-transform:uppercase}
+.btn.small{padding:4px 9px; font-size:11px}
+.trash-row{display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid var(--line); font-size:12px}
+.trash-row:last-child{border-bottom:0}
+.trash-row .tr-id{font-family:var(--mono); color:var(--ink-dim); flex:none; min-width:90px}
+.trash-row .tr-dup{font-size:10px; color:var(--corrupt); border:1px solid rgba(255,90,90,.35); border-radius:4px; padding:1px 5px; flex:none}
+.trash-row .tr-body{flex:1; color:var(--ink-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.trash-row .tr-reopen{flex:none}
+.trash-empty{color:var(--ink-faint); font-size:12px; padding:4px 0}
+/* ---------- filed panel (all-officers-read messages) ---------- */
+.filed-panel{display:none; padding:10px 18px; border-bottom:1px solid var(--line); background:rgba(10,20,14,.7); max-height:260px; overflow-y:auto}
+.filed-panel.show{display:block}
+.tr-filed{font-size:10px; color:var(--ok); border:1px solid rgba(50,200,100,.35); border-radius:4px; padding:1px 5px; flex:none}
+</style>
+</head>
+<body>
+
+<!-- ================= CONSOLE ================= -->
+<div class="console">
+  <div class="console-row">
+    <div class="brand"><span class="led"></span><span class="led save-led" id="saveLed" title="Storage save status — lights red if the last save failed"></span><h1>EGC&nbsp;Warning&nbsp;Reader</h1><small>INMARSAT-C · SafetyNET</small></div>
+    <button class="btn primary" id="btnImport">⤓ Import files…</button>
+    <button class="btn ghost" id="btnFiling" title="Edit filing header for print">▤ Filing header</button>
+    <div class="field">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+      <input id="search" type="search" placeholder="Search text, area, position…" autocomplete="off">
+    </div>
+    <div class="spacer"></div>
+    <select class="sel" id="sort" title="Sort order">
+      <option value="thread">Threaded (default)</option>
+      <option value="recv_desc">Received ↓ newest</option>
+      <option value="recv_asc">Received ↑ oldest</option>
+      <option value="issue_desc">Issued ↓ newest</option>
+      <option value="issue_asc">Issued ↑ oldest</option>
+    </select>
+    <button class="btn" id="btnPrint">🖨 Print for file</button>
+    <button class="btn ghost" id="btnTrash" style="display:none"></button>
+    <button class="btn ghost" id="btnFiled" style="display:none"></button>
+    <button class="btn danger" id="btnClear">Clear all</button>
+  </div>
+  <div class="filters">
+    <span class="counts" id="counts">—</span>
+    <span class="divider-v"></span>
+    <button class="chip-toggle f-all"        data-status="ALL"        data-on="1">All</button>
+    <button class="chip-toggle f-inforce"     data-status="IN FORCE"  data-on="1">In force</button>
+    <button class="chip-toggle f-superseded"  data-status="SUPERSEDED"data-on="1">Superseded</button>
+    <button class="chip-toggle f-cancelled"   data-status="CANCELLED" data-on="1">Cancelled</button>
+    <button class="chip-toggle f-duplicate"   data-status="DUPLICATE" data-on="1">Duplicate</button>
+    <button class="chip-toggle f-expired"     data-status="EXPIRED"   data-on="1">Expired</button>
+    <button class="chip-toggle f-corrupt"     data-status="CORRUPT"   data-on="1">Corrupt</button>
+    <span class="divider-v"></span>
+    <button class="chip-toggle f-met" id="famMet"  data-fam="met" data-on="1">MET</button>
+    <button class="chip-toggle f-forecast" id="famForecast" data-fam="forecast" data-on="1">🌤&nbsp;FORECAST</button>
+    <button class="chip-toggle f-coastal" id="famCoastal" data-fam="coastal" data-on="1">⚠&nbsp;COASTAL&nbsp;WARN</button>
+    <button class="chip-toggle f-coastal" id="famAuscoast" data-fam="auscoast" data-on="1">AUSCOAST</button>
+    <button class="chip-toggle f-coastal" id="famNavareaX" data-fam="navareax" data-on="1">NAVAREA&nbsp;X</button>
+    <button class="chip-toggle f-coastal" id="famCancel" data-fam="cancel" data-on="1">⊘&nbsp;CANCEL</button>
+    <button class="chip-toggle f-nav" id="famNav"  data-fam="navxi" data-on="1">NAV&nbsp;XI</button>
+  </div>
+  <div class="watermark" aria-hidden="true" id="watermark"><span class="wm-main" id="wmName"></span></div>
+  <!-- filing header (toggle) -->
+  <div class="filing" id="filing">
+    <label>Vessel<input id="f_vessel" placeholder="M/V FG EUCALYPTUS"></label>
+    <label>Voyage / Passage<input id="f_voyage" placeholder="Geelong → Yangpu"></label>
+    <label>Filed by (OOW)<input id="f_oow" placeholder="2/O R. ADLAWAN"></label>
+    <label>File ref / Date<input id="f_ref" placeholder="NAVWARN INDEX — 2026-06-21"></label>
+  </div>
+  <!-- trash panel (per-card reopen, #8) -->
+  <div class="trash" id="trash">
+    <div class="trash-head">
+      <span class="trash-title">📁 Archives — restore individually or all</span>
+      <button class="btn ghost small" id="btnReopenAll">Restore all</button>
+    </div>
+    <div class="trash-list" id="trashList"></div>
+  </div>
+  <!-- filed panel (all-officers-read messages) -->
+  <div class="filed-panel" id="filed">
+    <div class="trash-head">
+      <span class="trash-title">✅ Filed — All Officers Read</span>
+      <button class="btn ghost small" id="btnRestoreAllFiled">Restore all</button>
+    </div>
+    <div class="filed-list" id="filedList"></div>
+  </div>
+</div>
+
+<!-- ================= WALL ================= -->
+<div id="wall" class="wall"></div>
+<div id="empty" class="empty">
+  <div class="big">📡</div>
+  <h2>Drag &amp; drop your EGC files here</h2>
+  <div>Accepts any terminal dump, any extension or numbering — <code>.001</code> <code>.033</code> <code>.TXT</code> or no extension at all.<br>
+  Drop the whole <code>INMARSAT&nbsp;C</code> folder, or a <code>.zip</code> of it (subfolders read automatically), if you like; macOS junk (<code>._*</code>, <code>__MACOSX</code>) is ignored.</div>
+  <div class="dropzone-hint">Each EGC message becomes its own card. Duplicates, superseded bulletins and cancelled warnings are detected automatically.</div>
+</div>
+
+<input type="file" id="fileInput" multiple accept="*/*" style="display:none">
+<div id="drop"><div class="box"><div class="big">⤓</div><h3>RELEASE TO IMPORT</h3><p>reading EGC messages…</p></div></div>
+<div id="toast"></div>
+<div id="confirmClear">
+  <div class="box">
+    <h3>Clear all messages?</h3>
+    <p>This cannot be undone.</p>
+    <div class="btns">
+      <button class="btn danger" id="confirmClearYes">Clear all</button>
+      <button class="btn" id="confirmClearNo">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- desktop-only full-page card view (Expand button on a wide viewport) -->
+<div id="cardModal" class="cmodal">
+  <div class="cmodal-sheet">
+    <div class="cmodal-head">
+      <span class="cmodal-title">Message detail</span>
+      <button class="cmodal-x" id="cardModalClose" title="Move to Archives">✕ ARCHIVE</button>
+    </div>
+    <div class="cmodal-body" id="cardModalBody"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ===========================================================================
+   PART 1 — PARSER + DEDUP ENGINE  (validated against real FG Eucalyptus files)
+   =========================================================================== */
+
+/** normalise CR/LF and strip form-feeds */
+function normLF(t){ return t.replace(/\r\n?/g,"\n"); }
+
+/** FNV-1a 32-bit content hash for duplicate detection */
+function hash32(str){
+  let h=0x811c9dc5;
+  for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=(h*0x01000193)>>>0; }
+  return ("00000000"+h.toString(16)).slice(-8);
+}
+const canonNum     = (yy,nnnn)=> yy+"-"+nnnn;                 // NO.26-0257 -> 26-0257
+function cancelToCanon(ref){ const m=ref.match(/(\d{4})\/(\d{2})/); return m?m[2]+"-"+m[1]:null; } // 0162/23 -> 23-0162
+
+// parses an AMSA "WARNINGS IN FORCE" digest (e.g. "1. NAVAREA X WARNINGS IN FORCE AT...
+// 040/26, 059/26 ... 2. AUSCOAST WARNINGS IN FORCE AT... AREA A 195/26 \n AREA B NIL ...")
+// into a sorted NAVAREA X list + a per-area-letter AUSCOAST map. Area letters are scanned from
+// the text itself (not hardcoded A-F) so it stays correct if AMSA adds/removes areas.
+function extractDigest(B){
+  const out={ navx:[], areas:{} };
+  const navxSec=B.match(/NAVAREA\s+X\s+WARNINGS\s+IN\s+FORCE[^\n]*\n([\s\S]*?)(?=AUSCOAST\s+WARNINGS\s+IN\s+FORCE|$)/i);
+  if(navxSec){
+    const nums=navxSec[1].match(/\d+\/\d+/g)||[];
+    out.navx=[...new Set(nums.map(n=>n.trim()))].sort((a,b)=>parseInt(a,10)-parseInt(b,10));
+  }
+  const ausSec=B.match(/AUSCOAST\s+WARNINGS\s+IN\s+FORCE[^\n]*\n([\s\S]*?)(?=\n\s*\d+\.\s|COMPLETE TEXTS|$)/i);
+  if(ausSec){
+    ausSec[1].split("\n").forEach(ln=>{
+      const am=ln.match(/^\s*AREA\s+([A-Z])\b\s*(.*)$/i);
+      if(am){
+        const letter=am[1].toUpperCase();
+        const nums=(am[2]||"").match(/\d+\/\d+/g);
+        out.areas[letter]=nums ? nums.map(n=>n.trim()).sort((a,b)=>parseInt(a,10)-parseInt(b,10)) : [];
+      }
+    });
+  }
+  return out;
+}
+
+// shared coastal sub-classification — used both at import time (parseMessage) and on every
+// computeRelations() pass, so messages persisted before this field existed (or before any future
+// classification tweak) get re-classified automatically from their stored body text, rather than
+// staying stuck with whatever (or no) coastalKind they were originally parsed with.
+function classifyCoastal(B){
+  const out={ coastalKind:"", coastalNo:"", digestNavX:null, digestAreas:null, isCancel:false };
+  const cancelAusc=B.match(/CANCEL\s+AUSCOAST\s+WARNING\s+(\d+\/\d+)/i);
+  // bug fix: AMSA phrases NAVAREA X cancels two ways in real traffic — "CANCEL NAVAREA X 063/26"
+  // (no WARNING word) and "CANCEL NAVAREA X WARNING 048/26" (with it). The old pattern only
+  // matched the first, so the second's number/identity came back blank. Made WARNING optional.
+  const cancelTgt=B.match(/CANCEL\s+NAVAREA\s+X\s+(?:WARNING\s+)?(\d+\/\d+)/i);
+  const auscNo=B.match(/AUSCOAST\s+WARNING\s+(\d+\/\d+)/i);
+  const refers=B.match(/NAVAREA\s+X\s+(?:WARNING\s+)?(\d+\/\d+)\s+REFERS/i);
+  const navxNo=B.match(/NAVAREA\s+X\s+(?:WARNING\s+)?(\d+\/\d+)\b/i);
+  if(cancelAusc) out.coastalNo=`CANCEL AUSCOAST ${cancelAusc[1]}`;
+  else if(cancelTgt) out.coastalNo=`CANCEL NAVAREA X ${cancelTgt[1]}`;
+  else if(auscNo) out.coastalNo=`AUSCOAST ${auscNo[1]}`;
+  else if(refers) out.coastalNo=`NAVAREA X ${refers[1]}`;
+  else if(navxNo) out.coastalNo=`NAVAREA X ${navxNo[1]}`;
+  out.isCancel = !!(cancelAusc || cancelTgt);
+
+  if(/NAVAREA\s+X\s+WARNINGS\s+IN\s+FORCE/i.test(B) && /AUSCOAST\s+WARNINGS\s+IN\s+FORCE/i.test(B)){
+    out.coastalKind="digest";
+    const dg=extractDigest(B);
+    out.digestNavX=dg.navx; out.digestAreas=dg.areas;
+  } else if(/AUSCOAST\s+WARNING/i.test(B)){
+    out.coastalKind="auscoast";
+  } else if(/NAVAREA\s+X\b/i.test(B)){
+    out.coastalKind="navarea-x";
+  }
+  return out;
+}
+
+/** Resolve a selfCancel string to an absolute UTC ms expiry, or null if unparseable.
+ *  Formats seen on FG Eucalyptus traffic:
+ *    DDHHMMZ MON   — no year stated; inferred from the message's own issue date
+ *    DDMM/YY       — day+month / 2-digit year; treated as valid through end of that UTC day */
+function selfCancelExpiryMs(selfCancel, issueMs){
+  if(!selfCancel) return null;
+  const MON={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+  let m;
+  if((m=selfCancel.match(/^(\d{2})(\d{2})(\d{2})Z\s+([A-Z]{3})$/i))){
+    const dd=+m[1], hh=+m[2], mi=+m[3], mon=MON[m[4].toUpperCase()];
+    if(mon==null || !issueMs) return null;
+    const issueY=new Date(issueMs).getUTCFullYear();
+    let exp=Date.UTC(issueY,mon,dd,hh,mi,0);
+    if(exp-issueMs < -183*86400000) exp=Date.UTC(issueY+1,mon,dd,hh,mi,0); // year-wrap (e.g. issued Dec, cancels Jan)
+    return exp;
+  }
+  if((m=selfCancel.match(/^(\d{2})(\d{2})\/(\d{2})$/))){
+    const dd=+m[1], mon=+m[2]-1, yy=2000+ +m[3];
+    return Date.UTC(yy,mon,dd,23,59,0);
+  }
+  return null;
+}
+
+/** Split one raw file into individual EGC message chunks (handles multi-msg dumps). */
+function splitMessages(raw){
+  const t=normLF(raw); const re=/^EGC Message\b.*$/gm; const idx=[]; let m;
+  while((m=re.exec(t))!==null) idx.push(m.index);
+  if(idx.length===0) return t.trim()?[t]:[];
+  const out=[];
+  for(let i=0;i<idx.length;i++) out.push(t.slice(idx[i], i+1<idx.length?idx[i+1]:undefined));
+  return out;
+}
+
+/** Parse a single EGC chunk into a structured object. */
+function parseMessage(chunk){
+  const t=normLF(chunk).replace(/\f/g,"");
+  const lines=t.split("\n");
+  const o={ descriptor:"",seq:"",les:"",priority:"",size:"",recvRaw:"",routing:"",body:"",raw:"",
+    family:"unknown",kind:"",coastalKind:"",corrupt:false, area:"",warnType:"",warnSerial:"",subArea:"",issueRaw:"",issueMs:null,
+    navNo:"",navDate:"",region:"",cancels:[],selfCancel:"", recvMs:null,hash:"", coastalNo:"", digestNavX:null, digestAreas:null, isCancel:false };
+
+  // literal-print fix: keep the exact original chunk (line-ending-normalized only, no other
+  // change) for print output, separate from the parsed `body` field below. Messages already
+  // sitting in localStorage from before this field existed have no `raw` — print falls back
+  // to the parsed body for those (see print section, far below).
+  o.raw=t.replace(/^\n+/,"").replace(/\s+$/,"");
+
+  const dm=(lines[0]||"").match(/---\s*(.*?)\s*---/); if(dm) o.descriptor=dm[1];
+
+  for(const ln of lines){ let mm;
+    if((mm=ln.match(/^Message Sequence No\.\s*:\s*(.+?)\s*$/))) o.seq=mm[1];
+    else if((mm=ln.match(/^LES\s*:\s*(.+?)\s*$/))) o.les=mm[1];
+    else if((mm=ln.match(/^Priority\s*:\s*(.+?)\s*$/))) o.priority=mm[1];
+    else if((mm=ln.match(/^Size\s*:\s*(.+?)\s*$/))) o.size=mm[1];
+    else if((mm=ln.match(/^Receive Date & Time\s*:\s*(.+?)\s*$/))) o.recvRaw=mm[1];
+  }
+
+  // routing line: has " LES " + DD-MON-YYYY and is not the "LES :" header
+  let routeIdx=-1;
+  for(let i=0;i<lines.length;i++){
+    if(/\bLES\b/.test(lines[i]) && /\d{1,2}-[A-Z]{3}-\d{4}/.test(lines[i]) && !/^LES\s*:/.test(lines[i])){
+      o.routing=lines[i].trim(); routeIdx=i; break;
+    }
+  }
+  let bodyLines;
+  if(routeIdx>=0) bodyLines=lines.slice(routeIdx+1);
+  else { const h=lines.findIndex(l=>/^Receive Date & Time/.test(l)); bodyLines=lines.slice(h>=0?h+1:0); }
+  o.body=bodyLines.join("\n").replace(/^\n+/,"").replace(/\s+$/,"");
+  if(/RECEIVE ERROR|\*\*\*\s*WARNING/i.test(o.body)) o.corrupt=true;
+
+  const B=o.body;
+  let navMatch=B.match(/NO\.(\d{2})-(\d{4})/);
+  let navNoRecovered=false;
+  if(!navMatch){
+    // bug-3 fix: RX errors often garble the digits in "NO.26-0257" without destroying the rest of
+    // the message. Scan small windows right after "NO." anchors and tolerate common OCR-style
+    // letter/digit confusions before giving up — far safer than a full fuzzy body match.
+    const reNear=/NO\.[A-Za-z0-9\-]{4,9}/g; let nm;
+    while((nm=reNear.exec(B))!==null){
+      const delur=nm[0].replace(/[OoQ]/g,"0").replace(/[IiLl]/g,"1").replace(/[Ss]/g,"5").replace(/[Bb]/g,"8").replace(/[Zz]/g,"2").replace(/[Gg]/g,"6");
+      const rel=delur.match(/^NO\.(\d{2})-(\d{4})$/);
+      if(rel){ navMatch=rel; navNoRecovered=true; break; }
+    }
+  }
+  // bug fix (found via 20260611 AMSA sample set): the old /NAVAREA\s+[IVXL]+/i pattern matched
+  // "NAVAREA X" (Australia, area 10) just as readily as "NAVAREA XI" (Japan/JCG, area 11) — two
+  // unrelated numbering systems were being lumped into one bucket. Require the literal "XI".
+  if(/NAVAREA\s+XI\b/i.test(B) || navMatch){
+    o.family="navxi"; o.kind="navxi";
+    if(navMatch) o.navNo=canonNum(navMatch[1],navMatch[2]);
+    o.navNoRecovered=navNoRecovered;
+    const dm2=B.match(/Date\s*:\s*([0-9]{4}\/[0-9]{2}\/[0-9]{2}[^\n]*)/i);
+    if(dm2){ o.navDate=dm2[1].trim();
+      const dd=o.navDate.match(/(\d{4})\/(\d{2})\/(\d{2})\s+(\d{2})/);
+      if(dd) o.issueMs=Date.UTC(+dd[1],+dd[2]-1,+dd[3],+dd[4],0,0);
+    }
+    for(const ln of B.split("\n")){ const s=ln.trim();
+      if(s && /^[A-Z0-9 ,.'()\-]+$/.test(s) && !/NAVAREA|NO\.|^CANCEL|Date/i.test(s) && s.length>4){ o.region=s; break; }
+    }
+    const cre=/CANCEL\s+(\d{4}\/\d{2})/g; let cm;
+    while((cm=cre.exec(B))!==null){ const c=cancelToCanon(cm[1]); if(c) o.cancels.push(c); }
+    const self=B.match(/CANCEL THIS MSG\s+([0-9]{6}Z\s+[A-Z]{3}|\d{4}\/\d{2})/i); if(self) o.selfCancel=self[1];
+  } else if(/AUSCOAST\s+WARNING/i.test(B) || /NAVAREA\s+X\b/i.test(B)){
+    // coastal warning (AUSCOAST + Australia's NAVAREA X) — navigational hazard notices and
+    // their "WARNINGS IN FORCE" digests, kept separate from NAVAREA XI (Japan/JCG) above.
+    o.family="coastal"; o.kind="coastal-warning";
+    const cc=classifyCoastal(B);
+    o.coastalNo=cc.coastalNo; o.coastalKind=cc.coastalKind; o.digestNavX=cc.digestNavX; o.digestAreas=cc.digestAreas; o.isCancel=cc.isCancel;
+    const self=B.match(/CANCEL THIS MSG(?:E)?\s+([0-9]{6}Z?\s*[A-Z]{3}|\d{4}\/\d{2})/i); if(self) o.selfCancel=self[1];
+  } else if(/COASTAL WATERS FORECAST|HIGH SEAS FORECAST/i.test(B)){
+    // routine met forecast bulletin — checked before the warning-type check below so a forecast
+    // that happens to quote a warning inside its digest (e.g. "Part 1 Warnings: Gale Warning 2")
+    // is still treated as a forecast product, not a standalone hazard warning.
+    o.family="weather"; o.kind="met-forecast";
+    const me=B.match(/METAREA\s+(\d+)/i); if(me) o.area="METAREA "+me[1];
+    // bulletins like WA's "Northern Zones" / "Southern Zones" put a disambiguating qualifier on
+    // the line right after the area name — without it, two non-overlapping zones for the same
+    // state would collide into one supersession thread and one would wrongly show SUPERSEDED.
+    const cwf=B.match(/(?:COASTAL WATERS FORECAST|HIGH SEAS FORECAST)\s+for\s+([A-Z][A-Za-z0-9 ,'\-]+?)\n([^\n]*)/i);
+    if(cwf){
+      let a=cwf[1].trim().toUpperCase();
+      const q=(cwf[2]||"").trim();
+      if(q && !/^issued/i.test(q)) a += " — "+q.toUpperCase();
+      o.subArea=a;
+    } else {
+      const cwf2=B.match(/(?:COASTAL WATERS FORECAST|HIGH SEAS FORECAST)\s+for\s+([A-Z][A-Za-z0-9 ,'\-]+?)(?:\.|\n|$)/i);
+      if(cwf2) o.subArea=cwf2[1].trim().toUpperCase();
+    }
+  } else if(/METAREA|GALE WARNING|STORM WARNING|TROPICAL CYCLONE|HURRICANE|STRONG WIND WARNING|WIND WARNING|SWELL WARNING|FOG WARNING/i.test(B)){
+    o.family="weather"; o.kind="met-warning";
+    const me=B.match(/METAREA\s+(\d+)/i); if(me) o.area="METAREA "+me[1];
+    const wt=B.match(/\b((?:TROPICAL CYCLONE|STRONG WIND|SEVERE|GALE|STORM|HURRICANE|SWELL|FOG|WIND)\s+WARNING)\b(?:\s+(\d+))?/i);
+    if(wt){ o.warnType=wt[1].toUpperCase().replace(/\s+/g," "); if(wt[2]) o.warnSerial=wt[2]; }
+    // bug-7 fix: capture the named area up to end-of-line/period instead of requiring a literal
+    // trailing "AREA" — picks up BoM-named waters (Bass Strait, Coral Sea, etc.) too.
+    const af=B.match(/(?:TROPICAL CYCLONE|STRONG WIND|SEVERE|GALE|STORM|HURRICANE|SWELL|FOG|WIND)\s+WARNING(?:\s+\d+)?\s+FOR\s+([A-Z][A-Z0-9 ,'\-]+?)(?:\.|\n|$)/i);
+    if(af) o.subArea=af[1].trim().toUpperCase();
+    const it=B.match(/At\s+(\d{4})UTC\s+(\d{1,2})\s+(\w+)\s+(\d{4})/i);
+    if(it){ o.issueRaw=it[0];
+      const mon={january:0,february:1,march:2,april:3,may:4,june:5,july:6,august:7,september:8,october:9,november:10,december:11}[it[3].toLowerCase()];
+      if(mon!=null) o.issueMs=Date.UTC(+it[4],mon,+it[2],+it[1].slice(0,2),+it[1].slice(2),0);
+    }
+  }
+
+  const rt=o.recvRaw.match(/(\d{2})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/);
+  if(rt) o.recvMs=Date.UTC(2000+ +rt[1],+rt[2]-1,+rt[3],+rt[4],+rt[5],0);
+
+  // generic DTG fallback (e.g. "110001Z JUN 26") for messages with no other issued-date parser —
+  // mainly AMSA/JRCC coastal warnings, which don't use the "At HHMMUTC D Month YYYY" MET phrasing.
+  if(!o.issueMs){
+    const dtg=B.match(/\b(\d{2})(\d{2})(\d{2})Z\s+(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+(\d{2})\b/i);
+    if(dtg){
+      const mon3={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11}[dtg[4].toLowerCase()];
+      o.issueMs=Date.UTC(2000+ +dtg[5],mon3,+dtg[1],+dtg[2],+dtg[3],0);
+      o.issueRaw=dtg[0];
+    }
+  }
+
+  o.hash=hash32(B.toUpperCase().replace(/\s+/g," ").trim());
+  return o;
+}
+
+/** Compute duplicate / supersession / cancellation relations across the whole set. */
+function computeRelations(list){
+  list.forEach(x=>{ x.status=x.corrupt?"CORRUPT":"IN FORCE"; x.note=""; x.thread=""; });
+
+  // exact duplicates (same body) -> earliest received flagged
+  const byHash={}; list.forEach(x=>{ (byHash[x.hash]=byHash[x.hash]||[]).push(x); });
+  Object.values(byHash).forEach(g=>{ if(g.length>1){
+    g.sort((a,b)=>(a.recvMs||0)-(b.recvMs||0));
+    g.slice(0,-1).forEach(x=>{ if(x.status==="IN FORCE"||x.status==="CORRUPT"){ x.status="DUPLICATE"; x.note="exact duplicate of a later reception"; } });
+  }});
+
+  // weather supersession: group by METAREA + sub-area, newest issue is in force
+  const wg={};
+  list.filter(x=>x.family==="weather").forEach(x=>{
+    const k=(x.area||"?")+"|"+(x.subArea||x.warnType||"?"); x.thread="W:"+k; (wg[k]=wg[k]||[]).push(x);
+  });
+  Object.values(wg).forEach(g=>{ if(g.length>1){
+    g.sort((a,b)=>(a.issueMs||a.recvMs||0)-(b.issueMs||b.recvMs||0));
+    const latest=g[g.length-1];
+    g.forEach(x=>{ if(x!==latest && x.status==="IN FORCE"){ x.status="SUPERSEDED"; x.note="superseded by later bulletin for this area"; } });
+  }});
+
+  // NAVAREA XI — thread assignment, then A2 dedup-by-number, A4 time-ordered cancellation, A1 self-expiry
+  const navxiList=list.filter(x=>x.family==="navxi");
+  navxiList.forEach(x=>{ x.thread="N:"+(x.navNo||x.hash); });
+
+  // A2: dedup by warning number — clean copy wins over corrupt; else latest reception wins
+  const byNavNo={};
+  navxiList.forEach(x=>{ if(x.navNo) (byNavNo[x.navNo]=byNavNo[x.navNo]||[]).push(x); });
+  Object.values(byNavNo).forEach(g=>{ if(g.length<2) return;
+    const winner=g.slice().sort((a,b)=>{
+      if(a.corrupt!==b.corrupt) return a.corrupt?1:-1;     // non-corrupt copy wins
+      return (b.recvMs||0)-(a.recvMs||0);                  // else latest reception wins
+    })[0];
+    g.forEach(x=>{ if(x!==winner && (x.status==="IN FORCE"||x.status==="CORRUPT")){ x.status="DUPLICATE";
+      x.note = x.navNoRecovered ? `duplicate reception of NO.${x.navNo} (number recovered from corrupted text — verify)` : `duplicate reception of NO.${x.navNo}`; } });
+  });
+  // bug-3 fix: a corrupt reception whose number could not be read even with the OCR-tolerant
+  // fallback never enters the group above — flag it explicitly instead of leaving it silent.
+  navxiList.forEach(x=>{ if(x.corrupt && !x.navNo && !x.note){ x.note="warning number unreadable — verify manually against other NAVAREA XI cards"; } });
+
+  // A4: a CANCEL only takes effect if the citing message's time is not earlier than the target's.
+  // bug-5 hardening: a message with no issueMs/recvMs at all must not silently default to time 0 —
+  // that let an indeterminate-time CANCEL win by default. Skip auto-cancel when either time is unknown.
+  const cancelRefs={};
+  navxiList.forEach(x=>{ const citerTime=x.issueMs||x.recvMs||0;
+    if(citerTime>0) x.cancels.forEach(c=>{ (cancelRefs[c]=cancelRefs[c]||[]).push(citerTime); }); });
+  navxiList.forEach(x=>{
+    if(x.navNo && cancelRefs[x.navNo] && x.status==="IN FORCE"){
+      const targetTime=x.issueMs||x.recvMs||0;
+      if(targetTime>0 && cancelRefs[x.navNo].some(ct=>ct>=targetTime)){ x.status="CANCELLED"; x.note="cancelled by a later NAVAREA XI message"; }
+    }
+  });
+
+  // A1: self-cancel / expiry — grey out IN-FORCE messages whose own CANCEL THIS MSG time has elapsed
+  const NOW_MS=Date.now();
+  list.forEach(x=>{
+    if(x.status==="IN FORCE" && x.selfCancel){
+      const exp=selfCancelExpiryMs(x.selfCancel, x.issueMs);
+      if(exp!=null && exp<=NOW_MS){ x.status="EXPIRED"; x.note="self-expired — CANCEL THIS MSG time elapsed"; }
+    }
+  });
+  list.filter(x=>x.family==="unknown").forEach(x=>{ x.thread="U:"+x.hash; });
+  // bug fix: persisted messages imported before coastalKind existed (or before any future tweak
+  // to this classifier) had no coastalKind at all, so the AUSCOAST/NAVAREA X toggle silently had
+  // no effect on them. Re-derive it from the stored body text on every pass — cheap, idempotent,
+  // self-healing regardless of when the message was originally imported.
+  list.filter(x=>x.family==="coastal").forEach(x=>{
+    const cc=classifyCoastal(x.body);
+    x.coastalKind=cc.coastalKind; x.coastalNo=cc.coastalNo||x.coastalNo;
+    x.digestNavX=cc.digestNavX; x.digestAreas=cc.digestAreas; x.isCancel=cc.isCancel;
+    x.thread="C:"+(x.coastalNo||x.hash);
+  });
+
+  // dedup by coastal warning number — catches AUSCOAST/NAVAREA X duplicates (including the
+  // digest rebroadcasts that differ only by a random tracking ID, so the exact-hash check above
+  // never caught them). Same number = same warning; clean copy wins, else latest reception wins.
+  //
+  // bug fix: a digest's header reference number (e.g. "NAVAREA X 068/26") doesn't change between
+  // issuances unless a brand-new NAVAREA X number is issued — but the actual in-force lists inside
+  // it can still change (a warning added, one expired). Keying dedup on the header number alone
+  // wrongly treated genuinely different snapshots as duplicates and trashed real, non-duplicate
+  // data. For digests, the key now also includes the actual extracted content, so only byte-for-byte
+  // identical retransmissions merge; a digest with a real content change gets its own group and stays.
+  const coastalDedupKey = x => x.coastalKind==="digest"
+    ? x.coastalNo+"::"+JSON.stringify({n:x.digestNavX, a:x.digestAreas})
+    : x.coastalNo;
+  const byCoastalNo={};
+  list.filter(x=>x.family==="coastal" && x.coastalNo).forEach(x=>{ const k=coastalDedupKey(x); (byCoastalNo[k]=byCoastalNo[k]||[]).push(x); });
+  Object.values(byCoastalNo).forEach(g=>{ if(g.length<2) return;
+    const winner=g.slice().sort((a,b)=>{
+      if(a.corrupt!==b.corrupt) return a.corrupt?1:-1;
+      return (b.recvMs||0)-(a.recvMs||0);
+    })[0];
+    g.forEach(x=>{ if(x!==winner && (x.status==="IN FORCE"||x.status==="CORRUPT")){ x.status="DUPLICATE"; x.note=`duplicate reception of ${x.coastalNo}`; } });
+  });
+
+  // universal auto-trash: any message marked DUPLICATE by any of the checks above, OR a weather
+  // bulletin marked SUPERSEDED (an older forecast/warning for the same area now that a newer one
+  // exists), is automatically closed (moved to Trash) so only the single current bulletin per area
+  // shows on the wall — unless the officer has explicitly reopened it (dedupKeep), in which case
+  // that choice is respected and it stays visible (still correctly flagged DUPLICATE/SUPERSEDED)
+  // on every future pass.
+  // Fix note: weather SUPERSEDED was originally excluded from auto-trash by deliberate design
+  // (kept visible as a real lifecycle event, not redundant noise). Reversed per explicit officer
+  // instruction after reviewing real sample traffic — BOM/METAREA bulletins for the same area get
+  // reissued repeatedly (twice-daily forecasts, periodically refreshed warnings) and the officer
+  // only needs the current one visible; older ones should auto-file the same way AUSCOAST/NAVAREA X
+  // duplicates already do. Applies to both met-forecast and met-warning (confirmed: no exception
+  // for active gale/storm/cyclone warnings — those auto-trash on supersede too).
+  // CANCELLED and EXPIRED remain deliberately NOT auto-trashed — those are unrelated to this rule.
+  list.forEach(x=>{
+    const dupTrash = x.status==="DUPLICATE";
+    const supersededTrash = x.family==="weather" && x.status==="SUPERSEDED";
+    if((dupTrash||supersededTrash) && !x.closed && !x.dedupKeep){
+      x.closed=true; x.closedAt=Date.now();
+      x.autoClosedDuplicate=dupTrash;
+      x.autoClosedSuperseded=supersededTrash;
+    }
+  });
+  return list;
+}
+
+/* ===========================================================================
+   PART 2 — STATE + PERSISTENCE
+   =========================================================================== */
+const LSKEY="EGC_READER_V1";
+let STATE={ msgs:[], vessel:{vessel:"",voyage:"",oow:"",ref:""},
+  ui:{search:"",sort:"thread",statusOn:{}, famOn:{met:true,navxi:true,forecast:true,coastal:true,auscoast:true,navareaX:true,cancel:true}, filingOpen:false, trashOpen:false, filedOpen:false} };
+
+function save(){
+  try{
+    localStorage.setItem(LSKEY, JSON.stringify(STATE));
+    setSaveLed(false);
+    return true;
+  }catch(e){
+    console.error("EGC save failed:", e);
+    setSaveLed(true);
+    toast(`⚠ SAVE FAILED (${(e&&e.name)||"error"}) — last change NOT persisted, do not close this tab`, 6000);
+    return false;
+  }
+}
+function load(){ try{ const s=localStorage.getItem(LSKEY); if(s){ const p=JSON.parse(s);
+  STATE.msgs=p.msgs||[]; STATE.vessel=Object.assign(STATE.vessel,p.vessel||{}); STATE.ui=Object.assign(STATE.ui,p.ui||{}); } }catch(e){ console.error("EGC load failed:", e); } }
+function setSaveLed(failed){ const el=document.getElementById("saveLed"); if(el) el.classList.toggle("on", !!failed); }
+
+/* ===========================================================================
+   PART 3 — IMPORT  (file picker + drag/drop incl. folders)
+   =========================================================================== */
+const IGNORE=/^(\._|\.DS_Store$|__MACOSX)/i;
+const isZip = n=>/\.zip$/i.test(n);
+
+function readFileText(file){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload =()=>res({name:file.name, text:String(r.result)});
+    r.onerror=()=>res({name:file.name, text:""});
+    r.readAsText(file);              // EGC files are plain ASCII — no conversion needed
+  });
+}
+
+/** Recursively walk a dropped directory entry. */
+function walkEntry(entry, out){
+  return new Promise(resolve=>{
+    if(entry.isFile){ entry.file(f=>{ if(!IGNORE.test(f.name)) out.push(f); resolve(); }, ()=>resolve()); }
+    else if(entry.isDirectory){
+      const rd=entry.createReader(); const all=[];
+      const readBatch=()=>rd.readEntries(ents=>{
+        if(!ents.length){ Promise.all(all.map(e=>walkEntry(e,out))).then(resolve); return; }
+        all.push(...ents); readBatch();
+      }, ()=>resolve());
+      readBatch();
+    } else resolve();
+  });
+}
+
+/* ---------------------------------------------------------------------------
+   ZIP READER — reads a .zip directly, no external library/CDN.
+   Container parsing (byte offsets) is hand-written; actual decompression uses
+   the browser's native Compression Streams API (DecompressionStream), which
+   is a built-in browser feature (like fetch/FileReader), not a third-party
+   dependency — keeps this single-file/zero-dependency/offline-first.
+   --------------------------------------------------------------------------- */
+
+/** Locate the End Of Central Directory record (scans backward from EOF, since an optional
+ *  comment field of up to 65535 bytes can follow it). Returns {cdOffset,cdSize,entryCount},
+ *  {zip64:true} if the archive needs ZIP64 (unsupported here), or null if not a valid zip. */
+function findEOCD(buf){
+  const dv=new DataView(buf), len=buf.byteLength;
+  const scanFrom=Math.max(0, len-22-65535);
+  for(let i=len-22; i>=scanFrom; i--){
+    if(dv.getUint32(i,true)===0x06054b50){
+      const entryCount=dv.getUint16(i+10,true);
+      const cdSize=dv.getUint32(i+12,true);
+      const cdOffset=dv.getUint32(i+16,true);
+      if(entryCount===0xffff || cdOffset===0xffffffff) return {zip64:true};
+      return {cdOffset,cdSize,entryCount};
+    }
+  }
+  return null;
+}
+
+/** Walk the Central Directory into a flat list of entries (any subfolder depth — ZIP paths are
+ *  just strings, there's no real nested-directory structure to recurse into). */
+function parseCentralDirectory(buf, cdOffset, entryCount){
+  const dv=new DataView(buf); const entries=[]; let p=cdOffset;
+  for(let i=0;i<entryCount;i++){
+    if(p+46>buf.byteLength || dv.getUint32(p,true)!==0x02014b50) break; // short/corrupt CD — stop, use what's valid
+    const method=dv.getUint16(p+10,true);
+    const compSize=dv.getUint32(p+20,true);
+    const uncompSize=dv.getUint32(p+24,true);
+    const nameLen=dv.getUint16(p+28,true);
+    const extraLen=dv.getUint16(p+30,true);
+    const commentLen=dv.getUint16(p+32,true);
+    const localOffset=dv.getUint32(p+42,true);
+    const name=new TextDecoder("utf-8").decode(new Uint8Array(buf,p+46,nameLen));
+    entries.push({name, method, compSize, uncompSize, localOffset});
+    p += 46+nameLen+extraLen+commentLen;
+  }
+  return entries;
+}
+
+/** Slice one entry's raw (still-compressed) bytes out of the file, using the Local File Header
+ *  only to find where the data starts (its own size fields are ignored — the Central Directory's
+ *  sizes are authoritative, since streamed zips can leave the local header's sizes as zero). */
+function sliceEntryData(buf, entry){
+  const dv=new DataView(buf), lp=entry.localOffset;
+  if(lp+30>buf.byteLength || dv.getUint32(lp,true)!==0x04034b50) return null;
+  const nameLen=dv.getUint16(lp+26,true), extraLen=dv.getUint16(lp+28,true);
+  const start=lp+30+nameLen+extraLen;
+  if(start+entry.compSize>buf.byteLength) return null;
+  return buf.slice(start, start+entry.compSize);
+}
+
+/** Decompress one entry. method 0 = stored (no-op). method 8 = deflate (native DecompressionStream).
+ *  Anything else returns null — caller flags it rather than guessing or crashing.
+ *  Uses Blob.stream().pipeThrough() so both ends of the pipe are active simultaneously —
+ *  avoids the writer.write() deadlock that occurs when awaiting write before the reader is set up. */
+async function inflateEntry(rawBuf, method){
+  if(method===0) return new Uint8Array(rawBuf);
+  if(method!==8) return null;
+  const ds=new DecompressionStream("deflate-raw");
+  return new Uint8Array(await new Response(
+    new Blob([new Uint8Array(rawBuf)]).stream().pipeThrough(ds)
+  ).arrayBuffer());
+}
+
+/** Core zip reader: takes an ArrayBuffer and returns {out:[{name,text}], unsupported:[strings]}.
+ *  Called recursively for nested .zip entries (one level deep only — depth gate prevents loops).
+ *  All entries at any subfolder depth are returned flat; macOS junk is filtered at every level. */
+async function readZipBuffer(buf, depth){
+  const out=[], unsupported=[];
+  const eocd=findEOCD(buf);
+  if(!eocd || eocd.zip64) return {out, unsupported};
+  const central=parseCentralDirectory(buf, eocd.cdOffset, eocd.entryCount);
+  for(const entry of central){
+    if(entry.name.endsWith("/")) continue;
+    const base=entry.name.split("/").pop();
+    if(IGNORE.test(base) || /__MACOSX\//i.test(entry.name)) continue;
+    const raw=sliceEntryData(buf, entry);
+    if(!raw){ unsupported.push(entry.name+" — corrupt local file header, skipped"); continue; }
+    let bytes;
+    try{ bytes=await inflateEntry(raw, entry.method); }
+    catch(e){ unsupported.push(entry.name+" — decompression error, skipped"); continue; }
+    if(!bytes){ unsupported.push(entry.name+` — unsupported compression method (code ${entry.method}), skipped`); continue; }
+    if(isZip(base)){
+      if(depth>=1){ unsupported.push(entry.name+" — nested .zip inside a .zip is not auto-extracted"); continue; }
+      const nestedBuf=bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset+bytes.byteLength);
+      const nested=await readZipBuffer(nestedBuf, depth+1);
+      out.push(...nested.out);
+      nested.unsupported.forEach(w=>unsupported.push(entry.name+"/"+w));
+    } else {
+      out.push({ name:base, text:new TextDecoder("utf-8").decode(bytes) });
+    }
+  }
+  return {out, unsupported};
+}
+
+/** Read an entire .zip File into {out:[{name,text},...], unsupported:[warning strings]} — every
+ *  usable entry at any subfolder depth (including nested .zip files one level deep), macOS junk
+ *  skipped the same way dropped folders already are. */
+async function readZipEntries(file){
+  const buf=await file.arrayBuffer();
+  const eocd=findEOCD(buf);
+  if(!eocd){ return {out:[], unsupported:[file.name+" — not a readable ZIP (no end-of-central-directory record found)"]}; }
+  if(eocd.zip64){ return {out:[], unsupported:[file.name+" — ZIP64 archives are not supported by this reader"]}; }
+  return readZipBuffer(buf, 0);
+}
+
+async function ingestFiles(files){
+  const plain=[]; const zips=[];
+  for(const f of files){
+    if(IGNORE.test(f.name)) continue;
+    if(isZip(f.name)) zips.push(f); else plain.push(f);
+  }
+  if(!plain.length && !zips.length){ toast("No readable EGC files found"); return; }
+  if(zips.length) toast(`Reading ${zips.length} zip${zips.length>1?"s":""}…`, 60000); // replaced by the summary toast below once done
+
+  const plainReads=await Promise.all(plain.map(readFileText));
+  const zipReads=[]; const zipWarnings=[];
+  for(const zf of zips){
+    try{
+      const {out,unsupported}=await readZipEntries(zf);
+      zipReads.push(...out);
+      unsupported.forEach(w=>zipWarnings.push(w));
+    }catch(err){
+      console.error("EGC zip read failed:", zf.name, err);
+      zipWarnings.push(zf.name+" — could not be read as a ZIP file");
+    }
+  }
+  const reads=[...plainReads, ...zipReads];
+
+  let added=0, restored=0;
+  const existing=new Map(STATE.msgs.map(m=>[m.id,m]));
+  const fresh=[];
+  for(const {name,text} of reads){
+    for(const chunk of splitMessages(text)){
+      const p=parseMessage(chunk);
+      p._file=name;
+      p.id = p.hash+"_"+(p.seq||"");      // stable id: body-hash + sequence
+      fresh.push(p);
+    }
+  }
+  // merge: keep prior closed / printInclude overrides; skip exact re-imports
+  for(const p of fresh){
+    if(existing.has(p.id)){ restored++; continue; }
+    p.closed=false; p.printInclude=null; p.printUserSet=false; p.expanded=false;  // printInclude/printUserSet set after relations
+    p.dedupKeep=false; p.autoClosedDuplicate=false; p.autoClosedSuperseded=false; p.fullyFiled=false;
+    p.acks={threeO:false, twoO:false, co:false};
+    existing.set(p.id,p); added++;
+  }
+  STATE.msgs=[...existing.values()];
+  recomputeAll();
+  save(); render();
+
+  let msg=`${added} new · ${restored} already present`;
+  if(zips.length) msg+=` · ${zips.length} zip${zips.length>1?"s":""} read`;
+  if(zipWarnings.length){
+    msg+=` · ⚠ ${zipWarnings.length} entr${zipWarnings.length===1?"y":"ies"} skipped (see console)`;
+    console.warn("EGC zip import — skipped entries:\n"+zipWarnings.join("\n"));
+  }
+  toast(msg, zipWarnings.length?6000:2600);
+}
+
+/** Re-run the relation engine over all stored messages, then set default print flags. */
+function recomputeAll(){
+  computeRelations(STATE.msgs);
+  STATE.msgs.forEach(m=>{
+    // A3: only re-derive printInclude for cards the officer hasn't manually ticked/unticked —
+    // manual overrides survive re-imports; everything else tracks current status live.
+    if(!m.printUserSet) m.printInclude = (m.status==="IN FORCE"||m.status==="CORRUPT");
+  });
+}
+
+/* ===========================================================================
+   PART 4 — RENDER
+   =========================================================================== */
+const wall=document.getElementById("wall");
+const emptyEl=document.getElementById("empty");
+
+function statusClass(s){ return "s-"+s.toLowerCase().replace(/\s+/g,""); }
+function famChip(m){
+  if(m.family==="weather"){
+    if(m.kind==="met-forecast") return `<span class="chip fam-forecast">🌤 FORECAST${m.subArea?" · "+esc(m.subArea):(m.area?" "+esc(m.area.replace("METAREA ","X·")):"")}</span>`;
+    return `<span class="chip fam-met">MET ${m.area?m.area.replace("METAREA ","X·"):""}</span>`;
+  }
+  if(m.family==="navxi")   return `<span class="chip fam-nav">NAV XI</span>`;
+  if(m.family==="coastal"){
+    if(m.coastalKind==="digest")    return `<span class="chip fam-coastal">⚠ NAVAREA X + AUSCOAST</span>`;
+    if(m.isCancel && m.coastalKind==="auscoast")  return `<span class="chip fam-coastal">⊘ CANCEL AUSCOAST</span>`;
+    if(m.isCancel && m.coastalKind==="navarea-x") return `<span class="chip fam-coastal">⊘ CANCEL NAVAREA X</span>`;
+    if(m.coastalKind==="auscoast")  return `<span class="chip fam-coastal">⚠ AUSCOAST</span>`;
+    if(m.coastalKind==="navarea-x") return `<span class="chip fam-coastal">⚠ NAVAREA X</span>`;
+    return `<span class="chip fam-coastal">⚠ COASTAL WARN</span>`;
+  }
+  return `<span class="chip fam-unparsed">UNPARSED</span>`;
+}
+function fmtUTC(ms){ if(!ms) return "—"; const d=new Date(ms);
+  const p=n=>("0"+n).slice(-2);
+  return `${d.getUTCFullYear()}-${p(d.getUTCMonth()+1)}-${p(d.getUTCDate())} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}Z`; }
+function esc(s){ return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+
+function ageBadge(m){
+  if(m.status!=="IN FORCE" && m.status!=="CORRUPT") return "";
+  const t=m.issueMs||m.recvMs; if(!t) return "";
+  const days=(Date.now()-t)/86400000;
+  let label, cls;
+  if(days<1){ const h=Math.floor(days*24); label=(h<1?"<1h":h+"h"); cls="age-ok"; }
+  else{ const d=Math.floor(days); label=d+"d"; cls=days<3?"age-ok":days<7?"age-warn":"age-old"; }
+  return `<span class="age-badge ${cls}">${days>=7?"⚠ ":""}${label} old</span>`;
+}
+
+function passesFilter(m){
+  const ui=STATE.ui;
+  if(ui.famOn.met===false && m.family==="weather" && m.kind!=="met-forecast") return false;
+  if(ui.famOn.forecast===false && m.family==="weather" && m.kind==="met-forecast") return false;
+  if(ui.famOn.navxi===false && m.family==="navxi") return false;
+  if(ui.famOn.coastal===false && m.family==="coastal") return false;
+  if(m.family==="coastal"){
+    if(m.isCancel){
+      // cancel cards are controlled ONLY by the CANCEL chip — turning off AUSCOAST/NAVAREA X
+      // does not hide them, so "AUSCOAST off + NAVAREA X off + CANCEL on" isolates cancels alone.
+      if(ui.famOn.cancel===false) return false;
+    } else {
+      // a digest card touches both AUSCOAST and NAVAREA X content — per your call, turning off
+      // EITHER sub-chip hides it (not just the one that matches), rather than only hiding if both are off.
+      if(m.coastalKind==="auscoast" && ui.famOn.auscoast===false) return false;
+      if(m.coastalKind==="navarea-x" && ui.famOn.navareaX===false) return false;
+      if(m.coastalKind==="digest" && (ui.famOn.auscoast===false || ui.famOn.navareaX===false)) return false;
+    }
+  }
+  if(ui.statusOn[m.status]===false) return false;
+  if(ui.search){ const q=ui.search.toLowerCase();
+    const hay=(m.body+" "+m.area+" "+m.region+" "+m.subArea+" "+m.navNo+" "+m.seq+" "+(m._file||"")+" "+(m.coastalNo||"")).toLowerCase();
+    if(!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+// ---- fixed display-tier ordering (confirmed by officer, Jun 2026) ----
+// AMSA/JRCC coastal-family cards + true-unparsed cards are pulled out of normal
+// date/thread order and stacked at the top of the wall in a fixed sequence,
+// regardless of sort mode or dates — tierRank() return value, in order:
+//   0) NAVAREA X + AUSCOAST digest   1) AUSCOAST   2) NAVAREA X
+//   3) CANCEL (either AUSCOAST or NAVAREA X cancel)   4) UNPARSED
+//   5) NAVAREA XI (own clean tier — see serial-sort fix note below)
+//   6) MET/FORECAST (the only category left on plain date order)
+// Top-level (not nested in sortMsgs) so render()'s print-page-break logic — which needs
+// to detect tier *boundaries*, not just sort by them — can share the exact same definition.
+function tierRank(m){
+  if(m.family==="coastal"){
+    if(m.coastalKind==="digest") return 0;
+    if(m.isCancel) return 3;
+    if(m.coastalKind==="auscoast") return 1;
+    if(m.coastalKind==="navarea-x") return 2;
+    return 4; // unclassified coastal body — treat as unparsed, flag for manual review
+  }
+  if(m.family==="unknown") return 4;
+  if(m.family==="navxi") return 5; // own clean tier — see fix note below
+  return 6; // weather (MET/forecast) only — untouched, current sort order kept
+}
+
+function sortMsgs(arr){
+  const s=STATE.ui.sort;
+  let sorted;
+  if(s==="recv_desc") sorted=arr.sort((a,b)=>(b.recvMs||0)-(a.recvMs||0));
+  else if(s==="recv_asc")  sorted=arr.sort((a,b)=>(a.recvMs||0)-(b.recvMs||0));
+  else if(s==="issue_desc")sorted=arr.sort((a,b)=>(b.issueMs||b.recvMs||0)-(a.issueMs||a.recvMs||0));
+  else if(s==="issue_asc") sorted=arr.sort((a,b)=>(a.issueMs||a.recvMs||0)-(b.issueMs||b.recvMs||0));
+  else {
+    // threaded (default): order threads by their newest reception, in-force first within thread
+    const latest={};
+    arr.forEach(m=>{ latest[m.thread]=Math.max(latest[m.thread]||0, m.recvMs||0); });
+    const rank=s=>({"IN FORCE":0,"CORRUPT":0,"DUPLICATE":2,"SUPERSEDED":3,"CANCELLED":4,"EXPIRED":5}[s]??6);
+    sorted=arr.sort((a,b)=>
+      (latest[b.thread]||0)-(latest[a.thread]||0) ||
+      a.thread.localeCompare(b.thread) ||
+      rank(a.status)-rank(b.status) ||
+      (b.issueMs||b.recvMs||0)-(a.issueMs||a.recvMs||0)
+    );
+  }
+  // Within AUSCOAST / NAVAREA X / CANCEL / NAV XI, order by the warning's own serial
+  // number ascending (214/26 before 215/26 before 217/26), ignoring dates entirely —
+  // per the officer's explicit "regardless of the dates… do this to everything" instruction.
+  // Digest, unparsed and MET/FORECAST have no comparable single serial number, so they
+  // fall through unchanged and keep whatever order the sort mode above already gave them
+  // (Array.sort is stable, so returning 0 here preserves that order exactly).
+  //
+  // Fix note: NAVAREA XI was originally left lumped together with MET/FORECAST in one
+  // "untouched" tier. Testing (per CLAUDE.md §13 methodology) showed that applying serial
+  // sort to NAVAREA XI *while it shared a tier with non-serial MET cards* gave inconsistent
+  // results — two NAVAREA XI cards would sort correctly by serial when adjacent, but fall
+  // back to date order whenever a MET card happened to sit between them, because the
+  // comparator can't form a consistent ordering when some members of a tied group have a
+  // serial number and others don't. Fixed by giving NAVAREA XI its own tier (5), so every
+  // pairwise comparison inside it has a real serial number on both sides — confirmed this
+  // is now order-independent of whatever else is in the list.
+  function seqInfo(m){
+    if(m.family==="navxi" && m.navNo){
+      const mm=m.navNo.match(/^(\d{2})-(\d{4})$/);
+      return mm ? {num:+mm[2], year:+mm[1]} : null;
+    }
+    if(m.family==="coastal" && (m.coastalKind==="auscoast"||m.coastalKind==="navarea-x") && m.coastalNo){
+      const mm=m.coastalNo.match(/(\d+)\/(\d+)\s*$/);
+      return mm ? {num:+mm[1], year:+mm[2]} : null;
+    }
+    return null;
+  }
+  return sorted.sort((a,b)=>{
+    const tr=tierRank(a)-tierRank(b);
+    if(tr!==0) return tr;
+    const sa=seqInfo(a), sb=seqInfo(b);
+    if(sa && sb){
+      if(sa.num!==sb.num) return sa.num-sb.num;
+      if(sa.year!==sb.year) return sa.year-sb.year;
+    }
+    return 0; // tie, or no serial number on one/both sides — keep current stable order
+  });
+}
+
+function render(){
+  // sync controls
+  document.getElementById("search").value=STATE.ui.search;
+  document.getElementById("sort").value=STATE.ui.sort;
+  document.querySelectorAll(".chip-toggle[data-status]").forEach(b=>{
+    const st=b.dataset.status;
+    if(st==="ALL"){ b.dataset.on = Object.values(STATE.ui.statusOn).every(v=>v!==false)?"1":"0"; }
+    else b.dataset.on = (STATE.ui.statusOn[st]===false)?"0":"1";
+  });
+  document.getElementById("famMet").dataset.on = STATE.ui.famOn.met===false?"0":"1";
+  document.getElementById("famNav").dataset.on = STATE.ui.famOn.navxi===false?"0":"1";
+  document.getElementById("famForecast").dataset.on = STATE.ui.famOn.forecast===false?"0":"1";
+  document.getElementById("famCoastal").dataset.on = STATE.ui.famOn.coastal===false?"0":"1";
+  document.getElementById("famAuscoast").dataset.on = STATE.ui.famOn.auscoast===false?"0":"1";
+  document.getElementById("famNavareaX").dataset.on = STATE.ui.famOn.navareaX===false?"0":"1";
+  document.getElementById("famCancel").dataset.on = STATE.ui.famOn.cancel===false?"0":"1";
+  document.getElementById("filing").classList.toggle("show", STATE.ui.filingOpen);
+  document.getElementById("trash").classList.toggle("show", STATE.ui.trashOpen);
+  ["vessel","voyage","oow","ref"].forEach(k=>{ const el=document.getElementById("f_"+k); if(el) el.value=STATE.vessel[k]||""; });
+
+  // watermark — hardcoded: "2/O Adlawan RM © 2026 · EGC WARNING READER"
+  const wmName=document.getElementById("wmName");
+  if(wmName) wmName.textContent=`2/O Adlawan RM  ©  ${new Date().getFullYear()}  ·  EGC WARNING READER`;
+
+  const open=STATE.msgs.filter(m=>!m.closed);
+  const visible=sortMsgs(open.filter(passesFilter));
+
+  // counts
+  const total=STATE.msgs.length;
+  const archivedCount=STATE.msgs.filter(m=>m.closed&&!m.fullyFiled).length;
+  const filedCount=STATE.msgs.filter(m=>m.closed&&m.fullyFiled).length;
+  const inforce=open.filter(m=>m.status==="IN FORCE").length;
+  document.getElementById("counts").innerHTML=
+    `${visible.length} shown · ${open.length} open · <b>${inforce} in force</b> · ${total} total`;
+  const trashBtn=document.getElementById("btnTrash");
+  if(archivedCount>0){ trashBtn.style.display="inline-flex"; trashBtn.textContent=`📁 Archives (${archivedCount})`; }
+  else { trashBtn.style.display="none"; STATE.ui.trashOpen=false; }
+  renderTrash();
+  const filedBtn=document.getElementById("btnFiled");
+  if(filedCount>0){ filedBtn.style.display="inline-flex"; filedBtn.textContent=`✅ Filed (${filedCount})`; }
+  else { filedBtn.style.display="none"; STATE.ui.filedOpen=false; }
+  document.getElementById("filed").classList.toggle("show", STATE.ui.filedOpen);
+  renderFiled();
+
+  emptyEl.style.display = STATE.msgs.length? "none":"block";
+  wall.innerHTML="";
+  for(const m of visible) wall.appendChild(cardEl(m));
+
+  // mark which cards are excluded from print (closed or unticked)
+  const cardEls=[...document.querySelectorAll(".card")];
+  cardEls.forEach(c=>{
+    const m=STATE.msgs.find(x=>x.id===c.dataset.id);
+    c.classList.toggle("print-hide", !m || !m.printInclude);
+  });
+
+  // Print page-break-before the first card of EVERY category, no exceptions — each category
+  // (digest, AUSCOAST, NAVAREA X, CANCEL, UNPARSED, NAVAREA XI, MET/FORECAST) starts on its
+  // own fresh sheet for easy physical filing once printed.
+  // Fix note: CANCEL was originally exempted from this (left free to share a page with the
+  // trailing AUSCOAST/NAVAREA X cards above it), per an earlier explicit instruction. The
+  // officer found in practice that a CANCEL NAVAREA X card was landing on the same printed
+  // page as the NAVAREA X cards above it, and asked for that exception removed — confirmed
+  // explicitly. There is now no tier exempt from the page-break rule.
+  // Walks only the cards actually going to print, in the same tier+serial order already on
+  // the wall (`visible` is pre-sorted by sortMsgs, so tier numbers here only ever increase —
+  // no interleaving to worry about). A missing/empty tier (nothing printable in it) is simply
+  // skipped, never inserting a blank page.
+  let prevTier=null;
+  for(const m of visible){
+    if(!m.printInclude) continue;
+    const t=tierRank(m);
+    if(prevTier!==null && t!==prevTier){
+      const c=cardEls.find(el=>el.dataset.id===m.id);
+      if(c) c.classList.add("print-pagebreak");
+    }
+    prevTier=t;
+  }
+}
+
+function renderTrash(){
+  const list=document.getElementById("trashList");
+  // Same tier+serial ordering as the wall (sortMsgs) — not "most recently closed first" —
+  // so a trashed card sits in the same relative spot it would occupy if it were still open:
+  // digest -> AUSCOAST -> NAVAREA X -> CANCEL -> unparsed -> NAV XI, each ascending by serial,
+  // MET/FORECAST last by date. One shared sort function, so wall and trash can never disagree.
+  const closedMsgs=sortMsgs(STATE.msgs.filter(m=>m.closed&&!m.fullyFiled));
+  if(!closedMsgs.length){ list.innerHTML=`<div class="trash-empty">No archived cards.</div>`; return; }
+  list.innerHTML=closedMsgs.map(m=>{
+    const idTxt = m.family==="navxi" ? (m.navNo?("NO."+m.navNo):"NAV XI")
+      : m.family==="coastal" ? (m.coastalNo||"COASTAL WARN")
+      : (m.warnType||m.area||"WX");
+    const why = m.autoClosedDuplicate ? `<span class="tr-dup">auto: duplicate</span>`
+              : m.autoClosedSuperseded ? `<span class="tr-dup">auto: superseded</span>` : "";
+    return `<div class="trash-row" data-id="${m.id}">
+      <span class="tr-id">${esc(idTxt)}</span>
+      ${why}
+      <span class="tr-body">${esc((m.body||"").slice(0,90).replace(/\n/g," "))}</span>
+      <button class="foot-btn tr-reopen">Restore</button>
+    </div>`;
+  }).join("");
+  list.querySelectorAll(".tr-reopen").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const id=btn.closest(".trash-row").dataset.id;
+      const m=STATE.msgs.find(x=>x.id===id);
+      if(m){
+        m.closed=false;
+        if(m.autoClosedDuplicate||m.autoClosedSuperseded){ m.dedupKeep=true; m.autoClosedDuplicate=false; m.autoClosedSuperseded=false; }
+        save(); render(); toast("Restored");
+      }
+    });
+  });
+}
+
+function renderFiled(){
+  const list=document.getElementById("filedList");
+  const filedMsgs=sortMsgs(STATE.msgs.filter(m=>m.closed&&m.fullyFiled));
+  if(!filedMsgs.length){ list.innerHTML=`<div class="trash-empty">No filed messages.</div>`; return; }
+  list.innerHTML=filedMsgs.map(m=>{
+    const idTxt = m.family==="navxi" ? (m.navNo?("NO."+m.navNo):"NAV XI")
+      : m.family==="coastal" ? (m.coastalNo||"COASTAL WARN")
+      : (m.warnType||m.area||"WX");
+    return `<div class="trash-row" data-id="${m.id}">
+      <span class="tr-id">${esc(idTxt)}</span>
+      <span class="tr-filed">all read ✓</span>
+      <span class="tr-body">${esc((m.body||"").slice(0,90).replace(/\n/g," "))}</span>
+      <button class="foot-btn tr-reopen">Restore</button>
+    </div>`;
+  }).join("");
+  list.querySelectorAll(".tr-reopen").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const id=btn.closest(".trash-row").dataset.id;
+      const m=STATE.msgs.find(x=>x.id===id);
+      if(m){ m.closed=false; m.fullyFiled=false; save(); render(); toast("Restored"); }
+    });
+  });
+}
+
+/** Shared markup for a message's chips/meta/note/body — used by BOTH the wall card
+ *  (cardEl) and the desktop expand modal (openCardModal), so the two views can never
+ *  drift apart or show different content for the same message. */
+function cardInnerHtml(m){
+  const areaChip = m.family==="weather"
+      ? (m.warnType?`<span class="chip area">${esc(m.warnType)}${m.warnSerial?" "+m.warnSerial:""}${m.subArea?" · "+esc(m.subArea):""}</span>`:"")
+      : m.family==="coastal"
+        ? (m.coastalNo?`<span class="chip area">${esc(m.coastalNo)}</span>`:"")
+        : (m.navNo?`<span class="chip area">NO.${m.navNo}</span>`:"");
+  const corruptChip = m.corrupt?`<span class="chip corrupt">RX ERROR</span>`:"";
+
+  let noteHtml="";
+  if(m.note){
+    const cls = m.status==="CORRUPT"?"warn":(m.status==="IN FORCE"?"":"dim");
+    const icon = m.status==="CANCELLED"?"⊘":m.status==="SUPERSEDED"?"↻":m.status==="DUPLICATE"?"⧉":m.status==="EXPIRED"?"⌛":m.corrupt?"⚠":"●";
+    noteHtml=`<div class="note ${cls}">${icon} ${esc(m.note)}</div>`;
+  } else if(m.status==="IN FORCE"){
+    noteHtml=`<div class="note">● in force — no later message received</div>`;
+  }
+  if(m.selfCancel) noteHtml+=`<div class="note dim">⊘ self-cancels: ${esc(m.selfCancel)}</div>`;
+
+  return `
+    <div class="chead">
+      <span class="statusdot"></span><span class="statustext">${m.status}</span>
+      ${ageBadge(m)}
+      <div class="chips">${famChip(m)} ${areaChip} ${corruptChip}
+        ${m.priority?`<span class="chip">${esc(m.priority)}</span>`:""}</div>
+    </div>
+    <div class="meta">
+      <span><span class="k">ISS</span> ${m.family==="navxi"?esc(m.navDate||"—"):fmtUTC(m.issueMs)}</span>
+      <span><span class="k">RCV</span> ${esc(m.recvRaw||"—")}</span>
+      <span><span class="k">LES</span> ${esc(m.les||"—")}</span>
+      <span><span class="k">SEQ</span> ${esc(m.seq||"—")}</span>
+      <span><span class="k">FILE</span> ${esc(m._file||"—")}</span>
+    </div>
+    ${noteHtml}
+    <div class="body">${esc(m.body)}</div>`;
+}
+
+function cardEl(m){
+  const c=document.createElement("div");
+  c.className="card "+statusClass(m.status)+(m.expanded?" expanded":"");
+  c.dataset.id=m.id;
+
+  const a=m.acks||{};
+  c.innerHTML=cardInnerHtml(m)+
+    `<div class="print-raw">${esc(m.raw||m.body)}</div>`+
+    `<div class="print-ack">READ BY: 3/O ${a.threeO?"✓":"☐"}  2/O ${a.twoO?"✓":"☐"}  C/O ${a.co?"✓":"☐"}</div>`+
+    `<div class="ack-row">
+      <span class="ack-label">Read by</span>
+      <label class="ack-item"><input type="checkbox" class="ck-ack" data-rank="threeO" ${a.threeO?"checked":""}> 3/O</label>
+      <label class="ack-item"><input type="checkbox" class="ck-ack" data-rank="twoO" ${a.twoO?"checked":""}> 2/O</label>
+      <label class="ack-item"><input type="checkbox" class="ck-ack" data-rank="co" ${a.co?"checked":""}> C/O</label>
+    </div>`+
+    `<div class="cfoot">
+      <label class="inc"><input type="checkbox" class="ck-inc" ${m.printInclude?"checked":""}> include in file</label>
+      <button class="foot-btn ck-exp">${m.expanded?"Collapse":"Expand"}</button>
+      <button class="file-all-btn ck-file" title="File as fully read by all officers" style="${(a.threeO&&a.twoO&&a.co)?'':'display:none'}">✅ FILE</button>
+      <button class="close-x" title="Move to Archives">✕ ARCHIVE</button>
+    </div>`;
+
+  c.querySelectorAll(".ck-ack").forEach(cb=>cb.addEventListener("change",e=>{
+    if(!m.acks) m.acks={threeO:false,twoO:false,co:false};
+    m.acks[e.target.dataset.rank]=e.target.checked; save();
+    const fb=c.querySelector(".ck-file");
+    if(fb) fb.style.display=(m.acks.threeO&&m.acks.twoO&&m.acks.co)?"":"none";
+  }));
+  c.querySelector(".ck-inc").addEventListener("change",e=>{ m.printInclude=e.target.checked; m.printUserSet=true; save();
+    c.classList.toggle("print-hide", !m.printInclude); });
+  c.querySelector(".ck-exp").addEventListener("click",()=>{
+    // Desktop (>=768px viewport): Expand opens the full-page modal instead of growing the
+    // card in place. iPhone (<768px): unchanged — old in-card height-clamp toggle behavior.
+    if(isDesktopViewport()){ openCardModal(m); return; }
+    m.expanded=!m.expanded;
+    c.classList.toggle("expanded"); c.querySelector(".ck-exp").textContent=m.expanded?"Collapse":"Expand"; save();
+  });
+  c.querySelector(".ck-file").addEventListener("click",()=>{ m.closed=true; m.closedAt=Date.now(); m.fullyFiled=true; save(); render(); toast("Filed — all officers have read this message"); });
+  c.querySelector(".close-x").addEventListener("click",()=>{ m.closed=true; m.closedAt=Date.now(); save(); render(); toast("Archived — see 📁 Archives to restore"); });
+  return c;
+}
+
+/* ===========================================================================
+   PART 5 — UI WIRING
+   =========================================================================== */
+function toast(msg, ms){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"), ms||2600); }
+
+/* ===========================================================================
+   PART 5b — DESKTOP EXPAND MODAL (full-page card view, Mac browser only)
+   =========================================================================== */
+const DESKTOP_BREAKPOINT=768; // px — iPhone 14 Pro viewport (390pt CSS px) sits well under
+                                // this; a Mac browser window sits well over it. Checked live
+                                // on every click, not cached, so resizing a desktop window
+                                // down mid-session correctly falls back to in-card behavior.
+function isDesktopViewport(){ return window.innerWidth>=DESKTOP_BREAKPOINT; }
+
+const cardModal=document.getElementById("cardModal");
+const cardModalBody=document.getElementById("cardModalBody");
+let cardModalCurrentMsg=null; // tracks which message is open so the header ARCHIVE button can act on it
+
+function openCardModal(m){
+  cardModalCurrentMsg=m;
+  const a=m.acks||{};
+  cardModalBody.innerHTML=cardInnerHtml(m)+
+    `<div class="ack-row">
+      <span class="ack-label">Read by</span>
+      <label class="ack-item"><input type="checkbox" class="ck-ack" data-rank="threeO" ${a.threeO?"checked":""}> 3/O</label>
+      <label class="ack-item"><input type="checkbox" class="ck-ack" data-rank="twoO" ${a.twoO?"checked":""}> 2/O</label>
+      <label class="ack-item"><input type="checkbox" class="ck-ack" data-rank="co" ${a.co?"checked":""}> C/O</label>
+    </div>`+
+    `<div class="cfoot">
+      <label class="inc"><input type="checkbox" class="ck-inc" ${m.printInclude?"checked":""}> include in file</label>
+      <button class="file-all-btn ck-file" id="modalFileBtn" title="File as fully read by all officers" style="${(a.threeO&&a.twoO&&a.co)?'':'display:none'}">✅ FILE — ALL READ</button>
+      <button class="modal-close-btn" id="modalCloseBtn">CLOSE</button>
+    </div>`;
+  cardModalBody.querySelectorAll(".ck-ack").forEach(cb=>cb.addEventListener("change",e=>{
+    if(!m.acks) m.acks={threeO:false,twoO:false,co:false};
+    m.acks[e.target.dataset.rank]=e.target.checked; save(); render();
+    const fb=cardModalBody.querySelector("#modalFileBtn");
+    if(fb) fb.style.display=(m.acks.threeO&&m.acks.twoO&&m.acks.co)?"":"none";
+  }));
+  cardModalBody.querySelector(".ck-inc").addEventListener("change",e=>{
+    m.printInclude=e.target.checked; m.printUserSet=true; save(); render();
+  });
+  const modalFileBtnEl=cardModalBody.querySelector("#modalFileBtn");
+  if(modalFileBtnEl) modalFileBtnEl.addEventListener("click",()=>{
+    if(cardModalCurrentMsg){ cardModalCurrentMsg.closed=true; cardModalCurrentMsg.closedAt=Date.now(); cardModalCurrentMsg.fullyFiled=true;
+      save(); closeCardModal(); render(); toast("Filed — all officers have read this message"); }
+  });
+  cardModalBody.querySelector("#modalCloseBtn").addEventListener("click", closeCardModal);
+  cardModal.classList.add("show");
+}
+function closeCardModal(){ cardModal.classList.remove("show"); cardModalBody.innerHTML=""; cardModalCurrentMsg=null; }
+
+document.getElementById("cardModalClose").addEventListener("click", ()=>{
+  if(cardModalCurrentMsg){
+    cardModalCurrentMsg.closed=true; cardModalCurrentMsg.closedAt=Date.now();
+    save(); closeCardModal(); render(); toast("Archived — see 📁 Archives to restore");
+  } else { closeCardModal(); }
+});
+cardModal.addEventListener("click", e=>{ if(e.target===cardModal) closeCardModal(); }); // backdrop click
+window.addEventListener("keydown", e=>{ if(e.key==="Escape" && cardModal.classList.contains("show")) closeCardModal(); });
+
+document.getElementById("btnImport").onclick=()=>document.getElementById("fileInput").click();
+document.getElementById("fileInput").onchange=e=>{ ingestFiles([...e.target.files]); e.target.value=""; };
+
+document.getElementById("search").addEventListener("input",e=>{ STATE.ui.search=e.target.value; save(); render(); });
+document.getElementById("sort").addEventListener("change",e=>{ STATE.ui.sort=e.target.value; save(); render(); });
+
+document.querySelectorAll(".chip-toggle[data-status]").forEach(b=>b.addEventListener("click",()=>{
+  const st=b.dataset.status;
+  if(st==="ALL"){ const turnOn=b.dataset.on!=="1"; ["IN FORCE","SUPERSEDED","CANCELLED","DUPLICATE","EXPIRED","CORRUPT"].forEach(s=>STATE.ui.statusOn[s]=turnOn?undefined:false); }
+  else STATE.ui.statusOn[st]= (STATE.ui.statusOn[st]===false)? undefined : false;
+  save(); render();
+}));
+document.getElementById("famMet").addEventListener("click",()=>{ STATE.ui.famOn.met=!(STATE.ui.famOn.met!==false); save(); render(); });
+document.getElementById("famNav").addEventListener("click",()=>{ STATE.ui.famOn.navxi=!(STATE.ui.famOn.navxi!==false); save(); render(); });
+document.getElementById("famForecast").addEventListener("click",()=>{ STATE.ui.famOn.forecast=!(STATE.ui.famOn.forecast!==false); save(); render(); });
+document.getElementById("famCoastal").addEventListener("click",()=>{ STATE.ui.famOn.coastal=!(STATE.ui.famOn.coastal!==false); save(); render(); });
+document.getElementById("famAuscoast").addEventListener("click",()=>{ STATE.ui.famOn.auscoast=!(STATE.ui.famOn.auscoast!==false); save(); render(); });
+document.getElementById("famNavareaX").addEventListener("click",()=>{ STATE.ui.famOn.navareaX=!(STATE.ui.famOn.navareaX!==false); save(); render(); });
+document.getElementById("famCancel").addEventListener("click",()=>{ STATE.ui.famOn.cancel=!(STATE.ui.famOn.cancel!==false); save(); render(); });
+
+document.getElementById("btnFiling").onclick=()=>{ STATE.ui.filingOpen=!STATE.ui.filingOpen; save(); render(); };
+["vessel","voyage","oow","ref"].forEach(k=>{ const el=document.getElementById("f_"+k);
+  el.addEventListener("input",e=>{ STATE.vessel[k]=e.target.value; save(); }); });
+
+document.getElementById("btnTrash").onclick=()=>{ STATE.ui.trashOpen=!STATE.ui.trashOpen; save(); render(); };
+document.getElementById("btnFiled").onclick=()=>{ STATE.ui.filedOpen=!STATE.ui.filedOpen; save(); render(); };
+document.getElementById("btnRestoreAllFiled").addEventListener("click",()=>{
+  STATE.msgs.forEach(m=>{ if(m.closed&&m.fullyFiled){ m.closed=false; m.fullyFiled=false; } });
+  save(); render(); toast("All filed messages restored");
+});
+document.getElementById("btnReopenAll").addEventListener("click",()=>{
+  STATE.msgs.forEach(m=>{
+    if(m.closed&&!m.fullyFiled){
+      m.closed=false;
+      if(m.autoClosedDuplicate||m.autoClosedSuperseded){ m.dedupKeep=true; m.autoClosedDuplicate=false; m.autoClosedSuperseded=false; }
+    }
+  });
+  save(); render(); toast("All archived messages restored");
+});
+document.getElementById("btnPrint").onclick=()=>{ window.print(); };
+const confirmClearEl=document.getElementById("confirmClear");
+function showConfirmClear(){ confirmClearEl.classList.add("on"); }
+function hideConfirmClear(){ confirmClearEl.classList.remove("on"); }
+document.getElementById("btnClear").onclick=showConfirmClear;
+document.getElementById("confirmClearYes").onclick=()=>{ hideConfirmClear(); STATE.msgs=[]; save(); render(); toast("Cleared"); };
+document.getElementById("confirmClearNo").onclick=hideConfirmClear;
+confirmClearEl.addEventListener("click",e=>{ if(e.target===confirmClearEl) hideConfirmClear(); });
+window.addEventListener("keydown",e=>{ if(e.key==="Escape" && confirmClearEl.classList.contains("on")) hideConfirmClear(); });
+
+/* drag & drop (files + folders) */
+const drop=document.getElementById("drop"); let dragDepth=0;
+window.addEventListener("dragenter",e=>{ e.preventDefault(); dragDepth++; drop.classList.add("on"); });
+window.addEventListener("dragover", e=>{ e.preventDefault(); });
+window.addEventListener("dragleave",e=>{ e.preventDefault(); if(--dragDepth<=0){ dragDepth=0; drop.classList.remove("on"); } });
+window.addEventListener("drop", async e=>{
+  e.preventDefault(); dragDepth=0; drop.classList.remove("on");
+  const items=e.dataTransfer.items;
+  let files=[];
+  if(items && items.length && items[0].webkitGetAsEntry){
+    const entries=[...items].map(i=>i.webkitGetAsEntry&&i.webkitGetAsEntry()).filter(Boolean);
+    const out=[]; await Promise.all(entries.map(en=>walkEntry(en,out))); files=out;
+    if(!files.length) files=[...e.dataTransfer.files]; // fallback
+  } else files=[...e.dataTransfer.files];
+  ingestFiles(files);
+});
+
+/* ===========================================================================
+   PART 6 — BOOT
+   =========================================================================== */
+load();
+if(STATE.msgs.length) recomputeAll();   // refresh relations on every load
+render();
+
+/* bugs 2 & 4 fix: computeRelations()/recomputeAll() previously only ran at boot or after an
+   import, so a self-expiring NAVAREA XI warning (A1) — and the printInclude flag riding on it
+   (A3) — could sit stale and "IN FORCE" for hours if the tab was just left open on the bridge.
+   Re-check every 60s; only re-render/save if something actually changed, to avoid flicker. */
+setInterval(()=>{
+  if(!STATE.msgs.length) return;
+  const before=STATE.msgs.map(m=>m.id+":"+m.status+":"+m.printInclude).join("|");
+  recomputeAll();
+  const after=STATE.msgs.map(m=>m.id+":"+m.status+":"+m.printInclude).join("|");
+  if(before!==after){ save(); render(); }
+}, 60000);
+</script>
+</body>
+</html>
