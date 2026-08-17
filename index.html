@@ -607,6 +607,17 @@ h1{
 }
 .svc-dates svg{ width:14px; height:14px; flex:0 0 auto; }
 .svc-dates .arrow{ color:var(--signal); }
+/* Deliberately no white-space:nowrap — this line is long, and at the narrow breakpoint
+   it has to wrap rather than push the card into a horizontal scroll. */
+.svc-specs{
+  margin-top:8px;
+  padding-top:8px;
+  border-top:1px solid var(--hairline);
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  line-height:1.55;
+  color:var(--ink-dim);
+}
 .svc-note{
   margin-top:6px;
   font-size:12px;
@@ -1190,14 +1201,26 @@ footer .mono{ font-size:11.5px; }
 
 /* ============ SEA SERVICE DATA (Section 5 — verbatim) ============ */
 const SERVICE = [
-  { vessel:'FG EUCALYPTUS', type:'Supramax Bulk Carrier, 50,011 DWT, SG flag', rank:'2nd Officer', from:'2026-02-07', to:null,        dur:null,      note:'Contract to Oct 2026' },
-  { vessel:'CL BANYAN',     type:'Bulk Carrier (woodchips)',                   rank:'2nd Officer', from:'2024-09-13', to:'2025-08-12', dur:'11m 03d', note:null },
-  { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'2nd Officer', from:'2024-02-12', to:'2024-04-05', dur:'1m 23d',  note:null },
-  { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'2nd Officer', from:'2023-09-17', to:'2023-10-02', dur:'15d',     note:null },
-  { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'2nd Officer', from:'2023-04-01', to:'2023-09-17', dur:'5m 19d',  note:null },
-  { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'3rd Officer', from:'2022-03-09', to:'2022-10-27', dur:'7m 22d',  note:null },
-  { vessel:'JACK LONDON',   type:'Container Vessel',                           rank:'3rd Officer', from:'2020-12-11', to:'2021-07-12', dur:'7m 03d',  note:null }
+  { vessel:'FG EUCALYPTUS', type:'Supramax Bulk Carrier',    rank:'2nd Officer', from:'2026-02-07', to:null,        dur:null,      note:'Contract to Oct 2026' },
+  { vessel:'CL BANYAN',     type:'Panamax Woodchip Carrier', rank:'2nd Officer', from:'2024-09-13', to:'2025-08-12', dur:'11m 03d', note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'2nd Officer', from:'2024-02-12', to:'2024-04-05', dur:'1m 23d',  note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'2nd Officer', from:'2023-09-17', to:'2023-10-02', dur:'15d',     note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'2nd Officer', from:'2023-04-01', to:'2023-09-17', dur:'5m 19d',  note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'3rd Officer', from:'2022-03-09', to:'2022-10-27', dur:'7m 22d',  note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'3rd Officer', from:'2020-12-11', to:'2021-07-12', dur:'7m 03d',  note:null }
 ];
+
+/* Particulars per ship, keyed by SERVICE[].vessel. A recruiter's first question about
+   a contract is "what ship was that, and how big" — the type string alone never answered
+   it, and it cannot: it lives in an 11px right-aligned chip, and JACK LONDON has five
+   contracts, so anything written there is repeated five times. Keeping the particulars
+   in their own table lets each vessel state itself once, IMO included so the claim is
+   checkable against any registry. */
+const VESSELS = {
+  'FG EUCALYPTUS': { imo:'9942172', built:'2023', size:'50,011 DWT',             dims:'LOA 200 m &times; 32 m', flag:'Singapore' },
+  'CL BANYAN':     { imo:'9936836', built:'2023', size:'71,033 DWT / 57,541 GT', dims:'LOA 215 m &times; 37 m', flag:'Singapore' },
+  'JACK LONDON':   { imo:'9431812', built:'2010', size:'4,250 TEU / 50,278 DWT', dims:'LOA 261 m &times; 32 m', flag:'Liberia'   }
+};
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAY_MS = 86400000;
@@ -1226,9 +1249,15 @@ function fmtMD(days){
 (function buildTimeline(){
   const host = document.getElementById('timeline');
   const cal = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>';
+  /* The list is newest-first and a vessel's contracts are consecutive, so printing the
+     particulars on the first card of each run reads as a heading for that run. Repeating
+     them on all five JACK LONDON cards would say the same thing four extra times. */
+  const shown = new Set();
   let html = '';
   for (const c of SERVICE){
     const live = !c.to;
+    const v = !shown.has(c.vessel) && VESSELS[c.vessel];
+    if (v) shown.add(c.vessel);
     const durTxt = live ? 'Present · ' + fmtMD(spanDays(c)) : c.dur;
     const toTxt = live ? 'Present' : fmtD(c.to);
     html +=
@@ -1245,6 +1274,8 @@ function fmtMD(days){
           '<div class="svc-dates">' + cal +
             '<span>' + fmtD(c.from) + '</span><span class="arrow">&rarr;</span><span>' + toTxt + '</span>' +
           '</div>' +
+          (v ? '<p class="svc-specs">IMO ' + v.imo + ' &middot; Built ' + v.built +
+               ' &middot; ' + v.size + ' &middot; ' + v.dims + ' &middot; ' + v.flag + ' flag</p>' : '') +
           (c.note ? '<p class="svc-note">' + c.note + '</p>' : '') +
         '</div>' +
       '</article>';
