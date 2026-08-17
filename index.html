@@ -13,6 +13,8 @@
 <meta property="og:type" content="profile">
 <meta property="og:title" content="Richard Mark H. Adlawan — Deck Officer">
 <meta property="og:description" content="Chief Mate CoC (Unlimited, Oceangoing), STCW II/2. Bulk carrier and container experience, currently 2nd Officer on a Supramax bulk carrier.">
+<meta property="og:image" content="https://richardmarkadlawan.github.io/portrait.jpg">
+<meta property="og:image:alt" content="Richard Mark H. Adlawan in Deck Officer uniform">
 <meta name="twitter:card" content="summary">
 <meta name="author" content="Richard Mark H. Adlawan">
 <!-- Inline, so it costs nothing offline. This is what a recruiter searching the name
@@ -23,6 +25,7 @@
   "@type": "Person",
   "name": "Richard Mark H. Adlawan",
   "jobTitle": "Deck Officer (Chief Mate CoC, STCW II/2)",
+  "image": "https://richardmarkadlawan.github.io/portrait.jpg",
   "description": "Management-level Deck Officer with Chief Mate Certificate of Competency (Unlimited, Oceangoing). Bulk carrier and container experience; builds offline shipboard calculation software.",
   "address": {
     "@type": "PostalAddress",
@@ -371,7 +374,28 @@ h2{
 }
 
 /* ============ HERO ============ */
-#hero{ padding:64px 0 24px; }
+/* Two columns on desktop: the record on the left, the face on the right, both starting at
+   the same baseline as the name. The portrait comes second in the DOM so a screen reader
+   still hears the name before the picture of it; on mobile `order` lifts it above the text,
+   where a face above the fold is worth more than four lines of eyebrow copy. */
+#hero{
+  padding:64px 0 24px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:0 36px;
+  align-items:start;
+}
+.hero-text{ grid-column:1; grid-row:1; min-width:0; }
+.hero-portrait{ grid-column:2; grid-row:1; padding-top:6px; }
+.hero-portrait img{
+  display:block;
+  width:180px; height:180px;
+  border-radius:50%;              /* the rounded sides — a true circle, never a square */
+  object-fit:cover;               /* keeps it a circle, not an ellipse, at any box size */
+  border:2px solid var(--signal);
+  box-shadow:var(--glow-soft);
+  background:var(--sea-1);        /* the ring still reads while the file decodes */
+}
 .hero-eyebrow{
   font-family:var(--font-mono);
   font-size:11.5px;
@@ -907,13 +931,16 @@ footer .mono{ font-size:11.5px; }
     animation:heroRise .55s ease-out forwards;
     will-change:transform, opacity;
   }
-  .js #hero .rise:nth-child(2){ -webkit-animation-delay:.06s; animation-delay:.06s; }
-  .js #hero .rise:nth-child(3){ -webkit-animation-delay:.12s; animation-delay:.12s; }
-  .js #hero .rise:nth-child(4){ -webkit-animation-delay:.18s; animation-delay:.18s; }
-  .js #hero .rise:nth-child(5){ -webkit-animation-delay:.24s; animation-delay:.24s; }
-  .js #hero .rise:nth-child(6){ -webkit-animation-delay:.30s; animation-delay:.30s; }
-  .js #hero .rise:nth-child(7){ -webkit-animation-delay:.36s; animation-delay:.36s; }
-  .js #hero .rise:nth-child(8){ -webkit-animation-delay:.42s; animation-delay:.42s; }
+  /* The delays are indexed off child position, so they must be scoped to whatever element
+     actually holds the risers. The text now sits inside .hero-text; the portrait is a
+     sibling of that wrapper and keeps the delay-0 slot, arriving with the eyebrow. */
+  .js .hero-text .rise:nth-child(2){ -webkit-animation-delay:.06s; animation-delay:.06s; }
+  .js .hero-text .rise:nth-child(3){ -webkit-animation-delay:.12s; animation-delay:.12s; }
+  .js .hero-text .rise:nth-child(4){ -webkit-animation-delay:.18s; animation-delay:.18s; }
+  .js .hero-text .rise:nth-child(5){ -webkit-animation-delay:.24s; animation-delay:.24s; }
+  .js .hero-text .rise:nth-child(6){ -webkit-animation-delay:.30s; animation-delay:.30s; }
+  .js .hero-text .rise:nth-child(7){ -webkit-animation-delay:.36s; animation-delay:.36s; }
+  .js .hero-text .rise:nth-child(8){ -webkit-animation-delay:.42s; animation-delay:.42s; }
 }
 
 /* ============ BREAKPOINTS ============ */
@@ -922,6 +949,13 @@ footer .mono{ font-size:11.5px; }
   .tools-grid{ grid-template-columns:1fr 1fr; }
 }
 @media (max-width:768px){
+  /* One column, portrait first. It stays left-aligned with the text rather than centred —
+     everything else in the hero is flush left, and a centred avatar over left-flush copy
+     reads as two designs stacked. */
+  #hero{ grid-template-columns:1fr; gap:0; }
+  .hero-text{ grid-column:1; grid-row:2; }
+  .hero-portrait{ grid-column:1; grid-row:1; padding-top:0; margin-bottom:22px; }
+  .hero-portrait img{ width:132px; height:132px; }
   h1{ font-size:32px; }
   h2{ font-size:22px; }
   .stat-row{ grid-template-columns:1fr 1fr; }
@@ -933,6 +967,8 @@ footer .mono{ font-size:11.5px; }
   .brand{ font-size:12px; }
 }
 @media (max-width:380px){
+  .hero-portrait img{ width:108px; height:108px; }
+  .hero-portrait{ margin-bottom:18px; }
   h1{ font-size:28px; }
   .stat-row{ grid-template-columns:1fr 1fr; gap:8px; }
   .stat .v{ font-size:18px; }
@@ -956,6 +992,11 @@ footer .mono{ font-size:11.5px; }
   .seabar-track, .seabar-seg, .seabar-key i{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   .svc, .seabar{ break-inside:avoid; page-break-inside:avoid; }
   .stat .v{ text-shadow:none; }
+  /* Browsers drop background-ish imagery by default when printing; the portrait is content. */
+  .hero-portrait img{
+    width:120px; height:120px;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
   a{ color:inherit; text-decoration:none; }
 }
 </style>
@@ -995,6 +1036,7 @@ footer .mono{ font-size:11.5px; }
 
       <!-- ================= HERO ================= -->
       <section id="hero" aria-labelledby="hero-h">
+        <div class="hero-text">
         <p class="hero-eyebrow rise">Deck Officer &middot; Merchant Marine</p>
         <h1 id="hero-h" class="rise">Richard Mark<br>H.&nbsp;Adlawan</h1>
         <p class="coc-badge rise"><span class="dot"></span>CHIEF MATE CoC &middot; UNLIMITED, OCEANGOING &middot; STCW II/2</p>
@@ -1013,6 +1055,11 @@ footer .mono{ font-size:11.5px; }
           <div class="stat"><div class="v" id="stat2O">—</div><div class="l">As 2nd Officer</div></div>
           <div class="stat"><div class="v">50,011</div><div class="l">DWT current vessel</div></div>
           <div class="stat"><div class="v">0</div><div class="l">Incidents, all contracts</div></div>
+        </div>
+        </div>
+        <div class="hero-portrait rise">
+          <img src="portrait.jpg" width="180" height="180" decoding="async"
+               alt="Richard Mark H. Adlawan in white Deck Officer uniform">
         </div>
       </section>
 

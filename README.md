@@ -10,6 +10,7 @@ Live at **https://richardmarkadlawan.github.io**
 | `index.html` | The website. Single file, dark by default with a light toggle. |
 | `cv_print.html` | The print layout the PDF is made from. A4, two pages. |
 | `ADLAWAN_RICHARD_CV.pdf` | The downloadable CV. `index.html` links to it. |
+| `portrait.jpg` | The profile photo. 640×640 square, drawn as a circle by CSS in both pages. |
 | `apps/` | The shipboard apps, one folder each. Linked from the Tools section. |
 
 Everything is vanilla HTML, CSS and JavaScript with a system font stack — no frameworks, no CDNs,
