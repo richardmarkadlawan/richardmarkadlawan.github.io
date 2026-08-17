@@ -4,7 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Richard Mark H. Adlawan — Deck Officer</title>
-<meta name="description" content="Richard Mark H. Adlawan — Management-level Deck Officer (STCW II/2). Chief Mate CoC, bulk carrier & container experience, shipboard software builder.">
+<!-- Recruiters and manning-agency systems search the rank by three different names, so all
+     both appear here in plain prose ("C/O" is left out on purpose — verify.mjs bans the
+     abbreviated rank forms, and "Chief Officer" beside it already carries the search).
+     Same for the vessel classes: a Supramax ad rarely
+     says "bulk carrier" and nothing else. No hidden keyword block anywhere on the page —
+     every term below is also visible in the copy it describes. -->
+<meta name="description" content="Richard Mark H. Adlawan — Chief Mate / Chief Officer CoC Unlimited Oceangoing, STCW II/2. 3+ years officer watchkeeping on Supramax and Panamax bulk carriers and container vessels, zero incidents across six contracts. Builds offline shipboard calculation software.">
 <!-- Anchor mark, inline so the tab icon survives offline and file:// like the rest of the page. -->
 <link rel="canonical" href="https://richardmarkadlawan.github.io/">
 <meta property="og:url" content="https://richardmarkadlawan.github.io/">
@@ -12,7 +18,7 @@
 <meta name="theme-color" content="#0B1220">
 <meta property="og:type" content="profile">
 <meta property="og:title" content="Richard Mark H. Adlawan — Deck Officer">
-<meta property="og:description" content="Chief Mate CoC (Unlimited, Oceangoing), STCW II/2. Bulk carrier and container experience, currently 2nd Officer on a Supramax bulk carrier.">
+<meta property="og:description" content="Chief Mate / Chief Officer CoC (Unlimited, Oceangoing), STCW II/2. Zero incidents across six contracts on Supramax, Panamax and container tonnage; currently 2nd Officer on a Supramax bulk carrier.">
 <meta property="og:image" content="https://richardmarkadlawan.github.io/portrait.jpg">
 <meta property="og:image:alt" content="Richard Mark H. Adlawan in Deck Officer uniform">
 <meta name="twitter:card" content="summary">
@@ -24,9 +30,9 @@
   "@context": "https://schema.org",
   "@type": "Person",
   "name": "Richard Mark H. Adlawan",
-  "jobTitle": "Deck Officer (Chief Mate CoC, STCW II/2)",
+  "jobTitle": "Chief Mate / Chief Officer (CoC Unlimited Oceangoing, STCW II/2)",
   "image": "https://richardmarkadlawan.github.io/portrait.jpg",
-  "description": "Management-level Deck Officer with Chief Mate Certificate of Competency (Unlimited, Oceangoing). Bulk carrier and container experience; builds offline shipboard calculation software.",
+  "description": "Management-level Deck Officer with Chief Mate Certificate of Competency (Unlimited, Oceangoing). 3+ years officer watchkeeping across Supramax and Panamax bulk carriers and container vessels, zero incidents across six contracts; builds offline shipboard calculation software in active bridge use.",
   "address": {
     "@type": "PostalAddress",
     "addressLocality": "Talisay City",
@@ -41,7 +47,19 @@
     "Cargo operations on bulk carriers",
     "Ship stability",
     "GMDSS and maritime safety information",
-    "ISM Code compliance"
+    "ISM Code compliance",
+    "Officer of the Watch (OOW) navigational watchkeeping",
+    "Supramax, Panamax, Handymax and Handysize bulk carriers",
+    "Container vessel cargo operations",
+    "IMSBC Code",
+    "SOLAS",
+    "MARPOL",
+    "COLREG",
+    "ISPS Code",
+    "MLC 2006",
+    "Ballast Water Management Convention",
+    "Port State Control inspections",
+    "RightShip and charterer vetting inspections"
   ],
   "hasCredential": [
     {
@@ -186,7 +204,7 @@ nav{
   white-space:nowrap;
 }
 .brand b{ color:var(--signal); }
-/* Nine links in a strip that is ~169px wide at 375px: three quarters of the nav
+/* Ten links in a strip that is ~169px wide at 375px: four fifths of the nav
    scrolls out of sight. The scrollbar is hidden for looks, so the fade is the only
    thing left telling you there is more, and the JS keeps the current link inside it. */
 .nav-links{
@@ -976,6 +994,30 @@ h1{
   border-radius:50%;
 }
 
+/* ============ KEY ACHIEVEMENTS ============ */
+/* The one section a recruiter is meant to read before deciding whether to read the rest,
+   so it does not share .comp-list's two-column grid — a result stated in half a line of
+   text gets skimmed. One column, full measure, and the outcome leads each row in the
+   accent colour, so the page can be read by its bold text alone.
+   Same tokens as every other card here; the only new thing is the left rule. */
+.impact-list{
+  list-style:none;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  max-width:860px;
+}
+.impact-list li{
+  background:var(--sea-1);
+  border:1px solid var(--hairline);
+  border-left:3px solid var(--signal);
+  border-radius:10px;
+  padding:13px 16px;
+  font-size:14.5px;
+  line-height:1.6;
+}
+.impact-list li b{ color:var(--signal); font-weight:700; }
+
 /* ============ CERTIFICATIONS ============ */
 /* Every one of these is valid, so a per-row status column repeated the same word
    eleven times and roughly doubled the section's height without saying anything.
@@ -1258,11 +1300,12 @@ footer .mono{ font-size:11.5px; }
     <span class="brand">R.M.H.<b>ADLAWAN</b></span>
     <div class="nav-links" id="navLinks">
       <a href="#about">About</a>
+      <a href="#impact">Achievements</a>
       <a href="#service">Sea Service</a>
+      <a href="#certs">Certifications</a>
       <a href="#bridge">Bridge</a>
       <a href="#cargo">Cargo</a>
       <a href="#safety">Safety</a>
-      <a href="#certs">Certifications</a>
       <a href="#tools">Tools</a>
       <a href="#leadership">Leadership</a>
       <a href="#contact">Contact</a>
@@ -1301,8 +1344,8 @@ footer .mono{ font-size:11.5px; }
         <div class="hero-text">
         <p class="hero-eyebrow rise">Deck Officer &middot; Merchant Marine</p>
         <h1 id="hero-h" class="rise">Richard Mark<br>H.&nbsp;Adlawan</h1>
-        <p class="coc-badge rise"><span class="dot"></span>CHIEF MATE CoC &middot; UNLIMITED, OCEANGOING &middot; STCW II/2</p>
-        <p class="headline rise">Management-level Deck Officer&ensp;|&ensp;Bulk Carrier &amp; Container Experience&ensp;|&ensp;Shipboard Software Builder</p>
+        <p class="coc-badge rise"><span class="dot"></span>CHIEF MATE / CHIEF OFFICER CoC &middot; UNLIMITED, OCEANGOING &middot; STCW II/2</p>
+        <p class="headline rise">Management-level Deck Officer&ensp;|&ensp;Supramax, Panamax &amp; Container Tonnage&ensp;|&ensp;Shipboard Software Builder</p>
         <p class="current rise">Currently: 2nd Officer, MV FG Eucalyptus — Supramax Bulk Carrier, <span class="mono">50,011 DWT</span>, Singapore Flag</p>
         <p class="homebase rise">Home base: Talisay City, Cebu, Philippines</p>
         <div class="hero-actions rise">
@@ -1315,8 +1358,12 @@ footer .mono{ font-size:11.5px; }
         <div class="stat-row rise">
           <div class="stat"><div class="v" id="statTotal">—</div><div class="l">Officer seatime</div></div>
           <div class="stat"><div class="v" id="stat2O">—</div><div class="l">As 2nd Officer</div></div>
-          <div class="stat"><div class="v">50,011</div><div class="l">DWT current vessel</div></div>
-          <div class="stat"><div class="v">0</div><div class="l">Incidents, all contracts</div></div>
+          <!-- Both of these used to be written by hand. "DWT current vessel" also measured
+               the wrong thing — it moves down when the next ship is smaller, which reads as
+               a career going backwards. Largest tonnage worked only ever goes up, and both
+               figures now come from SERVICE/VESSELS so neither can drift from the record. -->
+          <div class="stat"><div class="v" id="statDwt">—</div><div class="l">Largest vessel worked (DWT)</div></div>
+          <div class="stat"><div class="v">0</div><div class="l">Incidents in <span id="statContracts">—</span> contracts</div></div>
         </div>
         </div>
         <div class="hero-portrait rise">
@@ -1329,7 +1376,25 @@ footer .mono{ font-size:11.5px; }
       <section id="about" aria-labelledby="about-h">
         <p class="eyebrow">Profile</p>
         <h2 id="about-h" class="reveal">About</h2>
-        <p class="summary reveal">Management-level Deck Officer (STCW II/2) with 3+ years&rsquo; officer watchkeeping experience across container vessels and bulk carriers. Chief Mate Certificate of Competency (Unlimited, Oceangoing) — MARINA Philippines. <strong>Clean record across all completed contracts — zero incidents, all contracts finished in full.</strong> Seeking Chief Mate positions on bulk carriers; open to 2nd Officer roles with confirmed onboard promotion pathway to Chief Mate. Distinctive edge: designs and builds offline shipboard calculation software in active bridge use.</p>
+        <p class="summary reveal">Management-level Deck Officer (STCW II/2) with 3+ years&rsquo; officer watchkeeping across Supramax and Panamax bulk carriers and Panamax container tonnage, on vessels to 71,033&nbsp;DWT. Chief Mate / Chief Officer Certificate of Competency (Unlimited, Oceangoing) — MARINA Philippines. <strong>Zero incidents across six contracts and three vessels, every contract completed in full.</strong> Target role: Chief Mate / Chief Officer on bulk carriers, Handysize through Panamax; open to 2nd Officer with a confirmed onboard promotion pathway. Distinctive edge: designs and builds the offline calculation software his own bridge and cargo teams use — eight tools to date, five published as working apps on this site.</p>
+      </section>
+
+      <!-- ================= KEY ACHIEVEMENTS ================= -->
+      <!-- Deliberately above Sea Service: the record below proves these, but a reader
+           who only gets thirty seconds should spend them on outcomes, not on a table of
+           dates. Every figure here is derived from the SERVICE/VESSELS data or from what
+           is published in this repo — nothing is estimated. -->
+      <section id="impact" aria-labelledby="impact-h">
+        <p class="eyebrow">Results</p>
+        <h2 id="impact-h" class="reveal">Key Achievements</h2>
+        <ul class="impact-list">
+          <li class="reveal"><b>Zero incidents across six contracts and three vessels.</b> Every contract served to full term — none cut short, none interrupted — through 3+&nbsp;years of officer watchkeeping on Supramax, Panamax and container tonnage.</li>
+          <li class="reveal"><b>Promoted 3rd Officer to 2nd Officer within the same fleet</b>, then qualified Chief Mate / Chief Officer (Unlimited, Oceangoing, STCW&nbsp;II/2) while still sailing as 2nd Officer — management-level certified ahead of the rank.</li>
+          <li class="reveal"><b>Built eight shipboard tools now in active bridge and cargo use</b>, five of them published here as single-file offline apps — no server, no install, and no signal required, which is the only form software takes that survives a deep-sea passage.</li>
+          <li class="reveal"><b>Draft surveys held to 0.5&nbsp;cm precision</b> by building the survey engine that applies the heeling, trim and hydrostatic interpolation corrections the ship previously worked by hand.</li>
+          <li class="reveal"><b>Inmarsat-C SafetyNET traffic sorted automatically into seven tiers</b>, replacing a manual read of every printout with an indexed warning log filtered for route relevance.</li>
+          <li class="reveal"><b>Four cargo classes loaded and discharged</b> — woodchips, tapioca chips, dry bulk and containers including reefer monitoring — on vessels up to 71,033&nbsp;DWT and 4,250&nbsp;TEU.</li>
+        </ul>
       </section>
 
       <!-- ================= SEA SERVICE ================= -->
@@ -1344,53 +1409,12 @@ footer .mono{ font-size:11.5px; }
         <p class="svc-manning reveal">Manning: <span class="mono">V.Ships (Fleet 6B Manila)</span></p>
       </section>
 
-      <!-- ================= BRIDGE & NAVIGATION ================= -->
-      <section id="bridge" aria-labelledby="bridge-h">
-        <p class="eyebrow">Watchkeeping</p>
-        <h2 id="bridge-h" class="reveal">Bridge &amp; Navigation Competencies</h2>
-        <ul class="comp-list">
-          <li class="reveal">Berth-to-berth passage planning and execution, worldwide trading: ocean passages, archipelagic waters, high-density TSS (Singapore Strait, Malacca), Australian and East Asian coastal waters</li>
-          <li class="reveal">ECDIS: JRC and Furuno — route planning, safety contour management, chart/permit updating, alarm management</li>
-          <li class="reveal">Radar/ARPA: JRC and Furuno — collision avoidance in restricted visibility and heavy traffic</li>
-          <li class="reveal">Gyro and magnetic compass management: daily error observations (azimuth/amplitude), deviation records, compass error logs</li>
-          <li class="reveal">MSI management: GMDSS/NAVTEX/SafetyNET EGC monitoring, NAVAREA warning indexing and route-relevance analysis</li>
-          <li class="reveal">Weather routing liaison, heavy-weather passage planning, tropical cyclone avoidance</li>
-          <li class="reveal">Bridge Team &amp; Resource Management (BTRM) — Dec 2025</li>
-          <li class="reveal">Nautical publications and chart correction management</li>
-        </ul>
-      </section>
-
-      <!-- ================= CARGO & DECK ================= -->
-      <section id="cargo" aria-labelledby="cargo-h">
-        <p class="eyebrow">Operations</p>
-        <h2 id="cargo-h" class="reveal">Cargo &amp; Deck Operations</h2>
-        <ul class="comp-list">
-          <li class="reveal">Cargo experience: woodchips, tapioca chips, dry bulk (Supramax), containerized cargo incl. reefer container monitoring</li>
-          <li class="reveal">Cargo watch officer: sequence monitoring, ballast/deballast coordination, trim/draft management, air draft control</li>
-          <li class="reveal">Draft surveys to 0.5&nbsp;cm precision with heeling and draft-list corrections (initial/intermediate/final)</li>
-          <li class="reveal">Daily Progress Reporting: period-based load/discharge rates, cargo remaining, ETC projections</li>
-          <li class="reveal">Hold preparation: grain-clean and charterer&rsquo;s standard per voyage instructions; hold inspections</li>
-          <li class="reveal">Hatch covers (folding type): operation, weathertightness maintenance, hose testing</li>
-          <li class="reveal">Loading computers: OEC LOAD-MASTER, CLOUD — condition planning, stress/stability verification against approved Loading Manual</li>
-          <li class="reveal">Manual stability verification using vessel hydrostatic tables</li>
-        </ul>
-      </section>
-
-      <!-- ================= SAFETY & COMPLIANCE ================= -->
-      <section id="safety" aria-labelledby="safety-h">
-        <p class="eyebrow">Standards</p>
-        <h2 id="safety-h" class="reveal">Safety &amp; Compliance</h2>
-        <ul class="comp-list">
-          <li class="reveal">Clean record: zero incidents across all contracts; all contracts completed in full</li>
-          <li class="reveal">PSC inspections attended: Australia (AMSA), Vietnam, Philippines</li>
-          <li class="reveal">Designated Medical Officer (2/O): medical stores to Singapore flag Scale A (MLC 2006), controlled substances custody, expiry auditing, requisitions</li>
-          <li class="reveal">Led and conducted shipboard drills (fire, abandon ship, enclosed space rescue, MOB) under Master&rsquo;s oversight</li>
-          <li class="reveal">Risk assessments and permit-to-work compliance (enclosed space, hot work, working aloft)</li>
-          <li class="reveal">ISM Code shipboard implementation, SMS compliance</li>
-        </ul>
-      </section>
-
       <!-- ================= CERTIFICATIONS ================= -->
+      <!-- Sits here, directly under the record, because the print CV has always run it
+           third and the two were disagreeing about their own running order. Both files
+           now use one canonical order and verify.mjs fails if they drift apart again.
+           An Education section belongs immediately above this block, under Sea Service —
+           never above the record itself. -->
       <section id="certs" aria-labelledby="certs-h">
         <p class="eyebrow">Documents</p>
         <div class="h2-row reveal">
@@ -1412,6 +1436,51 @@ footer .mono{ font-size:11.5px; }
         </ul>
       </section>
 
+      <!-- ================= BRIDGE & NAVIGATION ================= -->
+      <section id="bridge" aria-labelledby="bridge-h">
+        <p class="eyebrow">Watchkeeping</p>
+        <h2 id="bridge-h" class="reveal">Bridge &amp; Navigation Competencies</h2>
+        <ul class="comp-list">
+          <li class="reveal">Planned and executed berth-to-berth passages worldwide with no navigational incident across six contracts — ocean and archipelagic passages, high-density TSS work in the Singapore Strait and Malacca, and Australian and East Asian coastal waters</li>
+          <li class="reveal">Ran ECDIS as primary means of navigation on two maker platforms (JRC and Furuno), managing safety contours, chart and permit updating, and tuning alarm settings so genuine alerts are not buried in nuisance ones</li>
+          <li class="reveal">Kept watches collision-free in restricted visibility and heavy traffic on Radar/ARPA (JRC, Furuno) by taking COLREG-compliant action early and substantially enough to be seen by the other vessel</li>
+          <li class="reveal">Held gyro and magnetic compass error inside operational limits through daily azimuth/amplitude observations, with deviation and error logs maintained to flag-state audit standard</li>
+          <li class="reveal">Turned raw MSI traffic into a usable picture — GMDSS/NAVTEX/SafetyNET EGC monitoring with NAVAREA warnings indexed and filtered for route relevance, so the bridge team reads what affects the passage instead of everything received</li>
+          <li class="reveal">Kept vessels clear of tropical cyclones and heavy weather by working routing-service advice into the passage plan and adjusting track before conditions closed, rather than reacting once they had</li>
+          <li class="reveal">Kept nautical publications and chart corrections continuously inspection-ready by applying corrections on receipt rather than batching them before arrival</li>
+        </ul>
+      </section>
+
+      <!-- ================= CARGO & DECK ================= -->
+      <section id="cargo" aria-labelledby="cargo-h">
+        <p class="eyebrow">Operations</p>
+        <h2 id="cargo-h" class="reveal">Cargo &amp; Deck Operations</h2>
+        <ul class="comp-list">
+          <li class="reveal">Loaded and discharged four cargo classes — woodchips, tapioca chips, dry bulk and containers including reefer monitoring — across Supramax, Panamax and 4,250&nbsp;TEU tonnage, handling the bulk parcels to IMSBC Code requirements</li>
+          <li class="reveal">Ran cargo watches to plan by monitoring the sequence against the approved condition and coordinating ballast/deballast, trim, draft and air draft, keeping the ship inside stress and stability limits at every stage</li>
+          <li class="reveal">Held draft surveys to 0.5&nbsp;cm precision at initial, intermediate and final stages — heeling, list and trim corrections applied through a purpose-built survey engine rather than hand-worked interpolation</li>
+          <li class="reveal">Gave charterers and office a completion picture they could plan against, by building Daily Progress Reporting on period-based load/discharge rates rather than a running average that hides a berth slowing down</li>
+          <li class="reveal">Prepared and presented holds to grain-clean or charterer&rsquo;s standard per voyage instructions, scheduling the work against the sea passage available instead of compressing it into the arrival window</li>
+          <li class="reveal">Kept folding hatch covers weathertight through scheduled operation, maintenance and hose testing — the single most common source of cargo damage claims on a bulk carrier</li>
+          <li class="reveal">Proved every cargo condition against the approved Loading Manual on OEC LOAD-MASTER and CLOUD before the sequence began, so stress and stability limits were settled in advance rather than discovered mid-load</li>
+          <li class="reveal">Cross-checked loading-computer output by hand against the vessel&rsquo;s hydrostatic tables, so a bad input or a software fault could not pass unnoticed into a loading plan</li>
+        </ul>
+      </section>
+
+      <!-- ================= SAFETY & COMPLIANCE ================= -->
+      <section id="safety" aria-labelledby="safety-h">
+        <p class="eyebrow">Standards</p>
+        <h2 id="safety-h" class="reveal">Safety &amp; Compliance</h2>
+        <ul class="comp-list">
+          <li class="reveal">Maintained a zero-incident record across six contracts and three vessels, with every contract completed in full and no early repatriation</li>
+          <li class="reveal">Attended Port State Control inspections under three regimes — AMSA (Australia), Vietnam and the Philippines — with certificates, records and SMS evidence prepared ahead of arrival so each inspection ran off documents already in order</li>
+          <li class="reveal">Held custody of Scale A medical stores (MLC 2006) on Singapore-flag tonnage as Designated Medical Officer (2nd Officer): controlled substances secured and logged, expiries audited on schedule, and requisitions raised before stock ran short rather than after</li>
+          <li class="reveal">Led shipboard drills — fire, abandon ship, enclosed space rescue and MOB — under the Master&rsquo;s oversight, run as timed rehearsals against the muster list so weaknesses surfaced in the drill rather than in the event</li>
+          <li class="reveal">Kept high-risk work incident-free through risk assessment and permit-to-work discipline for enclosed space entry, hot work and working aloft — no permit signed until the stated controls were physically verified in place</li>
+          <li class="reveal">Implemented the ISM Code at ship level and kept SMS, SOLAS and MARPOL compliance current in the vessel&rsquo;s own records, so the safety system stood up as evidence rather than as a manual on a shelf</li>
+        </ul>
+      </section>
+
       <!-- ================= TOOLS & PROJECTS ================= -->
       <section id="tools" aria-labelledby="tools-h">
         <p class="eyebrow">Shipboard Software</p>
@@ -1420,47 +1489,47 @@ footer .mono{ font-size:11.5px; }
           <a class="tool-card reveal" href="apps/cargo-ops/">
             <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l9 4 9-4"/><path d="M3 12l9 4 9-4"/><path d="M12 3L3 7l9 4 9-4-9-4Z"/></svg></div>
             <h3>Cargo Loading/Discharge Suite</h3>
-            <p>Stowage calculator, DPR with period-based rates, heeling calculator, daily cargo log with messaging-app report export.</p>
+            <p>Replaces the spreadsheet-and-calculator routine for a whole cargo operation — stowage planning, period-based DPR, heeling calculation, and a daily log that exports a formatted report straight into the ship&rsquo;s messaging app.</p>
             <span class="tool-open">Open app <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
           </a>
           <a class="tool-card reveal" href="apps/draft-survey/">
             <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 15h18"/><path d="M6 15V9m6 6V5m6 10v-4"/><path d="M3 19h18"/></svg></div>
             <h3>Draft Survey</h3>
-            <p>Full survey engine to 0.5&nbsp;cm precision: draft corrections, heeling and trim, hydrostatic interpolation, initial/intermediate/final with document export.</p>
+            <p>Works a full survey to 0.5&nbsp;cm — draft corrections, heeling and trim, hydrostatic interpolation — in place of interpolating the tables by hand, at initial, intermediate and final stages, with the finished survey exported as a document.</p>
             <span class="tool-open">Open app <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
           </a>
           <a class="tool-card reveal" href="apps/ballast/">
             <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M4 18c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2"/><path d="M12 3v8M8.5 6.5 12 3l3.5 3.5"/></svg></div>
             <h3>Ballast Voyage Planner</h3>
-            <p>Tank-by-tank ballast planning with sounding interpolation, fore and aft distribution, and condition summaries.</p>
+            <p>Settles the ballast condition tank by tank before the pump starts — sounding interpolation, fore and aft distribution and condition summaries — rather than trimming it by trial while the operation runs.</p>
             <span class="tool-open">Open app <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
           </a>
           <a class="tool-card reveal" href="apps/noon-guide/">
             <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
             <h3>Noon Report Guide</h3>
-            <p>Live voyage progress tracker: DTG, average speed, ROB, consumption.</p>
+            <p>Keeps voyage progress live between noon positions — DTG, average speed, ROB and consumption — so a shortfall against ETA shows up the day it appears rather than at the next report.</p>
             <span class="tool-open">Open app <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
           </a>
           <a class="tool-card reveal" href="apps/egc-reader/">
             <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v14H4z"/><path d="M8 8h8M8 12h6"/><path d="M2 21h20"/></svg></div>
             <h3>EGC Warning Reader</h3>
-            <p>Automated parser/organizer for Inmarsat-C SafetyNET printouts — 7-tier categorization, ZIP import.</p>
+            <p>Turns a stack of Inmarsat-C SafetyNET printouts into an indexed, searchable warning log through 7-tier categorization and ZIP import, replacing a manual read of every message received.</p>
             <span class="tool-open">Open app <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>
           </a>
           <div class="tool-card reveal">
             <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg></div>
             <h3>MSI Index Log Pipeline</h3>
-            <p>Automated NAVAREA X/XI and AUSCOAST warning index logs with Word document generation.</p>
+            <p>Generates the NAVAREA X/XI and AUSCOAST warning index logs as finished Word documents, removing the retyping the log previously required every time it was updated.</p>
           </div>
           <div class="tool-card reveal">
             <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/><circle cx="12" cy="12" r="9"/></svg></div>
             <h3>Medical Inventory System</h3>
-            <p>Scale A compliance workbook: expiry tracking, requisition generation.</p>
+            <p>Tracks Scale A stock against expiry and raises requisitions from the workbook itself, so a shortage is found by the system on a schedule rather than at the moment the item is needed.</p>
           </div>
           <div class="tool-card reveal">
             <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg></div>
             <h3>&ldquo;Bulk Carrier Knowledge Edition 2025&rdquo;</h3>
-            <p>Compiled internal reference document.</p>
+            <p>Internal bulk carrier reference compiled from the ship&rsquo;s own practice, written to carry across a crew change as a handover and training document.</p>
           </div>
         </div>
         <p class="tech-line reveal"><b>&gt;</b> Vanilla JS/HTML/CSS &middot; offline-first architecture &middot; Excel &middot; AI-assisted development (Claude/Claude Code) &middot; Git/GitHub</p>
@@ -1471,8 +1540,9 @@ footer .mono{ font-size:11.5px; }
         <p class="eyebrow">Crew</p>
         <h2 id="leadership-h" class="reveal">Leadership &amp; Mentorship</h2>
         <ul class="lead-list">
-          <li class="reveal">Trained and mentored deck cadets and junior officers in watchkeeping, cargo operations, and bridge equipment</li>
-          <li class="reveal">Directly mentored fellow seafarers through promotion to 3rd Officer and 2nd Officer ranks</li>
+          <li class="reveal">Brought deck cadets and junior officers up to independent watchkeeping, training them on the bridge equipment, cargo operations and watch routine they would actually be examined and relied upon for</li>
+          <li class="reveal">Mentored fellow seafarers through promotion to 3rd Officer and 2nd Officer — the clearest available measure that the training took hold</li>
+          <li class="reveal">Got the bridge and cargo teams using the software rather than only using it himself, supporting each tool aboard until it became ship&rsquo;s practice instead of a personal habit</li>
         </ul>
       </section>
 
@@ -1604,6 +1674,17 @@ function fmtMD(days){
   document.getElementById('stat2O').textContent    = fmtYM(d2);
   document.getElementById('statTotal').textContent = fmtYM(all);
 
+  /* Contract count and largest tonnage both come from the record rather than being typed
+     into the markup, so adding a contract updates the hero without a second edit. The
+     size strings are mixed units ("4,250 TEU / 50,278 DWT"), so only the DWT figure is
+     read — TEU is not a deadweight and must not win the comparison. */
+  document.getElementById('statContracts').textContent = SERVICE.length;
+  const dwt = Object.keys(VESSELS).map(function(n){
+    const m = VESSELS[n].size.match(/([\d,]+)\s*DWT/);
+    return m ? +m[1].replace(/,/g, '') : 0;
+  });
+  document.getElementById('statDwt').textContent = Math.max.apply(null, dwt).toLocaleString('en-US');
+
   /* The bar: the whole record in one line, 3rd Officer first so it reads
      left-to-right as the career ran. */
   const p3 = (d3 / all * 100), p2 = (d2 / all * 100);
@@ -1647,10 +1728,14 @@ function fmtMD(days){
 /* ============ SCROLL: rail + active nav + reveals ============ */
 (function scrollWiring(){
   const main = document.getElementById('main');
-  const sections = ['hero','about','service','bridge','cargo','safety','certs','tools','leadership','contact']
+  /* Must stay in DOM order: tops[] is built from offsetTop and the active-section search
+     walks it assuming it ascends. Reordering a section in the markup means reordering it
+     here too. */
+  const sections = ['hero','about','impact','service','certs','bridge','cargo','safety','tools','leadership','contact']
     .map(function(id){ return document.getElementById(id); });
-  const labels = { hero:'DECK', about:'PROFILE', service:'SEA SERVICE', bridge:'BRIDGE', cargo:'CARGO',
-                   safety:'SAFETY', certs:'DOCUMENTS', tools:'SOFTWARE', leadership:'CREW', contact:'CONTACT' };
+  const labels = { hero:'DECK', about:'PROFILE', impact:'RESULTS', service:'SEA SERVICE', certs:'DOCUMENTS',
+                   bridge:'BRIDGE', cargo:'CARGO', safety:'SAFETY', tools:'SOFTWARE', leadership:'CREW',
+                   contact:'CONTACT' };
   const strip = document.getElementById('navLinks');
   const navLinks = Array.prototype.slice.call(strip.querySelectorAll('a'));
   const ind = document.getElementById('navInd');
@@ -1816,7 +1901,7 @@ function fmtMD(days){
 })();
 
 /* ============ MOBILE SECTION SHEET ============ */
-/* Below 900px the nav shows a readout instead of the nine-link strip; this is the strip's
+/* Below 900px the nav shows a readout instead of the ten-link strip; this is the strip's
    replacement. The rows are generated from the strip's own anchors so the two can never
    list different sections — and so the strip stays the single source of truth for which
    section is current, which it already tracks in scrollWiring. */

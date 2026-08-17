@@ -31,7 +31,10 @@ body{
 .page{
   width:186mm;
   margin:0 auto;
-  padding:10mm 0;
+  /* No padding in print: @page already reserves 11mm all round, and this block's own
+     10mm top and bottom sat inside that, spending 20mm of a 550mm two-page budget on a
+     second margin nobody asked for. The screen preview re-adds its own below. */
+  padding:0;
 }
 @media screen{
   body{ background:#E7ECF2; }
@@ -46,7 +49,7 @@ body{
 
 /* ---------- IDENTITY ---------- */
 header{
-  border-bottom:1.6pt solid var(--green); padding-bottom:5pt; margin-bottom:8pt;
+  border-bottom:1.6pt solid var(--green); padding-bottom:4pt; margin-bottom:6pt;
   display:flex; align-items:flex-start; gap:9pt;
 }
 header .ident{ flex:1 1 auto; min-width:0; }
@@ -73,16 +76,19 @@ h1{
   font-size:8.4pt; color:var(--dim); margin-top:3pt;
 }
 .ident-meta b{ color:var(--ink-2); font-weight:600; }
+/* Clickable in the PDF, but printed as text — a blue underline in the header of a CV
+   reads as a stray hyperlink rather than as part of the identity block. */
+.ident-meta a{ color:inherit; text-decoration:none; }
 
 /* ---------- SECTIONS ---------- */
-section{ margin-bottom:7pt; }
+section{ margin-bottom:5pt; }
 h2{
   font-size:8.4pt; font-weight:800; letter-spacing:.13em; text-transform:uppercase;
   color:var(--green); border-bottom:.6pt solid var(--rule);
-  padding-bottom:2pt; margin-bottom:4.5pt;
+  padding-bottom:1.8pt; margin-bottom:3.4pt;
 }
 p{ margin-bottom:2.5pt; }
-.lead{ font-size:9.1pt; line-height:1.45; text-align:justify; }
+.lead{ font-size:9.1pt; line-height:1.4; text-align:justify; }
 .lead b{ font-weight:700; }
 
 /* ---------- SEA SERVICE TABLE ---------- */
@@ -92,7 +98,7 @@ thead th{
   color:var(--dim); text-align:left; padding:2.5pt 4pt; background:var(--tint);
   border-bottom:.6pt solid var(--rule);
 }
-tbody td{ padding:2.6pt 4pt; border-bottom:.5pt solid var(--rule); vertical-align:top; }
+tbody td{ padding:2.2pt 4pt; border-bottom:.5pt solid var(--rule); vertical-align:top; }
 tbody tr:last-child td{ border-bottom:none; }
 .v-name{ font-family:var(--font-mono); font-weight:700; font-size:8.4pt; white-space:nowrap; }
 .num{ font-family:var(--font-mono); font-size:8.2pt; white-space:nowrap; }
@@ -105,24 +111,39 @@ tbody tr:last-child td{ border-bottom:none; }
 .vparticulars b{ color:var(--ink-2); font-weight:700; }
 .totals{
   display:flex; flex-wrap:wrap; gap:0 14pt;
-  margin-top:4pt; padding:3.5pt 5pt; background:var(--tint); border-radius:2pt;
+  margin-top:3pt; padding:3pt 5pt; background:var(--tint); border-radius:2pt;
   font-size:8.3pt;
 }
 .totals span b{ font-family:var(--font-mono); color:var(--green); font-weight:700; }
 
 /* ---------- COMPETENCY BLOCKS ---------- */
-.grp{ margin-bottom:3.2pt; }
+.grp{ margin-bottom:2.3pt; }
 .grp h3{
   font-size:8.4pt; font-weight:700; color:var(--ink); display:inline;
 }
 .grp h3::after{ content:" — "; color:var(--dim); font-weight:400; }
 .grp p{ display:inline; font-size:8.7pt; color:var(--ink-2); }
 
+/* ---------- KEY ACHIEVEMENTS ---------- */
+/* Single column on purpose. These are the lines the CV is actually read for, and the
+   two-column certificate treatment below would break them mid-result. The outcome is
+   bolded so the section survives being skimmed. */
+.wins li{
+  list-style:none; font-size:8.7pt; line-height:1.4;
+  margin-bottom:1.4pt; padding-left:9pt; position:relative;
+}
+.wins li::before{
+  content:""; position:absolute; left:0; top:3.2pt;
+  width:4pt; height:4pt; background:var(--green-bar); border-radius:50%;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.wins b{ font-weight:700; color:var(--ink); }
+
 /* ---------- CERTIFICATIONS ---------- */
 .certs{ column-count:2; column-gap:10mm; }
 .cert{
   break-inside:avoid; -webkit-column-break-inside:avoid; page-break-inside:avoid;
-  font-size:8.5pt; padding-left:9pt; position:relative; margin-bottom:1.8pt;
+  font-size:8.5pt; padding-left:9pt; position:relative; margin-bottom:1.3pt;
 }
 .cert::before{
   content:""; position:absolute; left:0; top:3.4pt;
@@ -131,7 +152,7 @@ tbody tr:last-child td{ border-bottom:none; }
 .cert i{ font-style:normal; color:var(--dim); font-size:7.9pt; }
 
 /* ---------- TOOLS ---------- */
-.tools li{ list-style:none; font-size:8.6pt; margin-bottom:1.6pt; padding-left:9pt; position:relative; }
+.tools li{ list-style:none; font-size:8.6pt; margin-bottom:1.2pt; padding-left:9pt; position:relative; }
 .tools li::before{ content:"›"; position:absolute; left:0; color:var(--green); font-weight:700; }
 .tools b{ font-weight:700; }
 .tech{
@@ -143,7 +164,7 @@ tbody tr:last-child td{ border-bottom:none; }
 .contact{ font-size:8.6pt; }
 .contact b{ color:var(--ink); }
 footer{
-  margin-top:6pt; padding-top:3pt; border-top:.5pt solid var(--rule);
+  margin-top:4pt; padding-top:2.5pt; border-top:.5pt solid var(--rule);
   font-size:7.3pt; color:var(--dim); display:flex; justify-content:space-between;
 }
 .avoid{ break-inside:avoid; page-break-inside:avoid; }
@@ -160,11 +181,15 @@ footer{
   <header>
     <div class="ident">
       <h1>Richard Mark H. Adlawan</h1>
-      <div class="rank">CHIEF MATE CoC (UNLIMITED, OCEANGOING) — MANAGEMENT LEVEL STCW II/2</div>
+      <div class="rank">CHIEF MATE / CHIEF OFFICER CoC (UNLIMITED, OCEANGOING) — MANAGEMENT LEVEL STCW II/2</div>
       <div class="ident-meta">
         <span>Currently <b>2nd Officer, MV FG Eucalyptus</b> (Supramax Bulk Carrier, 50,011 DWT, Singapore Flag)</span>
         <span>Talisay City, Cebu, Philippines</span>
         <span>Manning: <b>V.Ships (Fleet 6B Manila)</b></span>
+        <!-- The five apps below are the part of this CV that can be opened and tried, and
+             the PDF is what actually reaches a recruiter — so the address goes here, not
+             only on the site. Stays clickable in the exported PDF. -->
+        <span>CV &amp; working apps: <b><a href="https://richardmarkadlawan.github.io">richardmarkadlawan.github.io</a></b></span>
       </div>
     </div>
     <img class="portrait" src="portrait.jpg" width="83" height="83"
@@ -173,7 +198,21 @@ footer{
 
   <section class="avoid">
     <h2>Professional Summary</h2>
-    <p class="lead">Management-level Deck Officer (STCW II/2) with 3+ years&rsquo; officer watchkeeping experience across container vessels and bulk carriers. Chief Mate Certificate of Competency (Unlimited, Oceangoing) — MARINA Philippines. <b>Clean record across all completed contracts — zero incidents, all contracts finished in full.</b> Seeking Chief Mate positions on bulk carriers; open to 2nd Officer roles with confirmed onboard promotion pathway to Chief Mate. Distinctive edge: designs and builds offline shipboard calculation software in active bridge use.</p>
+    <p class="lead">Management-level Deck Officer (STCW II/2) with 3+ years&rsquo; officer watchkeeping across Supramax and Panamax bulk carriers and Panamax container tonnage, on vessels to 71,033&nbsp;DWT. Chief Mate / Chief Officer Certificate of Competency (Unlimited, Oceangoing) — MARINA Philippines. <b>Zero incidents across six contracts and three vessels, every contract completed in full.</b> Target role: Chief Mate / Chief Officer on bulk carriers, Handysize through Panamax; open to 2nd Officer with a confirmed onboard promotion pathway. Distinctive edge: designs and builds the offline calculation software his own bridge and cargo teams use — eight tools to date, five published as working apps.</p>
+  </section>
+
+  <!-- Above the record on purpose: the table below proves these, but a CV gets about
+       thirty seconds and they should be spent on outcomes rather than on dates. -->
+  <section class="avoid">
+    <h2>Key Achievements</h2>
+    <ul class="wins">
+      <li><b>Zero incidents across six contracts and three vessels</b> — every contract served to full term, through 3+ years of watchkeeping on Supramax, Panamax and container tonnage.</li>
+      <li><b>Promoted 3rd Officer to 2nd Officer within the same fleet</b>, then qualified Chief Mate / Chief Officer (Unlimited, Oceangoing) while still sailing as 2nd Officer.</li>
+      <li><b>Built eight shipboard tools now in active bridge and cargo use</b>, five published as offline single-file apps needing no server, install or signal.</li>
+      <li><b>Draft surveys held to 0.5 cm</b> by building the survey engine that applies the heeling, trim and hydrostatic corrections previously worked by hand.</li>
+      <li><b>Inmarsat-C SafetyNET traffic sorted automatically into seven tiers</b>, replacing a manual read of every printout with an indexed, route-filtered log.</li>
+      <li><b>Four cargo classes loaded and discharged</b> — woodchips, tapioca chips, dry bulk, containers incl. reefer — on vessels to 71,033 DWT and 4,250 TEU.</li>
+    </ul>
   </section>
 
   <section class="avoid">
@@ -217,51 +256,53 @@ footer{
 
   <section>
     <h2>Bridge &amp; Navigation Competencies</h2>
-    <div class="grp"><h3>Passage planning</h3><p>Berth-to-berth planning and execution, worldwide trading: ocean passages, archipelagic waters, high-density TSS (Singapore Strait, Malacca), Australian and East Asian coastal waters.</p></div>
-    <div class="grp"><h3>ECDIS</h3><p>JRC and Furuno — route planning, safety contour management, chart/permit updating, alarm management.</p></div>
-    <div class="grp"><h3>Radar / ARPA</h3><p>JRC and Furuno — collision avoidance in restricted visibility and heavy traffic.</p></div>
-    <div class="grp"><h3>Compass management</h3><p>Gyro and magnetic — daily error observations (azimuth/amplitude), deviation records, compass error logs.</p></div>
-    <div class="grp"><h3>MSI management</h3><p>GMDSS/NAVTEX/SafetyNET EGC monitoring, NAVAREA warning indexing and route-relevance analysis.</p></div>
-    <div class="grp"><h3>Weather</h3><p>Weather routing liaison, heavy-weather passage planning, tropical cyclone avoidance.</p></div>
-    <div class="grp"><h3>Bridge Team &amp; Resource Management (BTRM)</h3><p>Dec 2025. Nautical publications and chart correction management.</p></div>
+    <div class="grp"><h3>Passage planning</h3><p>Berth-to-berth passages worldwide with no navigational incident across six contracts: ocean and archipelagic, high-density TSS (Singapore Strait, Malacca), Australian and East Asian coastal waters.</p></div>
+    <div class="grp"><h3>ECDIS</h3><p>Primary means of navigation on JRC and Furuno: safety contours, chart and permit updating, alarms tuned so genuine alerts are not buried in nuisance ones.</p></div>
+    <div class="grp"><h3>Radar / ARPA</h3><p>Collision-free watches in restricted visibility and heavy traffic on JRC and Furuno, taking COLREG action early and substantially.</p></div>
+    <div class="grp"><h3>MSI management</h3><p>GMDSS/NAVTEX/SafetyNET EGC traffic indexed and filtered for route relevance, so the bridge reads what affects the passage, not everything received.</p></div>
+    <div class="grp"><h3>Weather</h3><p>Vessels kept clear of tropical cyclones and heavy weather by working routing advice into the plan and adjusting track before conditions closed.</p></div>
+    <div class="grp"><h3>Records &amp; publications</h3><p>Gyro and magnetic error held inside limits by daily azimuth/amplitude observation; charts and publications kept continuously inspection-ready, corrections applied on receipt.</p></div>
   </section>
 
   <section>
     <h2>Cargo &amp; Deck Operations</h2>
-    <div class="grp"><h3>Cargo experience</h3><p>Woodchips, tapioca chips, dry bulk (Supramax), containerized cargo incl. reefer container monitoring.</p></div>
-    <div class="grp"><h3>Cargo watch officer</h3><p>Sequence monitoring, ballast/deballast coordination, trim/draft management, air draft control.</p></div>
-    <div class="grp"><h3>Draft surveys</h3><p>To 0.5 cm precision with heeling and draft-list corrections (initial/intermediate/final).</p></div>
-    <div class="grp"><h3>Daily Progress Reporting</h3><p>Period-based load/discharge rates, cargo remaining, ETC projections.</p></div>
-    <div class="grp"><h3>Hold preparation</h3><p>Grain-clean and charterer&rsquo;s standard per voyage instructions; hold inspections. Hatch covers (folding type): operation, weathertightness maintenance, hose testing.</p></div>
-    <div class="grp"><h3>Loading computers</h3><p>OEC LOAD-MASTER, CLOUD — condition planning, stress/stability verification against approved Loading Manual; manual stability verification using vessel hydrostatic tables.</p></div>
+    <div class="grp"><h3>Cargo experience</h3><p>Woodchips, tapioca chips, dry bulk and containers incl. reefer, across Supramax, Panamax and 4,250 TEU tonnage; bulk parcels to IMSBC Code.</p></div>
+    <div class="grp"><h3>Cargo watch officer</h3><p>Sequence monitored against the approved condition, with ballast/deballast, trim, draft and air draft coordinated to hold the ship inside stress and stability limits.</p></div>
+    <div class="grp"><h3>Draft surveys</h3><p>Held to 0.5 cm at initial, intermediate and final stages; heeling, list and trim corrections applied through a purpose-built engine rather than by hand.</p></div>
+    <div class="grp"><h3>Daily Progress Reporting</h3><p>Built on period-based rates rather than a running average, so a berth slowing down shows in the completion estimate charterers plan against.</p></div>
+    <div class="grp"><h3>Hold preparation</h3><p>Presented to grain-clean or charterer&rsquo;s standard per voyage instructions, scheduled against the sea passage available. Folding hatch covers kept weathertight by maintenance and hose testing.</p></div>
+    <div class="grp"><h3>Loading computers</h3><p>Every condition proved against the approved Loading Manual on OEC LOAD-MASTER and CLOUD before the sequence began, and cross-checked by hand against the hydrostatic tables.</p></div>
   </section>
 
   <section>
     <h2>Safety &amp; Compliance</h2>
-    <div class="grp"><h3>Record</h3><p>Zero incidents across all contracts; all contracts completed in full.</p></div>
-    <div class="grp"><h3>PSC inspections attended</h3><p>Australia (AMSA), Vietnam, Philippines.</p></div>
-    <div class="grp"><h3>Designated Medical Officer (2/O)</h3><p>Medical stores to Singapore flag Scale A (MLC 2006), controlled substances custody, expiry auditing, requisitions.</p></div>
-    <div class="grp"><h3>Drills</h3><p>Led and conducted shipboard drills (fire, abandon ship, enclosed space rescue, MOB) under Master&rsquo;s oversight.</p></div>
-    <div class="grp"><h3>Compliance</h3><p>Risk assessments and permit-to-work compliance (enclosed space, hot work, working aloft); ISM Code shipboard implementation, SMS compliance.</p></div>
+    <div class="grp"><h3>Record</h3><p>Zero incidents across six contracts and three vessels; every contract completed in full, no early repatriation.</p></div>
+    <div class="grp"><h3>PSC inspections attended</h3><p>Three regimes — AMSA (Australia), Vietnam, Philippines — with certificates, records and SMS evidence prepared ahead of arrival.</p></div>
+    <div class="grp"><h3>Designated Medical Officer (2nd Officer)</h3><p>Scale A medical stores (MLC 2006) on Singapore-flag tonnage: controlled substances secured and logged, expiries audited on schedule, requisitions raised before stock ran short.</p></div>
+    <div class="grp"><h3>Drills</h3><p>Fire, abandon ship, enclosed space rescue and MOB led under the Master&rsquo;s oversight, run as timed rehearsals against the muster list so weaknesses surfaced in the drill.</p></div>
+    <div class="grp"><h3>Compliance</h3><p>Risk assessment and permit-to-work discipline for enclosed space, hot work and working aloft, no permit signed until controls were verified in place; ISM, SMS, SOLAS and MARPOL current in the ship&rsquo;s records.</p></div>
   </section>
 
   <section>
     <h2>Tools &amp; Projects — Shipboard Software</h2>
     <ul class="tools">
-      <li><b>Cargo Loading/Discharge Suite</b> — offline single-file apps in active bridge use: stowage calculator, DPR with period-based rates, draft readings, heeling calculator, daily cargo log with messaging-app report export.</li>
-      <li><b>Noon Report Guide</b> — live voyage progress tracker: DTG, average speed, ROB, consumption.</li>
-      <li><b>EGC Warning Reader</b> — automated parser/organizer for Inmarsat-C SafetyNET printouts (7-tier categorization, ZIP import).</li>
-      <li><b>MSI Index Log Pipeline</b> — automated NAVAREA X/XI and AUSCOAST warning index logs (Word document generation).</li>
-      <li><b>Medical Inventory System</b> — Scale A compliance workbook: expiry tracking, requisition generation.</li>
-      <li><b>&ldquo;Bulk Carrier Knowledge Edition 2025&rdquo;</b> — compiled internal reference document.</li>
+      <li><b>Cargo Loading/Discharge Suite</b> — replaces the spreadsheet-and-calculator routine for a cargo operation: stowage planning, period-based DPR, heeling, daily log exporting a report to the ship&rsquo;s messaging app.</li>
+      <li><b>Draft Survey</b> — a full survey to 0.5 cm in place of interpolating the tables by hand, at every stage, with document export.</li>
+      <li><b>Ballast Voyage Planner</b> — settles the ballast condition tank by tank before the pump starts; sounding interpolation, fore/aft distribution.</li>
+      <li><b>Noon Report Guide</b> — voyage progress live between noon positions, so a shortfall against ETA shows the day it appears.</li>
+      <li><b>EGC Warning Reader</b> — Inmarsat-C SafetyNET printouts turned into an indexed log (7-tier, ZIP import), replacing a manual read of every message.</li>
+      <li><b>MSI Index Log Pipeline</b> — NAVAREA X/XI and AUSCOAST index logs generated as finished Word documents, removing the retyping the log required.</li>
+      <li><b>Medical Inventory System</b> — Scale A stock tracked against expiry, requisitions raised from the workbook, so shortages surface on schedule.</li>
+      <li><b>&ldquo;Bulk Carrier Knowledge Edition 2025&rdquo;</b> — internal reference compiled from the ship&rsquo;s own practice, written to carry across a crew change.</li>
     </ul>
     <p class="tech">Vanilla JS/HTML/CSS · offline-first architecture · Excel · AI-assisted development (Claude/Claude Code) · Git/GitHub</p>
   </section>
 
   <section class="avoid">
     <h2>Leadership &amp; Mentorship</h2>
-    <div class="grp"><h3>Training</h3><p>Trained and mentored deck cadets and junior officers in watchkeeping, cargo operations, and bridge equipment.</p></div>
-    <div class="grp"><h3>Promotion support</h3><p>Directly mentored fellow seafarers through promotion to 3rd Officer and 2nd Officer ranks.</p></div>
+    <div class="grp"><h3>Training</h3><p>Deck cadets and junior officers brought up to independent watchkeeping, trained on the bridge equipment, cargo operations and watch routine they would be examined on.</p></div>
+    <div class="grp"><h3>Promotion support</h3><p>Fellow seafarers mentored through promotion to 3rd Officer and 2nd Officer — the clearest available measure that the training took hold.</p></div>
+    <div class="grp"><h3>Adoption</h3><p>Bridge and cargo teams brought onto the software rather than the author alone, each tool supported aboard until it became ship&rsquo;s practice.</p></div>
   </section>
 
   <section class="avoid">

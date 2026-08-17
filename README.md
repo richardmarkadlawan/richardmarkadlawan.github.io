@@ -68,6 +68,12 @@ In Safari or Chrome, open `cv_print.html` and print (⌘P). Choose **Save as PDF
 Save it next to `index.html` as `ADLAWAN_RICHARD_CV.pdf`. The on-screen page shows these same
 instructions; they do not appear in the print output.
 
+**The layout is a two-page budget, and it is nearly full.** A4 less the 11 mm margins gives
+275 mm a page, so the whole document has 550 mm to spend; it currently sits at about 548. Adding
+a few lines will silently push it to three pages, and nothing in `verify.mjs` catches that — check
+the page count after any edit that adds content. When it overflows, cut words from the Bridge and
+Cargo prose rather than shrinking the type.
+
 To regenerate from the command line instead:
 
 ```bash
@@ -85,6 +91,31 @@ that both files carry the same sea service record, that the "3+ years" claim is 
 the dates, that no phone number, personal email or expired document has crept in, and that neither
 page has picked up a remote resource that would break offline use. It exits non-zero on failure, so
 it also works as a pre-commit hook.
+
+It also enforces the presentation details that are individually trivial and collectively the
+reason a CV gets put down — each of which is invisible inside a single file and only shows up
+in a comparison:
+
+- **Section order** matches between the two files, and Education never sits above Sea Service.
+- **Rank naming** is consistent: `2/O`, `3/O` and `C/O` are rejected as rank labels in favour of
+  the full form. The abbreviations survive only inside the seatime bar, where a segment is too
+  narrow for "2nd Officer", and that one use is exempted by pattern rather than by hand.
+- **No placeholder text** — `«…»`, `TODO`, `TBD`, `XX` — survives into a published file.
+
+And it prints one figure it will never fail on:
+
+```
+ok   index.html: metric coverage 12/36 bullets carry a number
+```
+
+A bullet that states an outcome without a number is weaker, not wrong, so there is no threshold
+worth failing a build over. The ratio is printed because it is the number that quietly slides
+back down as sections get edited over time — and raising it is the single highest-value edit
+available to either page.
+
+An `<a href>` pointing at the live site is **not** counted as a remote resource. Only fetched
+subresources break offline use; a link the reader may click does not, which is what lets the
+print CV state its own web address.
 
 It also checks that **the PDF has not gone stale**. Both pages compute durations and seatime
 totals live, but the PDF is a frozen export — so while a contract is open, every day that passes
@@ -127,6 +158,47 @@ needs to change.
 The website lists certificates as a plain two-column list under a single **ALL VALID** badge on
 the heading, rather than repeating a status against every row. If a certificate ever stops being
 valid, that badge is no longer true — split the list or drop the badge rather than leaving it.
+
+## Section order
+
+Both pages run their sections in one canonical order, and `verify.mjs` fails if they drift
+apart:
+
+```
+Summary → Key Achievements → Sea Service → Certifications → Bridge → Cargo → Safety → Tools → Leadership → Contact
+```
+
+They disagreed for a long time without anyone noticing — the site ran Certifications after
+Safety, the print CV ran it third — because each file was internally consistent and only a
+comparison catches it.
+
+Two rules go with the order:
+
+- **Key Achievements stays above Sea Service.** The record proves the achievements, but a CV
+  gets about thirty seconds and they should be spent on outcomes rather than on dates.
+- **Education, if it is ever added, goes below Sea Service** — between the record and
+  Certifications, never above the record. `verify.mjs` fails the build if an `Education`
+  heading appears above `Sea Service` in either file.
+
+Adding or moving a section in `index.html` means updating the `sections` array and the
+`labels` map in `scrollWiring` too — the array must stay in DOM order, because the scroll
+logic builds `tops[]` from `offsetTop` and assumes it ascends. The mobile section sheet needs
+no edit; it generates its rows from the nav strip.
+
+## Writing the achievement and competency bullets
+
+Every bullet states an outcome and how it was achieved, not a duty. "PSC inspections attended:
+Australia, Vietnam, Philippines" is a list of places; what belongs on a CV is what came of
+attending them.
+
+**No metric is ever estimated.** A number is either supplied by Richard or derived from data
+already in the repo — the `SERVICE` array, the `VESSELS` table, or what is actually published
+under `apps/`. The hero's contract count and largest-DWT figures are computed from that data at
+page load rather than typed into the markup, so they cannot drift from the record.
+
+A figure that has not been supplied yet does not ship as a guess **and does not ship as a
+visible placeholder** either — `verify.mjs` fails on any surviving `«…»`, `TODO`, `TBD` or
+`XX` marker. Write the bullet without the number until the number exists.
 
 ## Still to do
 

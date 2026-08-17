@@ -213,6 +213,95 @@ for (const dir of readdirSync(new URL('apps/', import.meta.url), { withFileTypes
   if (clean) ok(`${rel}: no contact details`);
 }
 
+/* ---------- the small things ---------- */
+
+/* Three checks that all exist for the same reason: a CV is read by someone looking for a
+   reason to stop reading, and an inconsistency between the two files is exactly that. They
+   are cheap to introduce (one file gets edited, the other does not) and invisible until a
+   recruiter has both open. */
+
+/* Section order. The two files disagreed for a long time — the site ran Certifications
+   after Safety, the print CV ran it third — and nothing noticed, because each file is
+   internally consistent. Only a comparison catches it. */
+{
+  const headings = src => (src.match(/<h2\b[^>]*>([\s\S]*?)<\/h2>/gi) || [])
+    .map(h => h.replace(/<[^>]+>/g, '')
+               .replace(/&amp;/g, '&').replace(/&mdash;/g, '—')
+               .replace(/\s+/g, ' ').trim().toLowerCase())
+    /* The print CV states the certificate status in the heading ("Certifications — All
+       Valid") where the site uses a separate badge element, so compare the stem. */
+    .map(h => h.split(/\s+—\s+/)[0]);
+
+  const ha = headings(siteSrc), hb = headings(printSrc);
+  /* The site opens with the name in an <h1> and carries an extra "About" heading the print
+     CV renders as "Professional Summary"; align those two names before comparing. */
+  const norm = list => list.map(h => (h === 'about' || h === 'professional summary') ? 'summary' : h);
+  const na = norm(ha), nb = norm(hb);
+
+  if (na.join('|') !== nb.join('|')){
+    fail(`section order differs between the two files:\n` +
+         `        ${SITE}:  ${na.join(' → ')}\n` +
+         `        ${PRINT}: ${nb.join(' → ')}`);
+  } else {
+    ok(`section order: ${na.length} sections, same order in both files`);
+  }
+
+  /* Education, if it is ever added, must sit below Sea Service. Putting it above the
+     record is the single most common CV mistake for someone who has one. */
+  for (const [list, file] of [[na, SITE], [nb, PRINT]]){
+    const edu = list.indexOf('education'), svc = list.indexOf('sea service');
+    if (edu > -1 && svc > -1 && edu < svc){
+      fail(`${file}: Education is above Sea Service — the record comes first`);
+    }
+  }
+}
+
+/* Rank naming. "Designated Medical Officer (2/O)" sat one line below a table that spells
+   the same rank "2nd Officer". Pick one; the abbreviations survive only inside the seatime
+   bar, where a segment is too narrow for the long form. */
+{
+  const abbrev = /\((?:2\/O|3\/O|C\/O)\)|\b(?:2\/O|3\/O|C\/O)\s+(?:rank|officer)\b/gi;
+  for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
+    /* The seatime bar labels are built in JS as '3/O ' + duration — that is the one
+       sanctioned use, so it is cut out before scanning rather than special-cased below. */
+    const scanned = src.replace(/'[23]\/O '/g, "''");
+    const hits = scanned.match(abbrev);
+    if (hits) fail(`${file} writes a rank as ${[...new Set(hits)].join(', ')} — use the full form ("2nd Officer")`);
+  }
+}
+
+/* Placeholder guard. The impact bullets are written to carry real figures, and a figure
+   that has not been supplied yet must not ship — not as a guess, and not as a visible
+   «N» that a recruiter reads as an unfinished CV. */
+{
+  const markers = [/«[^»]*»/g, /\bTODO\b/g, /\bTBD\b/g, /\[\[[^\]]+\]\]/g, /\bXX+\b/g];
+  for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
+    for (const re of markers){
+      const hits = src.match(re);
+      if (hits) fail(`${file} still contains placeholder text: ${[...new Set(hits)].slice(0, 5).join(', ')}`);
+    }
+  }
+}
+
+/* Metric coverage — a note, never a failure. Bullets that state an outcome without a
+   number are weaker but not wrong, and there is no threshold worth failing a build over.
+   Printing the ratio keeps it visible, which is the whole point: it is the number that
+   quietly slides back down as sections get edited over time. */
+{
+  for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
+    const body = src.slice(src.indexOf('<body'));
+    const bullets = (body.match(/<li\b[^>]*>([\s\S]*?)<\/li>/gi) || [])
+      .concat(body.match(/<div class="grp">[\s\S]*?<\/div>/gi) || [])
+      .map(b => b.replace(/<[^>]+>/g, ' '))
+      /* Certificate rows and nav entries are not accomplishment bullets; counting them
+         drags the ratio toward whatever the document happens to list. */
+      .filter(t => t.trim().split(/\s+/).length >= 8);
+    if (!bullets.length) continue;
+    const withNum = bullets.filter(t => /\d/.test(t)).length;
+    ok(`${file}: metric coverage ${withNum}/${bullets.length} bullets carry a number`);
+  }
+}
+
 /* ---------- the PDF goes stale on its own ---------- */
 
 /* The PDF is a frozen snapshot of numbers the two pages compute live. While a contract
@@ -253,8 +342,14 @@ for (const dir of readdirSync(new URL('apps/', import.meta.url), { withFileTypes
 for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
   /* rel="canonical" and rel="alternate" carry an absolute URL but are declarative
      metadata — the browser never fetches them, so they cost nothing offline. Drop those
-     tags before scanning; everything else with an http(s) src/href does get fetched. */
-  const scanned = src.replace(/<link\b[^>]*\brel\s*=\s*["'](?:canonical|alternate)["'][^>]*>/gi, '');
+     tags before scanning; everything else with an http(s) src/href does get fetched.
+
+     An <a href> is the same category and was not exempt, which is why the print CV could
+     not state its own web address: the check read a link a reader might click as a
+     resource the page loads. Only fetched subresources break offline use. */
+  const scanned = src
+    .replace(/<link\b[^>]*\brel\s*=\s*["'](?:canonical|alternate)["'][^>]*>/gi, '')
+    .replace(/<a\b[^>]*>/gi, '<a>');
   const remote = scanned.match(/(?:src|href)\s*=\s*["']https?:\/\/[^"']+/gi) || [];
   if (remote.length){
     fail(`${file} loads ${remote.length} remote resource(s) — breaks offline use: ` +
