@@ -87,6 +87,66 @@ if (a && b){
   });
 }
 
+/* ---------- vessel particulars ---------- */
+
+/* Same duplication problem as SERVICE, and the same reason it needs checking here: the
+   particulars are the part a recruiter verifies against a registry, so the two files
+   disagreeing about an IMO number is worse than them disagreeing about a date. */
+
+const VESSEL_FIELDS = ['imo', 'built', 'size', 'dims', 'flag'];
+
+function extractVessels(src, file){
+  const block = src.match(/const VESSELS = \{([\s\S]*?)\n\};/);
+  if (!block) { fail(`${file}: could not find the VESSELS table`); return null; }
+  const out = {};
+  for (const row of block[1].match(/'([^']+)':\s*\{[^}]*\}/g) || []){
+    const name = row.match(/^'([^']+)'/)[1];
+    const rec = {};
+    for (const k of VESSEL_FIELDS){
+      rec[k] = (row.match(new RegExp(k + ":\\s*'([^']*)'")) || [])[1] ?? null;
+    }
+    out[name] = rec;
+  }
+  return out;
+}
+
+const va = extractVessels(siteSrc, SITE);
+const vb = extractVessels(printSrc, PRINT);
+
+if (va && vb){
+  const names = [...new Set([...Object.keys(va), ...Object.keys(vb)])];
+  let drift = 0;
+  for (const name of names){
+    if (!va[name] || !vb[name]){
+      fail(`vessel particulars for "${name}" exist only in ${va[name] ? SITE : PRINT}`);
+      drift++;
+      continue;
+    }
+    for (const k of VESSEL_FIELDS){
+      if (va[name][k] !== vb[name][k]){
+        fail(`vessel particulars for "${name}" differ on "${k}": ` +
+             `${SITE}=${JSON.stringify(va[name][k])} vs ${PRINT}=${JSON.stringify(vb[name][k])}`);
+        drift++;
+      }
+      /* A blank field renders as a gap mid-sentence — "IMO 9431812 · Built ·  · Liberia". */
+      if (!va[name][k]) { fail(`vessel particulars for "${name}" are missing "${k}"`); drift++; }
+    }
+  }
+
+  if (a){
+    /* Every ship in the record must state itself, and nothing may state a ship that is
+       no longer in the record. */
+    const sailed = new Set(a.map(r => r.vessel));
+    for (const v of sailed){
+      if (!va[v]) { fail(`${v} appears in the sea service but has no vessel particulars`); drift++; }
+    }
+    for (const v of Object.keys(va)){
+      if (!sailed.has(v)) { fail(`vessel particulars list ${v}, which is not in the sea service`); drift++; }
+    }
+    if (!drift) ok(`vessel particulars: ${names.length} ships, identical in both files`);
+  }
+}
+
 /* ---------- the seatime claim ---------- */
 
 const claimRe = /(\d+(?:\.\d+)?)\+ years&rsquo; officer watchkeeping/;
