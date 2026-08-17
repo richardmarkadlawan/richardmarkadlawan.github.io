@@ -100,6 +100,10 @@
   --amber:#F59E0B;
   --alert:#EF4444;
   --nav-h:52px;
+  /* Mobile section sheet: the scrim must read as "the page is behind this", not as a
+     tint on the panel, so it is darker than the panel's own ground. */
+  --scrim:rgba(11,18,32,.62);
+  --sheet-shadow:0 18px 40px rgba(0,0,0,.45);
   --font-ui:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono:"SF Mono", ui-monospace, Menlo, Monaco, "Cascadia Mono", "Roboto Mono", monospace;
   --radius:12px;
@@ -122,6 +126,10 @@
   --water-deep:rgba(22,101,52,.20);
   --water-shallow:rgba(22,101,52,.03);
   --seabar-3:rgba(22,101,52,.22);
+  /* On a light ground the sheet already separates by its own shadow; a scrim as heavy as
+     the dark theme's would read as a blackout rather than a layer. */
+  --scrim:rgba(16,24,38,.34);
+  --sheet-shadow:0 18px 40px rgba(16,24,38,.14);
 }
 
 /* ============ SHELL (proven iOS pattern) ============ */
@@ -155,6 +163,7 @@ main{
 
 /* ============ NAV (flex child, not fixed) ============ */
 nav{
+  position:relative;   /* the progress hairline and the strip indicator anchor here */
   height:var(--nav-h);
   flex:0 0 var(--nav-h);
   display:flex;
@@ -181,6 +190,7 @@ nav{
    scrolls out of sight. The scrollbar is hidden for looks, so the fade is the only
    thing left telling you there is more, and the JS keeps the current link inside it. */
 .nav-links{
+  position:relative;   /* containing block for .nav-ind, which scrolls with the chips */
   flex:1;
   display:flex;
   gap:2px;
@@ -218,9 +228,33 @@ nav{
   border-radius:8px;
   white-space:nowrap;
   cursor:pointer;
+  -webkit-transition:color .2s ease;
+  transition:color .2s ease;
 }
-.nav-links a:hover{ color:var(--ink); background:var(--sea-1); }
-.nav-links a[aria-current="page"]{ color:var(--signal); background:var(--signal-dim); }
+/* Guarded: on iOS the tapped link keeps :hover until you tap elsewhere, which left a
+   link you had merely visited looking half-active next to the real current one. */
+@media (hover:hover){
+  .nav-links a:hover{ color:var(--ink); background:var(--sea-1); }
+}
+/* The sliding underline carries the state now. A tinted pill *and* an underline reads
+   busy, and the pill was the thing the edge mask kept slicing in half. */
+.nav-links a[aria-current="page"]{ color:var(--signal); }
+.nav-ind{
+  position:absolute;
+  left:0;
+  bottom:6px;
+  width:1px;          /* scaleX() is the width; 1px keeps the maths a plain multiply */
+  height:2px;
+  border-radius:2px;
+  background:var(--signal);
+  box-shadow:var(--glow-soft);
+  transform-origin:left center;
+  transform:translateX(0) scaleX(0);
+  opacity:0;
+  pointer-events:none;
+  -webkit-transition:-webkit-transform .32s cubic-bezier(.22,1,.36,1), opacity .2s ease;
+  transition:transform .32s cubic-bezier(.22,1,.36,1), opacity .2s ease;
+}
 #themeBtn{
   flex:0 0 auto;
   width:44px; height:44px;
@@ -231,16 +265,225 @@ nav{
   color:var(--ink-dim);
   cursor:pointer;
 }
-#themeBtn:hover{ color:var(--ink); }
+@media (hover:hover){
+  #themeBtn:hover{ color:var(--ink); }
+}
 #themeBtn svg{ width:17px; height:17px; }
 #themeBtn .ic-sun{ display:none; }
 :root[data-theme="light"] #themeBtn .ic-sun{ display:block; }
 :root[data-theme="light"] #themeBtn .ic-moon{ display:none; }
+
+/* ============ NAV: SCROLL PROGRESS ============ */
+/* Sits on top of the nav's own 1px bottom border. Driven per frame from the same scroll
+   fraction the draft rail uses, so it is deliberately untransitioned — a transition here
+   would make the bar lag the finger. */
+.nav-progress{
+  position:absolute;
+  left:0;
+  bottom:-1px;
+  width:100%;
+  height:2px;
+  transform-origin:left center;
+  -webkit-transform:scaleX(0);
+  transform:scaleX(0);
+  will-change:transform;
+  background:-webkit-linear-gradient(left, var(--bar-from), var(--bar-to));
+  background:linear-gradient(90deg, var(--bar-from), var(--bar-to));
+}
+
+/* ============ NAV: MOBILE READOUT + SECTION SHEET ============ */
+/* Below 900px the nine-link strip has ~180px to show ~680px of links, so three quarters
+   of it is off-screen and the mask slices the current one mid-word. A console readout
+   naming where you are, plus a sheet holding every destination, says the same thing in
+   the space actually available — and it is the instrument-panel idiom the draft-mark
+   rail already established on desktop. */
+.readout{
+  display:none;
+  flex:0 1 auto;
+  min-width:0;
+  margin-left:auto;
+  align-items:center;
+  gap:8px;
+  min-height:44px;
+  padding:0 10px;
+  background:transparent;
+  border:1px solid var(--hairline);
+  border-radius:9px;
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.rd-idx{
+  flex:0 0 auto;
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  font-weight:700;
+  letter-spacing:.08em;
+  color:var(--signal);
+}
+.rd-label{
+  min-width:0;
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  font-weight:700;
+  letter-spacing:.1em;
+  color:var(--ink);
+  white-space:nowrap;
+  /* CERTIFICATIONS is the longest label and will not fit a 320px screen. An ellipsis
+     ends the word honestly; the mask this replaces just faded it out mid-glyph. */
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.rd-chev{
+  flex:0 0 auto;
+  width:14px; height:14px;
+  color:var(--ink-dim);
+  -webkit-transition:-webkit-transform .22s cubic-bezier(.22,1,.36,1);
+  transition:transform .22s cubic-bezier(.22,1,.36,1);
+}
+.readout[aria-expanded="true"] .rd-chev{ -webkit-transform:rotate(180deg); transform:rotate(180deg); }
+
+.nav-scrim{
+  position:fixed;
+  top:var(--nav-h); left:0; right:0; bottom:0;
+  z-index:14;
+  background:var(--scrim);
+  -webkit-backdrop-filter:blur(2px);
+  backdrop-filter:blur(2px);
+  opacity:0;
+  -webkit-transition:opacity .14s linear;
+  transition:opacity .14s linear;
+}
+.nav-sheet{
+  position:fixed;
+  top:var(--nav-h); left:0; right:0;
+  z-index:15;
+  max-height:calc(100dvh - var(--nav-h));
+  overflow-y:auto;
+  background:var(--sea-1);
+  border-bottom:1px solid var(--hairline);
+  border-radius:0 0 14px 14px;
+  box-shadow:var(--sheet-shadow);
+  opacity:0;
+  -webkit-transform:translateY(-10px);
+  transform:translateY(-10px);
+  /* Out. A transition reverting to the base style uses the base style's own timing, so
+     stating the exit here and the entrance under .open gives the two directions
+     different curves: unhurried in, brisk out. */
+  -webkit-transition:opacity .13s ease-in, -webkit-transform .15s ease-in;
+  transition:opacity .13s ease-in, transform .15s ease-in;
+}
+.nav-scrim.open, .nav-sheet.open{ opacity:1; -webkit-transform:none; transform:none; }
+.nav-scrim.open{ -webkit-transition:opacity .18s linear; transition:opacity .18s linear; }
+.nav-sheet.open{
+  -webkit-transition:opacity .2s ease-out, -webkit-transform .22s cubic-bezier(.22,1,.36,1);
+  transition:opacity .2s ease-out, transform .22s cubic-bezier(.22,1,.36,1);
+}
+.nav-sheet ul{ list-style:none; }
+.nav-sheet a{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  min-height:48px;
+  padding:0 18px;
+  font-size:14px;
+  font-weight:600;
+  letter-spacing:.03em;
+  color:var(--ink);
+  text-decoration:none;
+}
+.nav-sheet li + li a{ border-top:1px solid var(--hairline); }
+.nav-sheet .sh-idx{
+  flex:0 0 auto;
+  font-family:var(--font-mono);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.06em;
+  color:var(--ink-dim);
+}
+/* Same vocabulary as .rail-mark.sub and the strip's active link: green type, faint green
+   ground, and a hard signal edge on the leading side. */
+.nav-sheet a[aria-current="page"]{
+  background:var(--signal-dim);
+  color:var(--signal);
+  box-shadow:inset 2px 0 0 var(--signal);
+}
+.nav-sheet a[aria-current="page"] .sh-idx{ color:var(--signal); }
+
+/* Rows rise in sequence on the way in and leave together on the way out — the delay is
+   declared only on the .open side, so the exit inherits no stagger. */
+.js .nav-sheet a{
+  opacity:0;
+  -webkit-transform:translateY(6px);
+  transform:translateY(6px);
+  -webkit-transition:opacity .12s ease-in, -webkit-transform .12s ease-in;
+  transition:opacity .12s ease-in, transform .12s ease-in;
+}
+.js .nav-sheet.open a{
+  opacity:1;
+  -webkit-transform:none;
+  transform:none;
+  -webkit-transition:opacity .26s ease-out, -webkit-transform .26s cubic-bezier(.22,1,.36,1);
+  transition:opacity .26s ease-out, transform .26s cubic-bezier(.22,1,.36,1);
+  -webkit-transition-delay:calc(var(--i) * 22ms);
+  transition-delay:calc(var(--i) * 22ms);
+}
+
+@-webkit-keyframes rdIn{
+  from{ opacity:0; -webkit-transform:translateY(3px); transform:translateY(3px); }
+  to{ opacity:1; -webkit-transform:none; transform:none; }
+}
+@keyframes rdIn{
+  from{ opacity:0; -webkit-transform:translateY(3px); transform:translateY(3px); }
+  to{ opacity:1; -webkit-transform:none; transform:none; }
+}
+.rd-label.swap{ -webkit-animation:rdIn .2s ease-out; animation:rdIn .2s ease-out; }
+
+/* The swap needs JS to build the sheet and name the current section, so it is gated on
+   .js — without scripting the strip stays, and mobile keeps a working nav. */
+@media (max-width:899px){
+  .js .nav-links{ display:none; }
+  .js .readout{ display:inline-flex; }
+}
+/* Above the breakpoint the strip fits without overflowing, so the sheet never applies. */
+@media (min-width:900px){
+  .nav-scrim, .nav-sheet{ display:none !important; }
+}
+
+/* The progress hairline is deliberately not listed: it is positional information about
+   where you are in the page, not decoration, and it is driven by position rather than
+   by a transition, so it stays. */
+@media (prefers-reduced-motion: reduce){
+  .nav-ind, .rd-chev,
+  .nav-scrim, .nav-scrim.open,
+  .nav-sheet, .nav-sheet.open,
+  .js .nav-sheet a, .js .nav-sheet.open a{
+    -webkit-transition:none;
+    transition:none;
+    -webkit-transition-delay:0s;
+    transition-delay:0s;
+  }
+  .rd-label.swap{ -webkit-animation:none; animation:none; }
+}
 a:focus-visible, button:focus-visible{
   outline:2px solid var(--signal);
   outline-offset:2px;
 }
-/* Nine nav links precede the content; keyboard users get a way past them. */
+/* Off-screen but still announced. The readout's visible text is only a section name, so
+   the part that says what the control *does* is carried here rather than in an aria-label
+   that would replace the visible text in the accessible name. */
+.vh{
+  position:absolute;
+  width:1px; height:1px;
+  margin:-1px;
+  padding:0;
+  border:0;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  clip-path:inset(50%);
+  white-space:nowrap;
+}
+/* The nav precedes the content — nine links on desktop, the readout on mobile.
+   Keyboard users get a way past it. */
 .skip{
   position:absolute;
   left:8px;
@@ -967,6 +1210,13 @@ footer .mono{ font-size:11.5px; }
   .brand{ font-size:12px; }
 }
 @media (max-width:380px){
+  /* At 375px and up every section label fits the readout outright. Below that the nav is
+     genuinely short of room, so the readout and the brand both give up tracking rather
+     than letting the longest labels fall back to an ellipsis. */
+  .brand{ letter-spacing:.03em; }
+  .readout{ gap:6px; padding:0 8px; }
+  .rd-idx{ font-size:10px; letter-spacing:.04em; }
+  .rd-label{ font-size:10.5px; letter-spacing:.04em; }
   .hero-portrait img{ width:108px; height:108px; }
   .hero-portrait{ margin-bottom:18px; }
   h1{ font-size:28px; }
@@ -986,7 +1236,7 @@ footer .mono{ font-size:11.5px; }
   }
   #app{ height:auto; display:block; overflow:visible; }
   main{ overflow:visible; }
-  nav, #draftRail, .hero-actions, #themeBtn{ display:none !important; }
+  nav, #draftRail, .hero-actions, #themeBtn, .nav-scrim, .nav-sheet{ display:none !important; }
   section{ padding:18px 0; }
   .svc-head{ background:#18AB4E !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   .seabar-track, .seabar-seg, .seabar-key i{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -1016,12 +1266,24 @@ footer .mono{ font-size:11.5px; }
       <a href="#tools">Tools</a>
       <a href="#leadership">Leadership</a>
       <a href="#contact">Contact</a>
+      <i class="nav-ind" id="navInd" aria-hidden="true"></i>
     </div>
+    <button id="navReadout" class="readout" aria-expanded="false" aria-controls="navSheet">
+      <span class="vh">Sections — you are at</span>
+      <span class="rd-idx" id="rdIdx">00</span>
+      <span class="rd-label" id="rdLabel">DECK</span>
+      <svg class="rd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
     <button id="themeBtn" aria-label="Toggle light or dark theme">
       <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
       <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
     </button>
+    <i class="nav-progress" id="navProgress" aria-hidden="true"></i>
   </nav>
+  <div class="nav-scrim" id="navScrim" hidden></div>
+  <div class="nav-sheet" id="navSheet" hidden>
+    <ul id="navSheetList"></ul>
+  </div>
 
   <main id="main" tabindex="-1">
     <!-- Signature: hull draft-mark rail (desktop only, decorative) -->
@@ -1391,6 +1653,10 @@ function fmtMD(days){
                    safety:'SAFETY', certs:'DOCUMENTS', tools:'SOFTWARE', leadership:'CREW', contact:'CONTACT' };
   const strip = document.getElementById('navLinks');
   const navLinks = Array.prototype.slice.call(strip.querySelectorAll('a'));
+  const ind = document.getElementById('navInd');
+  const progress = document.getElementById('navProgress');
+  const rdIdx = document.getElementById('rdIdx');
+  const rdLabel = document.getElementById('rdLabel');
 
   /* draft-mark rail scale: hull numerals, 0 m at keel (bottom) to 12 m */
   const scale = document.getElementById('railScale');
@@ -1417,6 +1683,13 @@ function fmtMD(days){
     tops = sections.map(function(s){ return s.offsetTop - navH; });
   }
 
+  /* lastId gates the section-change work; lastTouch keeps the auto-scroll off the
+     strip while the reader is swiping it themselves. */
+  let lastId = null, lastTouch = 0;
+  function noteTouch(){ lastTouch = Date.now(); }
+  strip.addEventListener('pointerdown', noteTouch, { passive:true });
+  strip.addEventListener('touchstart', noteTouch, { passive:true });
+
   let ticking = false;
   function onScroll(){
     if (ticking) return;
@@ -1441,30 +1714,74 @@ function fmtMD(days){
       /* write — waterline rises as you scroll, draft increasing as you go deeper */
       water.style.height = pct;
       line.style.bottom = pct;
+      progress.style.transform = 'scaleX(' + p.toFixed(4) + ')';
       for (const mk of marks){
         mk.classList.toggle('sub', (+mk.getAttribute('data-m') / 12) <= p + 0.001);
       }
+
+      /* Everything below is a section-change event, not a scroll event. Running it every
+         frame is what made the strip drift: assigning scrollLeft under
+         scroll-behavior:smooth restarts the animation each frame, and reading the
+         in-flight value made keepInView conclude the link was already close enough — so
+         the strip parked wherever the interrupted animation happened to leave it, with
+         the current link sliced by the edge mask. */
+      if (curId === lastId) return;
+      lastId = curId;
+
       label.textContent = labels[curId] || '';
       let active = null;
       for (const a of navLinks){
         if (a.getAttribute('href') === '#' + curId){ a.setAttribute('aria-current','page'); active = a; }
         else a.removeAttribute('aria-current');
       }
-      if (active) keepInView(active);
+      if (active){ keepInView(active); moveInd(active); }
+      else { ind.style.opacity = '0'; }   /* the hero has no link of its own */
+      setReadout(active, curId);
       fadeEdges();
     });
   }
 
-  /* The strip is ~169px wide at 375px against ~670px of links, so the current
-     section's link is usually somewhere off to the right where nobody can see it.
-     scrollLeft is set directly: scrollIntoView would also walk up to #main and move
-     the page's vertical scroll out from under the reader. */
+  /* The strip is ~180px wide at 390px against ~680px of links, so the current section's
+     link is usually somewhere off to the right where nobody can see it.
+
+     It is centred rather than nudged to the near edge: the strip is masked 14px in from
+     the left and 18px in from the right, so a link parked against either edge is exactly
+     the one being faded out. Centring clears both fades by construction.
+
+     scrollLeft is set directly: scrollIntoView would also walk up to #main and move the
+     page's vertical scroll out from under the reader. */
   function keepInView(a){
-    const pad = 16;
-    const left = a.offsetLeft, right = left + a.offsetWidth;
-    const viewL = strip.scrollLeft, viewR = viewL + strip.clientWidth;
-    if (left - pad < viewL) strip.scrollLeft = Math.max(0, left - pad);
-    else if (right + pad > viewR) strip.scrollLeft = right + pad - strip.clientWidth;
+    /* Do not yank the strip away from a finger that is currently swiping it. */
+    if (Date.now() - lastTouch < 1200) return;
+    const room = strip.scrollWidth - strip.clientWidth;
+    if (room <= 0) return;
+    const centred = a.offsetLeft - (strip.clientWidth - a.offsetWidth) / 2;
+    strip.scrollLeft = Math.max(0, Math.min(room, centred));
+  }
+
+  /* The underline spans the link's text, not its tap target: the chips carry 10px of
+     horizontal padding (see .nav-links a) purely to make them 44px tall targets. */
+  function moveInd(a){
+    const pad = 10;
+    ind.style.transform = 'translateX(' + (a.offsetLeft + pad) + 'px) scaleX(' +
+                          Math.max(0, a.offsetWidth - pad * 2) + ')';
+    ind.style.opacity = '1';
+  }
+
+  /* Retriggering the keyframe by clearing and re-reading layout is what lets the label
+     cross-fade with no timers and no duplicate spans to keep in sync. */
+  function setReadout(a, id){
+    const text = labels[id] || '';
+    if (rdLabel.textContent === text) return;
+    /* Numbered against the links, not the sections: the sheet is built from these same
+       links and sits directly under the readout, so counting the unlinked hero here
+       would put "03 SEA SERVICE" above a row reading "02 Sea Service". The hero takes
+       00 — it is where you board, before the numbered sections. */
+    rdIdx.textContent = ('0' + (a ? navLinks.indexOf(a) + 1 : 0)).slice(-2);
+    rdLabel.textContent = text;
+    rdLabel.classList.remove('swap');
+    void rdLabel.offsetWidth;
+    rdLabel.classList.add('swap');
   }
 
   /* Fade only the edge that has something behind it. */
@@ -1482,6 +1799,9 @@ function fmtMD(days){
     requestAnimationFrame(function(){
       resizeTick = false;
       measure();
+      /* Chip offsets and the strip's width both move with the viewport, so the
+         section-change work has to run again even though the section has not changed. */
+      lastId = null;
       onScroll();
     });
   }
@@ -1493,6 +1813,114 @@ function fmtMD(days){
   window.addEventListener('load', onResize);
   onScroll();
   fadeEdges();
+})();
+
+/* ============ MOBILE SECTION SHEET ============ */
+/* Below 900px the nav shows a readout instead of the nine-link strip; this is the strip's
+   replacement. The rows are generated from the strip's own anchors so the two can never
+   list different sections — and so the strip stays the single source of truth for which
+   section is current, which it already tracks in scrollWiring. */
+(function sectionSheet(){
+  const btn   = document.getElementById('navReadout');
+  const sheet = document.getElementById('navSheet');
+  const scrim = document.getElementById('navScrim');
+  const list  = document.getElementById('navSheetList');
+  const strip = document.getElementById('navLinks');
+  const main  = document.getElementById('main');
+  if (!btn || !sheet || !scrim || !list || !strip) return;
+
+  const links = Array.prototype.slice.call(strip.querySelectorAll('a'));
+  list.innerHTML = links.map(function(a, i){
+    return '<li><a href="' + a.getAttribute('href') + '" style="--i:' + i + '">' +
+             '<span class="sh-idx">' + ('0' + (i + 1)).slice(-2) + '</span>' +
+             '<span>' + a.textContent + '</span>' +
+           '</a></li>';
+  }).join('');
+  const rows = Array.prototype.slice.call(list.querySelectorAll('a'));
+
+  let open = false, hideTimer = 0;
+
+  /* Read from the strip rather than caching: scrollWiring keeps it correct, and the
+     section can change between one opening of the sheet and the next. */
+  function markCurrent(){
+    const cur = strip.querySelector('a[aria-current="page"]');
+    const href = cur ? cur.getAttribute('href') : null;
+    for (const r of rows){
+      if (href && r.getAttribute('href') === href) r.setAttribute('aria-current','page');
+      else r.removeAttribute('aria-current');
+    }
+  }
+
+  function show(){
+    if (open) return;
+    open = true;
+    clearTimeout(hideTimer);
+    markCurrent();
+    sheet.hidden = false;
+    scrim.hidden = false;
+    sheet.inert = false;             /* must precede the focus() below */
+    void sheet.offsetWidth;          /* commit the hidden->shown frame before transitioning */
+    sheet.classList.add('open');
+    scrim.classList.add('open');
+    btn.setAttribute('aria-expanded','true');
+    main.style.overflow = 'hidden';  /* #main is the scroller, not <body> */
+    (rows[0] || btn).focus();
+  }
+
+  function hide(refocus){
+    if (!open) return;
+    open = false;
+    sheet.classList.remove('open');
+    scrim.classList.remove('open');
+    /* The rows stay in the DOM until the fade finishes below, and an invisible row is
+       still tabbable. inert takes them out of the tab order on the spot. */
+    sheet.inert = true;
+    btn.setAttribute('aria-expanded','false');
+    /* Restored synchronously so a row click's own anchor jump still finds a scroller. */
+    main.style.overflow = '';
+    if (refocus) btn.focus();
+    /* A timer, not transitionend: a transition that never starts (reduced motion, or the
+       element being display:none'd by a resize past the breakpoint) fires no event, and
+       the sheet would stay in the tab order forever. */
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function(){
+      if (open) return;
+      sheet.hidden = true;
+      scrim.hidden = true;
+    }, 260);
+  }
+
+  /* The scroller is locked while the sheet is open, but locking it does not cancel a
+     smooth scroll already in flight — so open the sheet mid-jump and the marked row
+     would freeze at whatever section the page had reached while the readout above it
+     kept counting. Re-reading on scroll keeps the two showing the same section. */
+  main.addEventListener('scroll', function(){ if (open) markCurrent(); }, { passive:true });
+
+  btn.addEventListener('click', function(){ open ? hide(false) : show(); });
+  scrim.addEventListener('click', function(){ hide(true); });
+  for (const r of rows){
+    r.addEventListener('click', function(){ hide(false); });
+  }
+
+  document.addEventListener('keydown', function(e){
+    if (!open) return;
+    if (e.key === 'Escape'){ e.preventDefault(); hide(true); return; }
+    if (e.key !== 'Tab') return;
+    /* Hold focus in the sheet and its trigger; everything else is behind the scrim. */
+    const cycle = [btn].concat(rows);
+    let i = cycle.indexOf(document.activeElement);
+    if (i === -1) i = 0;
+    i = (i + (e.shiftKey ? -1 : 1) + cycle.length) % cycle.length;
+    e.preventDefault();
+    cycle[i].focus();
+  });
+
+  /* Past the breakpoint the sheet is display:none and the strip is back; leaving it
+     "open" would strand the scroll lock and the aria-expanded state. */
+  const wide = window.matchMedia('(min-width:900px)');
+  const onWide = function(e){ if (e.matches) hide(false); };
+  if (wide.addEventListener) wide.addEventListener('change', onWide);
+  else if (wide.addListener) wide.addListener(onWide);
 })();
 
 /* ============ REVEAL ON SCROLL ============ */
