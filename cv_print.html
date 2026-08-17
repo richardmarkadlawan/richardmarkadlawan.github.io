@@ -45,7 +45,21 @@ body{
 @media print{ .hint{ display:none !important; } }
 
 /* ---------- IDENTITY ---------- */
-header{ border-bottom:1.6pt solid var(--green); padding-bottom:5pt; margin-bottom:8pt; }
+header{
+  border-bottom:1.6pt solid var(--green); padding-bottom:5pt; margin-bottom:8pt;
+  display:flex; align-items:flex-start; gap:9pt;
+}
+header .ident{ flex:1 1 auto; min-width:0; }
+header .portrait{
+  flex:0 0 auto;
+  width:22mm; height:22mm;
+  border-radius:50%;              /* circle here too, to match the website */
+  object-fit:cover;
+  border:.8pt solid var(--green);
+  /* Without this the export can drop the image and the ring on a "no background graphics"
+     print. The photo is content, not decoration — same reason .svc-head forces its bar. */
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
 h1{
   font-size:20pt; font-weight:800; letter-spacing:-.02em; line-height:1.05;
   text-transform:uppercase;
@@ -138,13 +152,17 @@ footer{
 <div class="page">
 
   <header>
-    <h1>Richard Mark H. Adlawan</h1>
-    <div class="rank">CHIEF MATE CoC (UNLIMITED, OCEANGOING) — MANAGEMENT LEVEL STCW II/2</div>
-    <div class="ident-meta">
-      <span>Currently <b>2nd Officer, MV FG Eucalyptus</b> (Supramax Bulk Carrier, 50,011 DWT, Singapore Flag)</span>
-      <span>Talisay City, Cebu, Philippines</span>
-      <span>Manning: <b>V.Ships (Fleet 6B Manila)</b></span>
+    <div class="ident">
+      <h1>Richard Mark H. Adlawan</h1>
+      <div class="rank">CHIEF MATE CoC (UNLIMITED, OCEANGOING) — MANAGEMENT LEVEL STCW II/2</div>
+      <div class="ident-meta">
+        <span>Currently <b>2nd Officer, MV FG Eucalyptus</b> (Supramax Bulk Carrier, 50,011 DWT, Singapore Flag)</span>
+        <span>Talisay City, Cebu, Philippines</span>
+        <span>Manning: <b>V.Ships (Fleet 6B Manila)</b></span>
+      </div>
     </div>
+    <img class="portrait" src="portrait.jpg" width="83" height="83"
+         alt="Richard Mark H. Adlawan in white Deck Officer uniform">
   </header>
 
   <section class="avoid">
