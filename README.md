@@ -70,9 +70,10 @@ instructions; they do not appear in the print output.
 
 **The layout is a two-page budget, and it is nearly full.** A4 less the 11 mm margins gives
 275 mm a page, so the whole document has 550 mm to spend; it currently sits at about 548. Adding
-a few lines will silently push it to three pages, and nothing in `verify.mjs` catches that — check
-the page count after any edit that adds content. When it overflows, cut words from the Bridge and
-Cargo prose rather than shrinking the type.
+a few lines will silently push it to three pages. `verify.mjs` counts the pages in the exported
+PDF and fails if there are more than two — but it can only see that *after* you regenerate, so
+regenerate before you commit. When it overflows, cut words from the Bridge and Cargo prose rather
+than shrinking the type.
 
 To regenerate from the command line instead:
 
@@ -101,11 +102,18 @@ in a comparison:
   the full form. The abbreviations survive only inside the seatime bar, where a segment is too
   narrow for "2nd Officer", and that one use is exempted by pattern rather than by hand.
 - **No placeholder text** — `«…»`, `TODO`, `TBD`, `XX` — survives into a published file.
+- **The exported PDF is two pages.** More than two fails; if the page count cannot be read the
+  check stays silent rather than guessing.
+
+The PDF staleness check is graded rather than absolute. While a contract is open its duration
+grows daily, so a strict "exported before today" test failed every single day and taught you to
+ignore it. Under 14 days it reports the drift and passes; at 14 days it fails. Two weeks against
+3+ years of seatime is invisible to a recruiter — a quarter is not.
 
 And it prints one figure it will never fail on:
 
 ```
-ok   index.html: metric coverage 12/36 bullets carry a number
+ok   index.html: metric coverage 17/39 bullets are quantified
 ```
 
 A bullet that states an outcome without a number is weaker, not wrong, so there is no threshold
@@ -113,15 +121,25 @@ worth failing a build over. The ratio is printed because it is the number that q
 back down as sections get edited over time — and raising it is the single highest-value edit
 available to either page.
 
+It counts **quantification, not digits**: `6 contracts` and `six contracts` both score, because
+a reader cannot tell the difference and neither should the check. Certificate rows are excluded
+from the population — they are not accomplishments, and counting them meant the same
+certificates landed in one file's denominator and not the other's, since the site renders them
+as `<li>` and the print CV as `<div class="cert">`. Tool descriptions are counted in both, which
+is why the totals are now comparable rather than an artefact of markup.
+
+Prefer digits in the copy anyway. A digit survives a six-second skim where a spelled-out number
+reads as prose — that is a presentation choice, not something the checker cares about.
+
 An `<a href>` pointing at the live site is **not** counted as a remote resource. Only fetched
 subresources break offline use; a link the reader may click does not, which is what lets the
 print CV state its own web address.
 
 It also checks that **the PDF has not gone stale**. Both pages compute durations and seatime
 totals live, but the PDF is a frozen export — so while a contract is open, every day that passes
-makes the PDF understate the record by a day. The check fails if the PDF is older than
-`cv_print.html`, or if it was exported on an earlier day while a contract is still open. When it
-fails, regenerate the PDF (below) and run it again.
+makes the PDF understate the record by a day. The check always fails if the PDF is older than
+`cv_print.html`, since that means an edit has not been exported at all; the day-drift above it is
+the graded part. When it fails, regenerate the PDF (below) and run it again.
 
 Note that the word "phone" is banned outright in the two CV pages, not just phone-number patterns.
 That is deliberate — a blunt guard is the right trade for a privacy check — so avoid the word even

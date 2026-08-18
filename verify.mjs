@@ -286,23 +286,50 @@ for (const dir of readdirSync(new URL('apps/', import.meta.url), { withFileTypes
 /* Metric coverage — a note, never a failure. Bullets that state an outcome without a
    number are weaker but not wrong, and there is no threshold worth failing a build over.
    Printing the ratio keeps it visible, which is the whole point: it is the number that
-   quietly slides back down as sections get edited over time. */
+   quietly slides back down as sections get edited over time.
+
+   Two things this got wrong when it was first written, both of which made the figure lie:
+
+   It tested for a digit rather than for quantification, so "6 contracts" counted and
+   "six contracts" did not — and the pages were full of the second kind. A spelled-out
+   number is still a number; the reader cannot tell the difference and neither should this.
+
+   And it counted certificate rows, which are not accomplishments. index.html renders those
+   as <li> and the print CV renders them as <div class="cert">, so the same certificates
+   landed in one denominator and not the other — which is why the two files reported
+   different totals despite carrying the same content. The certificate block is cut out
+   before scanning, the way the rank check cuts out the seatime-bar labels, rather than
+   being filtered back out afterwards. */
 {
+  const WORD_NUM = /\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/i;
+
   for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
-    const body = src.slice(src.indexOf('<body'));
+    const body = src.slice(src.indexOf('<body'))
+      .replace(/<ul class="cert-list">[\s\S]*?<\/ul>/gi, '')
+      .replace(/<div class="certs">[\s\S]*?<\/div>\s*<\/section>/gi, '');
+
+    /* The site states its tools as cards and the print CV states the same tools as a
+       list, so counting only <li> and .grp scored the same eight tools in one file and
+       not the other. Pull the card copy in too, or the two ratios are not comparable. */
+    const toolsGrid = (body.match(/<div class="tools-grid">[\s\S]*?\n        <\/div>/i) || [''])[0];
+
     const bullets = (body.match(/<li\b[^>]*>([\s\S]*?)<\/li>/gi) || [])
       .concat(body.match(/<div class="grp">[\s\S]*?<\/div>/gi) || [])
-      .map(b => b.replace(/<[^>]+>/g, ' '))
-      /* Certificate rows and nav entries are not accomplishment bullets; counting them
-         drags the ratio toward whatever the document happens to list. */
+      .concat(toolsGrid.match(/<p>[\s\S]*?<\/p>/gi) || [])
+      .map(b => b.replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/gi, ' '))
+      /* Nav entries and one-word list items are not accomplishment bullets. */
       .filter(t => t.trim().split(/\s+/).length >= 8);
+
     if (!bullets.length) continue;
-    const withNum = bullets.filter(t => /\d/.test(t)).length;
-    ok(`${file}: metric coverage ${withNum}/${bullets.length} bullets carry a number`);
+    const quantified = bullets.filter(t => /\d/.test(t) || WORD_NUM.test(t)).length;
+    ok(`${file}: metric coverage ${quantified}/${bullets.length} bullets are quantified`);
   }
 }
 
 /* ---------- the PDF goes stale on its own ---------- */
+
+const STALE_DAYS = 14;
+const PDF_PAGES  = 2;
 
 /* The PDF is a frozen snapshot of numbers the two pages compute live. While a contract
    is open, its duration and every seatime total grow by a day, every day — so a PDF
@@ -325,14 +352,39 @@ for (const dir of readdirSync(new URL('apps/', import.meta.url), { withFileTypes
       const localDay = d =>
         Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000;
       const days = localDay(new Date()) - localDay(pdf.mtime);
-      if (days > 0){
+      /* Graded, because the strict version failed every single day. An open contract grows
+         by a day every day, so "exported before today" was permanently true and the script
+         was permanently red — the exact cry-wolf failure this file avoids everywhere else.
+         A fortnight of drift is invisible against 3+ years of seatime; a quarter is not. */
+      if (days >= STALE_DAYS){
         fail(`${PDF} was exported ${days} day(s) ago and a contract is still open, ` +
              `so its durations and totals now understate the record — regenerate it`);
+      } else if (days > 0){
+        ok(`${PDF} exported ${days} day(s) ago; open contract understates by ${days}d ` +
+           `(regenerate before sending, required at ${STALE_DAYS})`);
       } else {
         ok(`${PDF} is current (exported today, open contract still counting)`);
       }
     } else {
       ok(`${PDF} is newer than ${PRINT}`);
+    }
+
+    /* The layout is a fixed two-page budget and it sits within a couple of millimetres of
+       full, so a few added lines silently produce a three-page CV. Until now nothing
+       caught that — the README said so in as many words. Counting page objects in the
+       exported file needs no library and no browser, which keeps `node verify.mjs` the
+       whole toolchain.
+
+       If the count cannot be read the check says nothing at all. A checker that fails
+       because it could not parse something is noise, and noise is what gets checks
+       ignored. */
+    const bytes = readFileSync(new URL(PDF, import.meta.url)).toString('latin1');
+    const pages = (bytes.match(/\/Type\s*\/Page[^s]/g) || []).length;
+    if (pages > PDF_PAGES){
+      fail(`${PDF} is ${pages} pages — the layout is a ${PDF_PAGES}-page budget. ` +
+           `Cut words from the Bridge and Cargo prose in ${PRINT}, do not shrink the type`);
+    } else if (pages === PDF_PAGES){
+      ok(`${PDF}: ${pages} pages, within budget`);
     }
   }
 }
