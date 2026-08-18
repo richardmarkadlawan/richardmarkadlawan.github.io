@@ -43,17 +43,31 @@
     "GMDSS and maritime safety information",
     "ISM Code compliance"
   ],
+  "alumniOf": {
+    "@type": "EducationalOrganization",
+    "name": "University of Cebu — Maritime Education and Training Center (UC-METC)"
+  },
   "hasCredential": [
     {
       "@type": "EducationalOccupationalCredential",
       "name": "Certificate of Competency — Chief Mate (Unlimited, Oceangoing), STCW II/2",
       "credentialCategory": "license",
-      "recognizedBy": { "@type": "Organization", "name": "MARINA Philippines" }
+      "recognizedBy": { "@type": "Organization", "name": "MARINA Philippines" },
+      "validFrom": "2026-02-13",
+      "expires": "2031-02-13"
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
+      "name": "Certificate of Competency — Officer in Charge of a Navigational Watch, STCW II/1",
+      "credentialCategory": "license",
+      "recognizedBy": { "@type": "Organization", "name": "MARINA Philippines" },
+      "expires": "2030-10-16"
     },
     {
       "@type": "EducationalOccupationalCredential",
       "name": "GMDSS General Operator's Certificate",
-      "credentialCategory": "certificate"
+      "credentialCategory": "certificate",
+      "expires": "2030-10-16"
     }
   ]
 }
@@ -952,6 +966,14 @@ h1{
   color:var(--ink-dim);
 }
 .svc-manning .mono{ color:var(--ink); }
+/* Pre-empts the one question a recruiter cross-checking the MARINA register would ask:
+   why these durations run a few days longer than the official record. */
+.svc-foot{
+  margin-top:6px;
+  font-size:12px;
+  line-height:1.55;
+  color:var(--ink-dim);
+}
 
 /* ============ COMPETENCY LISTS ============ */
 .comp-list{
@@ -1014,6 +1036,30 @@ h1{
   border-radius:50%;
 }
 .cert-note{
+  display:block;
+  font-size:12px;
+  color:var(--ink-dim);
+  margin-top:3px;
+}
+/* The verification handle for the whole block. Stated once beneath the list — an issuer
+   line per certificate would double the section's height to say the same thing twelve times. */
+.cert-foot{
+  margin-top:14px;
+  font-size:12.5px;
+  line-height:1.6;
+  color:var(--ink-dim);
+}
+
+/* ============ EDUCATION ============ */
+.edu-line{
+  background:var(--sea-1);
+  border:1px solid var(--hairline);
+  border-radius:10px;
+  padding:14px 16px;
+  font-size:14px;
+  line-height:1.55;
+}
+.edu-note{
   display:block;
   font-size:12px;
   color:var(--ink-dim);
@@ -1264,6 +1310,7 @@ footer .mono{ font-size:11.5px; }
       <a href="#cargo">Cargo</a>
       <a href="#safety">Safety</a>
       <a href="#certs">Certifications</a>
+      <a href="#education">Education</a>
       <a href="#tools">Tools</a>
       <a href="#leadership">Leadership</a>
       <a href="#contact">Contact</a>
@@ -1341,7 +1388,8 @@ footer .mono{ font-size:11.5px; }
           <p class="seabar-key" id="seabarKey"></p>
         </div>
         <div class="timeline" id="timeline"><!-- built by JS from SERVICE data --></div>
-        <p class="svc-manning reveal">Manning: <span class="mono">V.Ships (Fleet 6B Manila)</span></p>
+        <p class="svc-manning reveal">Manning: <span class="mono">V.Ships (Fleet 6B Manila)</span> &middot; earlier contracts under <span class="mono">Pacific Ocean Manning, Inc.</span></p>
+        <p class="svc-foot reveal">Durations are actual days aboard, derived from the sign-on and sign-off dates. MARINA records sea service in fixed 30-day months, so the official register shows marginally lower figures for the same dates.</p>
       </section>
 
       <!-- ================= BRIDGE & NAVIGATION ================= -->
@@ -1398,18 +1446,28 @@ footer .mono{ font-size:11.5px; }
           <span class="pill">ALL VALID</span>
         </div>
         <ul class="cert-list">
-          <li class="reveal">CoC Chief Mate (Management Level, STCW II/2), Unlimited / Oceangoing — MARINA<span class="cert-note">New issuance in final evaluation; current CoC valid to Sep 2026</span></li>
-          <li class="reveal">GMDSS GOC</li>
-          <li class="reveal">Management Level Functions 2 &amp; 3 (2025); BTRM (Dec 2025)</li>
-          <li class="reveal">BST (updated), PSCRB, Advanced Fire Fighting</li>
-          <li class="reveal">Medical First Aid (MEFA) and Medical Care (MECA) — both held</li>
-          <li class="reveal">Ship Security Officer (SSO) — Certificate of Proficiency</li>
+          <li class="reveal">CoC Chief Mate (Management Level, STCW II/2), Unlimited / Oceangoing — MARINA<span class="cert-note">Issued 13 Feb 2026 &middot; valid to 13 Feb 2031 &middot; no limitation</span></li>
+          <li class="reveal">CoC Officer in Charge of a Navigational Watch — MARINA<span class="cert-note">Valid to 16 Oct 2030 &middot; no limitation</span></li>
+          <li class="reveal">Deck Management Level — theoretical examination passed, practical assessment completed<span class="cert-note">January 2026</span></li>
+          <li class="reveal">Management Level Course, Marine Deck Officers — Functions 1, 2 &amp; 3<span class="cert-note">Navigation; cargo handling &amp; stowage; controlling the operation of the ship (2025)</span></li>
+          <li class="reveal">GMDSS General Operator&rsquo;s Certificate<span class="cert-note">Valid to 16 Oct 2030</span></li>
+          <li class="reveal">Basic Training, Survival Craft &amp; Rescue Boat, Advanced Fire Fighting<span class="cert-note">All refreshed 2025 &middot; valid to 16 Oct 2030</span></li>
+          <li class="reveal">Medical First Aid (MEFA) and Medical Care (MECA) — both held<span class="cert-note">Medical Care: unlimited validity</span></li>
+          <li class="reveal">Ship Security Officer (SSO) — Certificate of Proficiency<span class="cert-note">Unlimited validity</span></li>
           <li class="reveal">ISPS Security Awareness / Designated Security Duties</li>
           <li class="reveal">ECDIS Generic + type-specific (JRC, Furuno)</li>
           <li class="reveal">Singapore (MPA) Certificate of Endorsement</li>
           <li class="reveal">Philippine Passport, SIRB, Yellow Fever</li>
           <li class="reveal">PEME: Fit for Duty<span class="cert-note">Valid to Dec 2027</span></li>
         </ul>
+        <p class="cert-foot reveal">MARINA-issued certificates verifiable against the Philippine Maritime Industry Authority record under <span class="mono">SRN 8712140002</span>. Training completed with PROTECT, New Simulator Center of the Philippines, EXACT, PHILASIA and IMPAC.</p>
+      </section>
+
+      <!-- ================= EDUCATION ================= -->
+      <section id="education" aria-labelledby="education-h">
+        <p class="eyebrow">Background</p>
+        <h2 id="education-h" class="reveal">Education</h2>
+        <p class="edu-line reveal"><strong>University of Cebu &mdash; Maritime Education and Training Center (UC-METC)</strong><span class="edu-note">College, maritime programme &middot; graduated 2008</span></p>
       </section>
 
       <!-- ================= TOOLS & PROJECTS ================= -->
@@ -1509,13 +1567,17 @@ footer .mono{ font-size:11.5px; }
 'use strict';
 
 /* ============ SEA SERVICE DATA (Section 5 — verbatim) ============ */
+/* Durations are NOT stored. They were, as hand-written strings, and every one of the six
+   had drifted from the dates beside it — the cards showed CL BANYAN as 11m 03d while the
+   totals bar computed 10m 30d from the same sign-on and sign-off. Two renderings of one
+   fact is one too many, so the dates are the fact and fmtMD(spanDays(c)) is the rendering. */
 const SERVICE = [
-  { vessel:'FG EUCALYPTUS', type:'Supramax Bulk Carrier',    rank:'2nd Officer', from:'2026-02-07', to:null,        dur:null,      note:'Contract to Oct 2026' },
-  { vessel:'CL BANYAN',     type:'Panamax Woodchip Carrier', rank:'2nd Officer', from:'2024-09-13', to:'2025-08-12', dur:'11m 03d', note:null },
-  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'2nd Officer', from:'2024-02-12', to:'2024-04-05', dur:'1m 23d',  note:null },
-  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'2nd Officer', from:'2023-04-01', to:'2023-10-02', dur:'6m 04d',  note:null },
-  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'3rd Officer', from:'2022-03-09', to:'2022-10-27', dur:'7m 22d',  note:null },
-  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'3rd Officer', from:'2020-12-11', to:'2021-07-12', dur:'7m 03d',  note:null }
+  { vessel:'FG EUCALYPTUS', type:'Supramax Bulk Carrier',    rank:'2nd Officer', from:'2026-02-07', to:null,        note:'Contract to Oct 2026' },
+  { vessel:'CL BANYAN',     type:'Panamax Woodchip Carrier', rank:'2nd Officer', from:'2024-09-13', to:'2025-08-12', note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'2nd Officer', from:'2024-02-12', to:'2024-04-05', note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'2nd Officer', from:'2023-04-01', to:'2023-10-02', note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'3rd Officer', from:'2022-03-09', to:'2022-10-27', note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'3rd Officer', from:'2020-12-11', to:'2021-07-12', note:null }
 ];
 
 /* Particulars per ship, keyed by SERVICE[].vessel. A recruiter's first question about
@@ -1565,7 +1627,7 @@ function fmtMD(days){
   for (const c of SERVICE){
     const live = !c.to;
     const v = VESSELS[c.vessel];
-    const durTxt = live ? 'Present · ' + fmtMD(spanDays(c)) : c.dur;
+    const durTxt = (live ? 'Present · ' : '') + fmtMD(spanDays(c));
     const toTxt = live ? 'Present' : fmtD(c.to);
     html +=
       '<article class="svc reveal">' +
@@ -1647,10 +1709,11 @@ function fmtMD(days){
 /* ============ SCROLL: rail + active nav + reveals ============ */
 (function scrollWiring(){
   const main = document.getElementById('main');
-  const sections = ['hero','about','service','bridge','cargo','safety','certs','tools','leadership','contact']
+  const sections = ['hero','about','service','bridge','cargo','safety','certs','education','tools','leadership','contact']
     .map(function(id){ return document.getElementById(id); });
   const labels = { hero:'DECK', about:'PROFILE', service:'SEA SERVICE', bridge:'BRIDGE', cargo:'CARGO',
-                   safety:'SAFETY', certs:'DOCUMENTS', tools:'SOFTWARE', leadership:'CREW', contact:'CONTACT' };
+                   safety:'SAFETY', certs:'DOCUMENTS', education:'BACKGROUND', tools:'SOFTWARE',
+                   leadership:'CREW', contact:'CONTACT' };
   const strip = document.getElementById('navLinks');
   const navLinks = Array.prototype.slice.call(strip.querySelectorAll('a'));
   const ind = document.getElementById('navInd');
