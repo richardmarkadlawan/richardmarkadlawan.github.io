@@ -42,8 +42,7 @@ function extractService(src, file){
       type: str('type'),
       rank: str('rank'),
       from: str('from'),
-      to: nullable('to'),
-      dur: nullable('dur')
+      to: nullable('to')
     };
   });
 }
@@ -76,15 +75,12 @@ if (a && b){
   const openIdx = a.findIndex(r => r.to === null);
   if (openIdx > 0) fail(`the open contract (${a[openIdx].vessel}) is not first; list must be newest-first`);
 
-  /* Every closed contract needs its stated duration; the open one is computed. */
-  a.forEach((r, i) => {
-    if (r.to !== null && !r.dur) fail(`row ${i + 1} (${r.vessel}) is closed but has no duration`);
-    if (r.to === null && r.dur) fail(`row ${i + 1} (${r.vessel}) is open, so dur must be null`);
-    /* "0m 15d" reads like a broken field; a sub-month contract is just "15d". */
-    if (r.dur && /^0m\s/.test(r.dur)){
-      fail(`row ${i + 1} (${r.vessel}) has duration "${r.dur}" — drop the empty month, write "${r.dur.replace(/^0m\s*/, '').replace(/^0+/, '')}"`);
-    }
-  });
+  /* There were three checks here policing a stored `dur` string per row — that a closed
+     contract had one, that an open one did not, and that it was formatted sanely. They
+     could not check the only thing that mattered, which is whether the string agreed with
+     the dates on the same row; all six had quietly drifted a couple of days high. The
+     field is gone and both pages derive the duration with fmtMD(spanDays(c)), so there is
+     no second copy left to disagree. Do not reintroduce it. */
 }
 
 /* ---------- vessel particulars ---------- */
@@ -175,11 +171,27 @@ if (!siteClaim || !printClaim){
 
 /* ---------- things that must never appear ---------- */
 
+/* The MISMO (MARINA) account is the source for the credentials on these pages, and syncing
+   against it means that record sits open in a browser beside these files. Everything below
+   is a field on that same page that must never be pasted across.
+
+   The SRN is the deliberate exception — it is published as the verification handle for the
+   certificates, so it gets no rule. Note the birth-date rule matches a formatted date only
+   (12/14/1987); it must not match the bare digits inside the SRN, whose first six encode
+   the same date. */
 const banned = [
   [/\bUS\s+visa\b/i, 'US visa (not valid — must never be listed)'],
   [/\btel:/i, 'a telephone link'],
   [/\bphone\b/i, 'a phone number'],
-  [/@(?:gmail|yahoo|outlook|hotmail)\./i, 'a personal email address']
+  [/@(?:gmail|yahoo|outlook|hotmail)\./i, 'a personal email address'],
+  [/\bEC\d{7}\b/, 'a passport number'],
+  [/\b\d{2}\/\d{2}\/(?:19|20)\d{2}\b/, 'a formatted birth date'],
+  [/\bSOFIA\s+LOUISSE\b/i, "the emergency contact's name (a third party)"],
+  [/\bCASA\s+MIRA\b/i, 'a home address'],
+  [/\bUPPER\s+PAKIGNE\b/i, 'a home address'],
+  /* Name plus a live certificate number is the raw material for impersonation and for
+     fraudulent verification lookups. Titles, issuer and dates only. */
+  [/\b(?:CCM|COICNW|GOC|BTB|SCRB|PSCRB|AFF|SSO|MECA)\d{9,}\b/, 'a certificate number']
 ];
 for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
   for (const [re, what] of banned){

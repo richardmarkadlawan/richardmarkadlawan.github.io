@@ -129,6 +129,8 @@ tbody tr:last-child td{ border-bottom:none; }
   width:4pt; height:4pt; border:.9pt solid var(--green); border-radius:50%;
 }
 .cert i{ font-style:normal; color:var(--dim); font-size:7.9pt; }
+/* Stated once under the list — the verification handle for every MARINA cert above. */
+.certfoot{ margin-top:2mm; font-size:7.4pt; line-height:1.45; color:var(--dim); }
 
 /* ---------- TOOLS ---------- */
 .tools li{ list-style:none; font-size:8.6pt; margin-bottom:1.6pt; padding-left:9pt; position:relative; }
@@ -196,23 +198,32 @@ footer{
       <span>Total as 3rd Officer: <b id="t3o">—</b></span>
       <span>Total officer seatime: <b id="tall">—</b></span>
     </div>
+    <p class="certfoot">Manning: V.Ships (Fleet 6B Manila); earlier contracts under Pacific Ocean Manning, Inc. Durations are actual days aboard, derived from the sign-on and sign-off dates — MARINA records sea service in fixed 30-day months, so the official register shows marginally lower figures.</p>
   </section>
 
   <section>
     <h2>Certifications — All Valid</h2>
     <div class="certs">
-      <div class="cert">CoC Chief Mate (Management Level, STCW II/2), Unlimited / Oceangoing — MARINA <i>(new issuance in final evaluation; current CoC valid to Sep 2026)</i></div>
-      <div class="cert">GMDSS GOC</div>
-      <div class="cert">Management Level Functions 2 &amp; 3 (2025); BTRM (Dec 2025)</div>
-      <div class="cert">BST (updated), PSCRB, Advanced Fire Fighting</div>
-      <div class="cert">Medical First Aid (MEFA) and Medical Care (MECA) — both held</div>
-      <div class="cert">Ship Security Officer (SSO) — Certificate of Proficiency</div>
+      <div class="cert">CoC Chief Mate (Management Level, STCW II/2), Unlimited / Oceangoing — MARINA <i>(issued 13 Feb 2026; valid to 13 Feb 2031; no limitation)</i></div>
+      <div class="cert">CoC Officer in Charge of a Navigational Watch — MARINA <i>(valid to 16 Oct 2030; no limitation)</i></div>
+      <div class="cert">Deck Management Level — theoretical examination passed, practical assessment completed <i>(Jan 2026)</i></div>
+      <div class="cert">Management Level Course, Marine Deck Officers — Functions 1, 2 &amp; 3 <i>(2025)</i></div>
+      <div class="cert">GMDSS General Operator&rsquo;s Certificate <i>(valid to 16 Oct 2030)</i></div>
+      <div class="cert">Basic Training, Survival Craft &amp; Rescue Boat, Advanced Fire Fighting <i>(refreshed 2025; valid to 16 Oct 2030)</i></div>
+      <div class="cert">Medical First Aid (MEFA) and Medical Care (MECA) — both held <i>(MECA: unlimited)</i></div>
+      <div class="cert">Ship Security Officer (SSO) — Certificate of Proficiency <i>(unlimited)</i></div>
       <div class="cert">ISPS Security Awareness / Designated Security Duties</div>
       <div class="cert">ECDIS Generic + type-specific (JRC, Furuno)</div>
       <div class="cert">Singapore (MPA) Certificate of Endorsement</div>
       <div class="cert">Philippine Passport, SIRB, Yellow Fever</div>
       <div class="cert">PEME: Fit for Duty <i>(valid to Dec 2027)</i></div>
     </div>
+    <p class="certfoot">MARINA-issued certificates verifiable against the Philippine Maritime Industry Authority record under SRN 8712140002. Training completed with PROTECT, New Simulator Center of the Philippines, EXACT, PHILASIA and IMPAC.</p>
+  </section>
+
+  <section class="avoid">
+    <h2>Education</h2>
+    <div class="cert"><b>University of Cebu &mdash; Maritime Education and Training Center (UC-METC)</b> <i>(college, maritime programme; graduated 2008)</i></div>
   </section>
 
   <section>
@@ -279,14 +290,15 @@ footer{
 <script>
 'use strict';
 
-/* Same service data and date maths as index.html — totals must agree. */
+/* Same service data and date maths as index.html — totals must agree. Durations are
+   derived from the dates, never stored; see the note on SERVICE in index.html. */
 const SERVICE = [
-  { vessel:'FG EUCALYPTUS', type:'Supramax Bulk Carrier',    rank:'2nd Officer', from:'2026-02-07', to:null,        dur:null,      note:'to Oct 2026' },
-  { vessel:'CL BANYAN',     type:'Panamax Woodchip Carrier', rank:'2nd Officer', from:'2024-09-13', to:'2025-08-12', dur:'11m 03d', note:null },
-  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'2nd Officer', from:'2024-02-12', to:'2024-04-05', dur:'1m 23d',  note:null },
-  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'2nd Officer', from:'2023-04-01', to:'2023-10-02', dur:'6m 04d',  note:null },
-  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'3rd Officer', from:'2022-03-09', to:'2022-10-27', dur:'7m 22d',  note:null },
-  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'3rd Officer', from:'2020-12-11', to:'2021-07-12', dur:'7m 03d',  note:null }
+  { vessel:'FG EUCALYPTUS', type:'Supramax Bulk Carrier',    rank:'2nd Officer', from:'2026-02-07', to:null,        note:'to Oct 2026' },
+  { vessel:'CL BANYAN',     type:'Panamax Woodchip Carrier', rank:'2nd Officer', from:'2024-09-13', to:'2025-08-12', note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'2nd Officer', from:'2024-02-12', to:'2024-04-05', note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'2nd Officer', from:'2023-04-01', to:'2023-10-02', note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'3rd Officer', from:'2022-03-09', to:'2022-10-27', note:null },
+  { vessel:'JACK LONDON',   type:'Panamax Container Vessel', rank:'3rd Officer', from:'2020-12-11', to:'2021-07-12', note:null }
 ];
 
 /* Same particulars table as index.html — verify.mjs diffs it field for field.
@@ -330,7 +342,7 @@ function fmtMD(days){
         '<td>' + c.type + '</td>' +
         '<td>' + c.rank + '</td>' +
         '<td class="num">' + fmtD(c.from) + ' – ' + (live ? 'Present' : fmtD(c.to)) + '</td>' +
-        '<td class="num t-right">' + (live ? fmtMD(spanDays(c)) : c.dur) + '</td>' +
+        '<td class="num t-right">' + fmtMD(spanDays(c)) + '</td>' +
       '</tr>';
   }
   document.getElementById('svcBody').innerHTML = html;
