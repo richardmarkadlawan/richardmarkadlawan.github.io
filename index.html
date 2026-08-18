@@ -134,7 +134,13 @@
 
 /* ============ SHELL (proven iOS pattern) ============ */
 *{ box-sizing:border-box; margin:0; padding:0; }
-html,body{ height:100%; }
+html,body{
+  height:100%;
+  /* The shell never scrolls — #main does. Without this a drag that reaches the document
+     (over the fixed sheet or scrim, say) rubber-bands the whole viewport on iOS and takes
+     the nav up under the status bar with it. */
+  overscroll-behavior:none;
+}
 body{
   font-family:var(--font-ui);
   background:var(--sea-0);
@@ -153,6 +159,7 @@ body{
 main{
   flex:1;
   overflow-y:auto;
+  overscroll-behavior:none;
   overflow-x:hidden;
   scroll-behavior:smooth;
   -webkit-overflow-scrolling:touch;
@@ -312,14 +319,6 @@ nav{
   cursor:pointer;
   -webkit-tap-highlight-color:transparent;
 }
-.rd-idx{
-  flex:0 0 auto;
-  font-family:var(--font-mono);
-  font-size:10.5px;
-  font-weight:700;
-  letter-spacing:.08em;
-  color:var(--signal);
-}
 .rd-label{
   min-width:0;
   font-family:var(--font-mono);
@@ -346,6 +345,9 @@ nav{
   position:fixed;
   top:var(--nav-h); left:0; right:0; bottom:0;
   z-index:14;
+  /* Nothing behind the scrim may be panned by a drag across it, and the scrim itself
+     has nothing to scroll. */
+  touch-action:none;
   background:var(--scrim);
   -webkit-backdrop-filter:blur(2px);
   backdrop-filter:blur(2px);
@@ -359,6 +361,16 @@ nav{
   z-index:15;
   max-height:calc(100dvh - var(--nav-h));
   overflow-y:auto;
+  /* The list may need to scroll on a short screen; contain keeps that from chaining to
+     the page once it hits either end. */
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+  /* Same as the nav's: a press-and-drag on a row should move nothing and select nothing,
+     not start a text selection over the labels. */
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+  -webkit-tap-highlight-color:transparent;
   background:var(--sea-1);
   border-bottom:1px solid var(--hairline);
   border-radius:0 0 14px 14px;
@@ -382,9 +394,8 @@ nav{
 .nav-sheet a{
   display:flex;
   align-items:center;
-  gap:14px;
   min-height:48px;
-  padding:0 18px;
+  padding:0 16px;
   font-size:14px;
   font-weight:600;
   letter-spacing:.03em;
@@ -392,14 +403,6 @@ nav{
   text-decoration:none;
 }
 .nav-sheet li + li a{ border-top:1px solid var(--hairline); }
-.nav-sheet .sh-idx{
-  flex:0 0 auto;
-  font-family:var(--font-mono);
-  font-size:11px;
-  font-weight:700;
-  letter-spacing:.06em;
-  color:var(--ink-dim);
-}
 /* Same vocabulary as .rail-mark.sub and the strip's active link: green type, faint green
    ground, and a hard signal edge on the leading side. */
 .nav-sheet a[aria-current="page"]{
@@ -407,7 +410,6 @@ nav{
   color:var(--signal);
   box-shadow:inset 2px 0 0 var(--signal);
 }
-.nav-sheet a[aria-current="page"] .sh-idx{ color:var(--signal); }
 
 /* Rows rise in sequence on the way in and leave together on the way out — the delay is
    declared only on the .open side, so the exit inherits no stagger. */
@@ -1215,7 +1217,6 @@ footer .mono{ font-size:11.5px; }
      than letting the longest labels fall back to an ellipsis. */
   .brand{ letter-spacing:.03em; }
   .readout{ gap:6px; padding:0 8px; }
-  .rd-idx{ font-size:10px; letter-spacing:.04em; }
   .rd-label{ font-size:10.5px; letter-spacing:.04em; }
   .hero-portrait img{ width:108px; height:108px; }
   .hero-portrait{ margin-bottom:18px; }
@@ -1270,7 +1271,6 @@ footer .mono{ font-size:11.5px; }
     </div>
     <button id="navReadout" class="readout" aria-expanded="false" aria-controls="navSheet">
       <span class="vh">Sections — you are at</span>
-      <span class="rd-idx" id="rdIdx">00</span>
       <span class="rd-label" id="rdLabel">DECK</span>
       <svg class="rd-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
     </button>
@@ -1655,7 +1655,6 @@ function fmtMD(days){
   const navLinks = Array.prototype.slice.call(strip.querySelectorAll('a'));
   const ind = document.getElementById('navInd');
   const progress = document.getElementById('navProgress');
-  const rdIdx = document.getElementById('rdIdx');
   const rdLabel = document.getElementById('rdLabel');
 
   /* draft-mark rail scale: hull numerals, 0 m at keel (bottom) to 12 m */
@@ -1736,7 +1735,7 @@ function fmtMD(days){
       }
       if (active){ keepInView(active); moveInd(active); }
       else { ind.style.opacity = '0'; }   /* the hero has no link of its own */
-      setReadout(active, curId);
+      setReadout(curId);
       fadeEdges();
     });
   }
@@ -1770,14 +1769,9 @@ function fmtMD(days){
 
   /* Retriggering the keyframe by clearing and re-reading layout is what lets the label
      cross-fade with no timers and no duplicate spans to keep in sync. */
-  function setReadout(a, id){
+  function setReadout(id){
     const text = labels[id] || '';
     if (rdLabel.textContent === text) return;
-    /* Numbered against the links, not the sections: the sheet is built from these same
-       links and sits directly under the readout, so counting the unlinked hero here
-       would put "03 SEA SERVICE" above a row reading "02 Sea Service". The hero takes
-       00 — it is where you board, before the numbered sections. */
-    rdIdx.textContent = ('0' + (a ? navLinks.indexOf(a) + 1 : 0)).slice(-2);
     rdLabel.textContent = text;
     rdLabel.classList.remove('swap');
     void rdLabel.offsetWidth;
@@ -1832,8 +1826,7 @@ function fmtMD(days){
   const links = Array.prototype.slice.call(strip.querySelectorAll('a'));
   list.innerHTML = links.map(function(a, i){
     return '<li><a href="' + a.getAttribute('href') + '" style="--i:' + i + '">' +
-             '<span class="sh-idx">' + ('0' + (i + 1)).slice(-2) + '</span>' +
-             '<span>' + a.textContent + '</span>' +
+             a.textContent +
            '</a></li>';
   }).join('');
   const rows = Array.prototype.slice.call(list.querySelectorAll('a'));
@@ -1901,6 +1894,16 @@ function fmtMD(days){
   for (const r of rows){
     r.addEventListener('click', function(){ hide(false); });
   }
+
+  /* overscroll-behavior handles the chaining case, but a drag that starts on the scrim
+     or on a sheet too short to scroll has no scroller to chain *from* — Safari pans the
+     visual viewport instead, which is what pushed the nav off the top of the screen.
+     Registered once and gated on `open`, same as the keydown handler below. */
+  document.addEventListener('touchmove', function(e){
+    if (!open) return;
+    const inSheet = sheet.contains(e.target) && sheet.scrollHeight > sheet.clientHeight;
+    if (!inSheet && e.cancelable) e.preventDefault();
+  }, { passive:false });
 
   document.addEventListener('keydown', function(e){
     if (!open) return;
