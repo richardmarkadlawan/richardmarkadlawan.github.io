@@ -365,9 +365,15 @@ for (const dir of readdirSync(new URL('apps/', import.meta.url), { withFileTypes
 
 for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
   /* rel="canonical" and rel="alternate" carry an absolute URL but are declarative
-     metadata — the browser never fetches them, so they cost nothing offline. Drop those
-     tags before scanning; everything else with an http(s) src/href does get fetched. */
-  const scanned = src.replace(/<link\b[^>]*\brel\s*=\s*["'](?:canonical|alternate)["'][^>]*>/gi, '');
+     metadata — the browser never fetches them, so they cost nothing offline. An <a href>
+     is the same kind of promise: nothing is requested until a reader clicks, and the page
+     renders identically with no network. What this check is really guarding is resources
+     the browser fetches on its own to paint the page — stylesheets, scripts, fonts,
+     images. Drop the declarative tags before scanning; everything left with an http(s)
+     src/href does get fetched. */
+  const scanned = src
+    .replace(/<link\b[^>]*\brel\s*=\s*["'](?:canonical|alternate)["'][^>]*>/gi, '')
+    .replace(/<a\b[^>]*>/gi, '');
   const remote = scanned.match(/(?:src|href)\s*=\s*["']https?:\/\/[^"']+/gi) || [];
   if (remote.length){
     fail(`${file} loads ${remote.length} remote resource(s) — breaks offline use: ` +
