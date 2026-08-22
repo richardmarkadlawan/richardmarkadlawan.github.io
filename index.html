@@ -53,7 +53,10 @@
       "@type": "EducationalOccupationalCredential",
       "name": "Certificate of Competency — Chief Mate (Unlimited, Oceangoing), STCW II/2",
       "credentialCategory": "license",
-      "recognizedBy": { "@type": "Organization", "name": "MARINA Philippines" },
+      "recognizedBy": {
+        "@type": "Organization",
+        "name": "MARINA Philippines"
+      },
       "validFrom": "2026-02-13",
       "expires": "2031-02-13",
       "identifier": "8570065",
@@ -63,14 +66,90 @@
       "@type": "EducationalOccupationalCredential",
       "name": "Certificate of Competency — Officer in Charge of a Navigational Watch, STCW II/1",
       "credentialCategory": "license",
-      "recognizedBy": { "@type": "Organization", "name": "MARINA Philippines" },
-      "expires": "2030-10-16"
+      "recognizedBy": {
+        "@type": "Organization",
+        "name": "MARINA Philippines"
+      },
+      "validFrom": "2025-10-16",
+      "expires": "2030-10-16",
+      "identifier": "8398330",
+      "url": "https://online-appointment.marina.gov.ph/verify-id-certificate"
     },
     {
       "@type": "EducationalOccupationalCredential",
       "name": "GMDSS General Operator's Certificate",
       "credentialCategory": "certificate",
-      "expires": "2030-10-16"
+      "recognizedBy": {
+        "@type": "Organization",
+        "name": "MARINA Philippines"
+      },
+      "validFrom": "2025-10-16",
+      "expires": "2030-10-16",
+      "identifier": "8398334",
+      "url": "https://online-appointment.marina.gov.ph/verify-id-certificate"
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
+      "name": "Basic Training (STCW A-VI/1)",
+      "credentialCategory": "certificate",
+      "recognizedBy": {
+        "@type": "Organization",
+        "name": "MARINA Philippines"
+      },
+      "validFrom": "2026-01-14",
+      "expires": "2030-10-16",
+      "identifier": "8516085",
+      "url": "https://online-appointment.marina.gov.ph/verify-id-certificate"
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
+      "name": "Survival Craft and Rescue Boat other than Fast Rescue Boat (STCW A-VI/2)",
+      "credentialCategory": "certificate",
+      "recognizedBy": {
+        "@type": "Organization",
+        "name": "MARINA Philippines"
+      },
+      "validFrom": "2025-10-16",
+      "expires": "2030-10-16",
+      "identifier": "8398329",
+      "url": "https://online-appointment.marina.gov.ph/verify-id-certificate"
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
+      "name": "Advanced Fire Fighting (STCW A-VI/3)",
+      "credentialCategory": "certificate",
+      "recognizedBy": {
+        "@type": "Organization",
+        "name": "MARINA Philippines"
+      },
+      "validFrom": "2025-10-16",
+      "expires": "2030-10-16",
+      "identifier": "8398322",
+      "url": "https://online-appointment.marina.gov.ph/verify-id-certificate"
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
+      "name": "Ship Security Officer, Certificate of Proficiency",
+      "credentialCategory": "certificate",
+      "recognizedBy": {
+        "@type": "Organization",
+        "name": "MARINA Philippines"
+      },
+      "validFrom": "2023-03-17",
+      "identifier": "6804871",
+      "url": "https://online-appointment.marina.gov.ph/verify-id-certificate"
+    },
+    {
+      "@type": "EducationalOccupationalCredential",
+      "name": "Medical Care (STCW A-VI/4-2)",
+      "credentialCategory": "certificate",
+      "recognizedBy": {
+        "@type": "Organization",
+        "name": "MARINA Philippines"
+      },
+      "validFrom": "2023-03-10",
+      "identifier": "6795962",
+      "url": "https://online-appointment.marina.gov.ph/verify-id-certificate"
     }
   ]
 }
@@ -1045,28 +1124,79 @@ nav{
   color:var(--ink-dim);
   margin-top:var(--s-1);
 }
-/* The serial is the one live thing in this section -- the number a crewing officer can
-   actually check -- so it is the only accent-coloured, underlined element here.
+/* ---- Certifications register ----
+   Modelled on .svc above, not invented: same ch-sized grid, same hairline between rows,
+   same mono column on the right. "16 Oct 2025 – 16 Oct 2030" is 25 characters in Plex
+   Mono and "SN 8398330" is 10, so the columns are measured rather than eyeballed. */
+.cert-eyebrow{
+  font-family:var(--font-mono);
+  font-size:var(--t-label);
+  text-transform:uppercase;
+  letter-spacing:var(--tr-label);
+  color:var(--ink-dim);
+  margin:0 0 var(--s-3);
+}
+/* One selector owns this margin. A `.cert-eyebrow + .creg-list` rule would also work and
+   would out-specify the base rule, which is exactly the kind of quiet fight between two
+   selectors that makes spacing here unpredictable later. */
+ul.creg-list{ list-style:none; margin:0 0 var(--s-6); padding:0; max-width:var(--measure); }
+.creg{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 11ch;
+  gap:0 var(--s-4);
+  align-items:baseline;
+  padding:var(--s-3) 0;
+  border-top:1px solid var(--rule);
+}
+.creg-list li:first-child{ border-top:0; }
+.creg-name{
+  margin:0;
+  color:var(--ink);
+  text-wrap:pretty;
+}
+.creg-sub{
+  display:block;
+  font-family:var(--font-mono);
+  font-size:var(--t-small);
+  color:var(--ink-dim);
+  margin-top:2px;
+}
+.creg-dates{
+  grid-column:1 / -1;
+  font-family:var(--font-mono);
+  font-size:var(--t-small);
+  line-height:var(--lh-register);
+  color:var(--ink-mid);
+  font-variant-numeric:lining-nums tabular-nums;
+  margin:var(--s-1) 0 0;
+}
+.creg-dates .d-sep{ color:var(--ink-dim); margin:0 .5ch; }
 
-   It gets its own line rather than being appended to the validity chain: at this measure
-   the chain wraps, and a lone "·" left hanging at the start of a line is the kind of small
-   ugliness this document does not permit. The break also gives the section's one tappable
-   thing a target of its own.
+/* The serial is the only thing in this section a stranger can act on, and there are eight
+   of them. When there was one it was accent green; eight would turn the accent into
+   wallpaper and it would stop meaning anything. So the accent moves to the interaction:
+   quiet mono at rest, green the moment a pointer or keyboard lands on it. One affordance,
+   used eight times, that only lights up when it is about to be used.
 
    MARINA's form cannot be prefilled from outside it -- it reads no query string and is
    captcha-gated -- so the click copies the number and opens the page, and the toast says
    what to do with it. */
-.cert-verify{ display:block; margin-top:var(--s-1); }
 .sn{
-  display:inline-block;
-  padding:2px 0;
-  color:var(--accent);
+  justify-self:end;
+  font-family:var(--font-mono);
+  font-size:var(--t-small);
+  font-variant-numeric:lining-nums tabular-nums;
+  color:var(--ink-mid);
   white-space:nowrap;
-  text-decoration:underline;
+  text-decoration:underline dotted;
   text-underline-offset:3px;
   text-decoration-thickness:1px;
 }
-.sn:hover,.sn:focus-visible{ text-decoration-thickness:2px; }
+.sn:hover,.sn:focus-visible{
+  color:var(--accent);
+  text-decoration:underline solid;
+  text-decoration-thickness:2px;
+}
 @media print{ .sn{ color:inherit; text-decoration:none; } }
 
 .toast{
@@ -1087,6 +1217,56 @@ nav{
   .toast{ left:var(--s-5); right:var(--s-5); bottom:var(--s-4); max-width:none; }
 }
 @media print{ .toast{ display:none; } }
+
+/* A caption, not a category. The two eyebrows above name kinds of credential; giving this
+   the same uppercase mono treatment would file "how to verify" as a third kind. Sentence
+   case in the body face keeps it legible as an aside.
+
+   The numbering is earned: click, then set the dropdown, then submit. Out of order the
+   form does not work. */
+.howto{
+  margin:0 0 var(--s-4);
+  padding-bottom:var(--s-4);
+  border-bottom:1px solid var(--rule);
+  max-width:var(--measure);
+}
+.howto-title{
+  font-size:var(--t-small);
+  color:var(--ink-mid);
+  margin:0 0 var(--s-3);
+}
+.howto-steps{
+  list-style:none;
+  margin:0; padding:0;
+  counter-reset:howto-step;
+  display:grid;
+  gap:var(--s-2);
+}
+/* Hanging indent via an absolutely positioned marker, NOT a two-column grid on the li.
+   The grid version looked right until a step contained an inline <span>: every span
+   becomes its own grid item, so steps 2 and 3 had their words dealt out across the
+   numeral column. Anything with inline children cannot be a grid here. */
+.howto-steps li{
+  position:relative;
+  padding-left:calc(2.5ch + var(--s-3));
+  font-size:var(--t-small);
+  color:var(--ink-dim);
+  text-wrap:pretty;
+}
+.howto-steps li::before{
+  counter-increment:howto-step;
+  content:counter(howto-step);
+  position:absolute;
+  left:0; top:0;
+  font-family:var(--font-mono);
+  font-variant-numeric:lining-nums tabular-nums;
+  color:var(--ink-mid);
+}
+/* The three strings a reader has to hunt for on MARINA's screen. Set in the serials' own
+   face at full ink, they stop being sentence and become things to look for. */
+.howto .mono{ color:var(--ink); }
+/* On paper the instruction is simply false -- nothing there can be clicked. */
+@media print{ .howto{ display:none; } }
 
 .cert-foot{
   margin-top:var(--s-5);
@@ -1554,16 +1734,83 @@ footer .mono{ font-size:var(--t-label); }
         <div class="h2-row reveal">
           <h2 id="certs-h">Certifications</h2>
         </div>
+        <!-- Two blocks, and the split is the point: everything above the second eyebrow is on
+             the national register and a stranger can check it against MARINA in a minute;
+             everything below is training and endorsements that no public register carries.
+             Grouping them into one list, as this section used to, made a verifiable CoC and
+             an in-house ECDIS course look like the same kind of claim.
+
+             The register rows deliberately reuse the sea-service register's grid idiom
+             (.svc, further up): ch-sized columns, a hairline between rows, the mono column
+             on the right. Same document, same vocabulary, nothing new to learn.
+
+             What is NOT here: the MISMO certificate numbers, the long prefixed ones from
+             the other column of the same table. A serial is enough to verify; a full
+             certificate number beside a name is what someone needs to impersonate him.
+             verify.mjs enforces this, and it caught an earlier draft of this very comment
+             for quoting one as an example. Do not name one here either. -->
+        <p class="cert-eyebrow reveal">On the MARINA register</p>
+        <!-- Eight numbers with dotted underlines mean nothing to a stranger, and MARINA's
+             form opens blank with its serial box hidden until a dropdown is set. Step 2
+             names that option verbatim because it is the single thing most likely to
+             strand a recruiter mid-check. -->
+        <div class="howto reveal">
+          <p class="howto-title">How to check any of these</p>
+          <ol class="howto-steps" role="list">
+            <li>Click a serial number. It copies, and MARINA&rsquo;s verification page opens in a new tab.</li>
+            <li>Set <span class="mono">Verification Type</span> to <span class="mono">COP/COC/COE (MISMO ISSUED)</span>, then paste the number.</li>
+            <li>Complete the captcha and press <span class="mono">Check Data</span>.</li>
+          </ol>
+        </div>
+        <ul class="creg-list">
+          <li class="creg reveal">
+            <p class="creg-name">CoC Chief Mate<span class="creg-sub">Management Level, STCW II/2 &middot; unlimited / oceangoing</span></p>
+            <a class="sn" id="snCoC" href="https://online-appointment.marina.gov.ph/verify-id-certificate" target="_blank" rel="noopener noreferrer" data-sn="8570065" aria-label="Certificate serial number 8570065 for CoC Chief Mate. Copies the serial number and opens the MARINA verification page in a new tab.">SN 8570065</a>
+            <p class="creg-dates">13 Feb 2026 <span class="d-sep">&ndash;</span> <span class="d-to">13 Feb 2031</span> &middot; no limitation</p>
+          </li>
+          <li class="creg reveal">
+            <p class="creg-name">CoC Officer in Charge of a Navigational Watch<span class="creg-sub">STCW II/1 &middot; unlimited / oceangoing</span></p>
+            <a class="sn" id="snOicnw" href="https://online-appointment.marina.gov.ph/verify-id-certificate" target="_blank" rel="noopener noreferrer" data-sn="8398330" aria-label="Certificate serial number 8398330 for CoC Officer in Charge of a Navigational Watch. Copies the serial number and opens the MARINA verification page in a new tab.">SN 8398330</a>
+            <p class="creg-dates">16 Oct 2025 <span class="d-sep">&ndash;</span> <span class="d-to">16 Oct 2030</span> &middot; no limitation</p>
+          </li>
+          <li class="creg reveal">
+            <p class="creg-name">GMDSS General Operator&rsquo;s Certificate<span class="creg-sub">Radiocommunications</span></p>
+            <a class="sn" id="snGoc" href="https://online-appointment.marina.gov.ph/verify-id-certificate" target="_blank" rel="noopener noreferrer" data-sn="8398334" aria-label="Certificate serial number 8398334 for GMDSS General Operator&rsquo;s Certificate. Copies the serial number and opens the MARINA verification page in a new tab.">SN 8398334</a>
+            <p class="creg-dates">16 Oct 2025 <span class="d-sep">&ndash;</span> <span class="d-to">16 Oct 2030</span> &middot; no limitation</p>
+          </li>
+          <li class="creg reveal">
+            <p class="creg-name">Basic Training</p>
+            <a class="sn" id="snBt" href="https://online-appointment.marina.gov.ph/verify-id-certificate" target="_blank" rel="noopener noreferrer" data-sn="8516085" aria-label="Certificate serial number 8516085 for Basic Training. Copies the serial number and opens the MARINA verification page in a new tab.">SN 8516085</a>
+            <p class="creg-dates">14 Jan 2026 <span class="d-sep">&ndash;</span> <span class="d-to">16 Oct 2030</span></p>
+          </li>
+          <li class="creg reveal">
+            <p class="creg-name">Survival Craft &amp; Rescue Boat<span class="creg-sub">Other than fast rescue boat</span></p>
+            <a class="sn" id="snScrb" href="https://online-appointment.marina.gov.ph/verify-id-certificate" target="_blank" rel="noopener noreferrer" data-sn="8398329" aria-label="Certificate serial number 8398329 for Survival Craft &amp; Rescue Boat. Copies the serial number and opens the MARINA verification page in a new tab.">SN 8398329</a>
+            <p class="creg-dates">16 Oct 2025 <span class="d-sep">&ndash;</span> <span class="d-to">16 Oct 2030</span></p>
+          </li>
+          <li class="creg reveal">
+            <p class="creg-name">Advanced Fire Fighting</p>
+            <a class="sn" id="snAff" href="https://online-appointment.marina.gov.ph/verify-id-certificate" target="_blank" rel="noopener noreferrer" data-sn="8398322" aria-label="Certificate serial number 8398322 for Advanced Fire Fighting. Copies the serial number and opens the MARINA verification page in a new tab.">SN 8398322</a>
+            <p class="creg-dates">16 Oct 2025 <span class="d-sep">&ndash;</span> <span class="d-to">16 Oct 2030</span></p>
+          </li>
+          <li class="creg reveal">
+            <p class="creg-name">Ship Security Officer<span class="creg-sub">Certificate of Proficiency</span></p>
+            <a class="sn" id="snSso" href="https://online-appointment.marina.gov.ph/verify-id-certificate" target="_blank" rel="noopener noreferrer" data-sn="6804871" aria-label="Certificate serial number 6804871 for Ship Security Officer. Copies the serial number and opens the MARINA verification page in a new tab.">SN 6804871</a>
+            <p class="creg-dates">17 Mar 2023 <span class="d-sep">&ndash;</span> <span class="d-to">no expiry</span></p>
+          </li>
+          <li class="creg reveal">
+            <p class="creg-name">Medical Care<span class="creg-sub">MECA</span></p>
+            <a class="sn" id="snMeca" href="https://online-appointment.marina.gov.ph/verify-id-certificate" target="_blank" rel="noopener noreferrer" data-sn="6795962" aria-label="Certificate serial number 6795962 for Medical Care. Copies the serial number and opens the MARINA verification page in a new tab.">SN 6795962</a>
+            <p class="creg-dates">10 Mar 2023 <span class="d-sep">&ndash;</span> <span class="d-to">no expiry</span></p>
+          </li>
+        </ul>
+
+        <p class="cert-eyebrow reveal">Training &amp; endorsements</p>
         <ul class="cert-list">
-          <li class="reveal">CoC Chief Mate (Management Level, STCW II/2), Unlimited / Oceangoing, MARINA<span class="cert-note">Issued 13 Feb 2026 &middot; valid to 13 Feb 2031 &middot; no limitation <span class="cert-verify"><a class="sn" id="snCoC" href="https://online-appointment.marina.gov.ph/verify-id-certificate" target="_blank" rel="noopener noreferrer" data-sn="8570065" aria-label="Certificate serial number 8570065. Copies the serial number and opens the MARINA verification page in a new tab.">SN 8570065</a></span></span></li>
-          <li class="reveal">CoC Officer in Charge of a Navigational Watch, MARINA<span class="cert-note">Valid to 16 Oct 2030 &middot; no limitation</span></li>
           <li class="reveal">Deck Management Level: theoretical examination passed, practical assessment completed<span class="cert-note">January 2026</span></li>
           <li class="reveal">Management Level Course, Marine Deck Officers, Functions 1, 2 &amp; 3<span class="cert-note">Navigation; cargo handling &amp; stowage; controlling the operation of the ship (2025)</span></li>
           <li class="reveal">Bridge Team &amp; Resource Management (BTRM)<span class="cert-note">Dec 2025</span></li>
-          <li class="reveal">GMDSS General Operator&rsquo;s Certificate<span class="cert-note">Valid to 16 Oct 2030</span></li>
-          <li class="reveal">Basic Training, Survival Craft &amp; Rescue Boat, Advanced Fire Fighting<span class="cert-note">All refreshed 2025 &middot; valid to 16 Oct 2030</span></li>
-          <li class="reveal">Medical First Aid (MEFA) and Medical Care (MECA), both held<span class="cert-note">Medical Care: unlimited validity</span></li>
-          <li class="reveal">Ship Security Officer (SSO), Certificate of Proficiency<span class="cert-note">Unlimited validity</span></li>
+          <li class="reveal">Medical First Aid (MEFA)</li>
           <li class="reveal">ISPS Security Awareness / Designated Security Duties</li>
           <li class="reveal">ECDIS Generic + type-specific (JRC, Furuno)</li>
           <li class="reveal">Singapore (MPA) Certificate of Endorsement</li>
@@ -2184,9 +2431,8 @@ function fmtMD(days){
 
 /* ============ CERTIFICATE SERIAL ============ */
 (function serial(){
-  const link = document.getElementById('snCoC');
-  if (!link) return;
-  const sn = link.dataset.sn;
+  const links = document.querySelectorAll('.sn');
+  if (!links.length) return;
 
   let el = null, timer = 0;
   function toast(msg){
@@ -2223,22 +2469,28 @@ function fmtMD(days){
     } catch (e){ return false; }
   }
 
-  const OK   = 'Serial ' + sn + ' copied \u2014 choose COP/COC/COE (MISMO ISSUED) and paste';
-  const FAIL = 'Serial ' + sn + ' \u2014 choose COP/COC/COE (MISMO ISSUED)';
-
   /* No preventDefault: the anchor's own new-tab navigation is the link, and the copy
      rides along inside the same user gesture. If the script is broken or blocked the
-     link still works -- it just does not carry the number. */
-  link.addEventListener('click', function(){
-    if (navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(sn).then(
-        function(){ toast(OK); },
-        function(){ toast(legacyCopy(sn) ? OK : FAIL); }
-      );
-    } else {
-      toast(legacyCopy(sn) ? OK : FAIL);
-    }
-  });
+     link still works -- it just does not carry the number.
+
+     One listener per serial, one toast between them. Eight copies of this function, one
+     per certificate, is the version to avoid: eight toasts would stack up the corner of
+     the screen the first time somebody clicked twice. */
+  for (const link of links){
+    link.addEventListener('click', function(){
+      const sn = link.dataset.sn;
+      const OK   = 'Serial ' + sn + ' copied \u2014 choose COP/COC/COE (MISMO ISSUED) and paste';
+      const FAIL = 'Serial ' + sn + ' \u2014 choose COP/COC/COE (MISMO ISSUED)';
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(sn).then(
+          function(){ toast(OK); },
+          function(){ toast(legacyCopy(sn) ? OK : FAIL); }
+        );
+      } else {
+        toast(legacyCopy(sn) ? OK : FAIL);
+      }
+    });
+  }
 })();
 
 document.getElementById('year').textContent = new Date().getFullYear();
