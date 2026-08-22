@@ -66,6 +66,8 @@ The CV is generated from `cv_print.html`, so edit that file rather than the PDF.
 
 In Safari or Chrome, open `cv_print.html` and print (⌘P). Choose **Save as PDF**, paper size
 **A4**, margins **Default**, turn **off** headers and footers, turn **on** background graphics.
+The layout is sized to fit inside US Letter's shorter height as well, so it comes out as two
+pages on either paper.
 Save it next to `index.html` as `ADLAWAN_RICHARD_CV.pdf`. The on-screen page shows these same
 instructions; they do not appear in the print output.
 

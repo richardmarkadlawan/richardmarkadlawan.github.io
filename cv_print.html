@@ -41,11 +41,17 @@
 }
 
 /* ================== PRINT CV — A4, 2 pages, light ================== */
-/* size:auto, not A4. US Letter is 18mm shorter than A4 (279mm vs 297mm), so a two-page
-   layout tuned to A4 spills onto a third page for every US recruiter. Letting the printer
-   supply its own sheet fits both, and the content is set to Letter's shorter usable
-   height so A4 simply gets a deeper bottom margin. */
-@page{ size:auto; margin:11mm 12mm; }
+/* A4, deliberately: this file exists to produce ADLAWAN_RICHARD_CV.pdf, and that artifact
+   goes to ship managers in Singapore, Europe and the Philippines, where A4 is the paper.
+   (index.html's own print block uses size:auto instead, because there the reader is
+   printing the website on whatever is in their tray.)
+
+   The important half of the fix is not the keyword, it is that the content is sized to fit
+   inside US LETTER's usable height, which is 18mm shorter than A4 (279mm vs 297mm).
+   Anything that fits Letter fits A4 with room to spare, so this prints as two pages on
+   both papers -- verified by exporting to each. A layout tuned to fill A4 exactly is the
+   one that spills a third page for every US reader. */
+@page{ size:A4; margin:11mm 12mm; }
 
 :root{
   --ink:#16191D;
@@ -253,12 +259,13 @@ footer{
   </section>
 
   <section>
-    <h2>Certifications (All Valid)</h2>
+    <h2>Certifications</h2>
     <div class="certs">
       <div class="cert">CoC Chief Mate (Management Level, STCW II/2), Unlimited / Oceangoing, MARINA <i>(issued 13 Feb 2026; valid to 13 Feb 2031; no limitation)</i></div>
       <div class="cert">CoC Officer in Charge of a Navigational Watch, MARINA <i>(valid to 16 Oct 2030; no limitation)</i></div>
       <div class="cert">Deck Management Level: theoretical examination passed, practical assessment completed <i>(Jan 2026)</i></div>
       <div class="cert">Management Level Course, Marine Deck Officers, Functions 1, 2 &amp; 3 <i>(2025)</i></div>
+      <div class="cert">Bridge Team &amp; Resource Management (BTRM) <i>(Dec 2025)</i></div>
       <div class="cert">GMDSS General Operator&rsquo;s Certificate <i>(valid to 16 Oct 2030)</i></div>
       <div class="cert">Basic Training, Survival Craft &amp; Rescue Boat, Advanced Fire Fighting <i>(refreshed 2025; valid to 16 Oct 2030)</i></div>
       <div class="cert">Medical First Aid (MEFA) and Medical Care (MECA), both held <i>(MECA: unlimited)</i></div>
@@ -285,7 +292,7 @@ footer{
     <div class="grp"><h3>Compass management</h3><p>Gyro and magnetic: daily error observations (azimuth/amplitude), deviation records, compass error logs.</p></div>
     <div class="grp"><h3>MSI management</h3><p>GMDSS/NAVTEX/SafetyNET EGC monitoring, NAVAREA warning indexing and route-relevance analysis.</p></div>
     <div class="grp"><h3>Weather</h3><p>Weather routing liaison, heavy-weather passage planning, tropical cyclone avoidance.</p></div>
-    <div class="grp"><h3>Bridge Team &amp; Resource Management (BTRM)</h3><p>Dec 2025. Nautical publications and chart correction management.</p></div>
+    <div class="grp"><h3>Publications</h3><p>Nautical publications and chart correction management.</p></div>
   </section>
 
   <section>
