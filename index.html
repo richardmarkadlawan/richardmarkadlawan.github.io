@@ -55,7 +55,9 @@
       "credentialCategory": "license",
       "recognizedBy": { "@type": "Organization", "name": "MARINA Philippines" },
       "validFrom": "2026-02-13",
-      "expires": "2031-02-13"
+      "expires": "2031-02-13",
+      "identifier": "8570065",
+      "url": "https://online-appointment.marina.gov.ph/verify-id-certificate"
     },
     {
       "@type": "EducationalOccupationalCredential",
@@ -1043,6 +1045,49 @@ nav{
   color:var(--ink-dim);
   margin-top:var(--s-1);
 }
+/* The serial is the one live thing in this section -- the number a crewing officer can
+   actually check -- so it is the only accent-coloured, underlined element here.
+
+   It gets its own line rather than being appended to the validity chain: at this measure
+   the chain wraps, and a lone "·" left hanging at the start of a line is the kind of small
+   ugliness this document does not permit. The break also gives the section's one tappable
+   thing a target of its own.
+
+   MARINA's form cannot be prefilled from outside it -- it reads no query string and is
+   captcha-gated -- so the click copies the number and opens the page, and the toast says
+   what to do with it. */
+.cert-verify{ display:block; margin-top:var(--s-1); }
+.sn{
+  display:inline-block;
+  padding:2px 0;
+  color:var(--accent);
+  white-space:nowrap;
+  text-decoration:underline;
+  text-underline-offset:3px;
+  text-decoration-thickness:1px;
+}
+.sn:hover,.sn:focus-visible{ text-decoration-thickness:2px; }
+@media print{ .sn{ color:inherit; text-decoration:none; } }
+
+.toast{
+  position:fixed; right:var(--s-5); bottom:var(--s-5); z-index:60;
+  max-width:min(34ch,calc(100vw - 2rem));
+  padding:var(--s-3) var(--s-4);
+  background:var(--ink); color:var(--ground);
+  border:1px solid var(--rule);
+  font-family:var(--font-mono); font-size:var(--t-small);
+  text-wrap:pretty;
+  opacity:0; transform:translateY(6px); pointer-events:none;
+}
+.toast.is-on{ opacity:1; transform:none; }
+@media (prefers-reduced-motion:no-preference){
+  .toast{ transition:opacity .18s ease, transform .18s ease; }
+}
+@media (max-width:600px){
+  .toast{ left:var(--s-5); right:var(--s-5); bottom:var(--s-4); max-width:none; }
+}
+@media print{ .toast{ display:none; } }
+
 .cert-foot{
   margin-top:var(--s-5);
   padding-top:var(--s-4);
@@ -1510,7 +1555,7 @@ footer .mono{ font-size:var(--t-label); }
           <h2 id="certs-h">Certifications</h2>
         </div>
         <ul class="cert-list">
-          <li class="reveal">CoC Chief Mate (Management Level, STCW II/2), Unlimited / Oceangoing, MARINA<span class="cert-note">Issued 13 Feb 2026 &middot; valid to 13 Feb 2031 &middot; no limitation</span></li>
+          <li class="reveal">CoC Chief Mate (Management Level, STCW II/2), Unlimited / Oceangoing, MARINA<span class="cert-note">Issued 13 Feb 2026 &middot; valid to 13 Feb 2031 &middot; no limitation <span class="cert-verify"><a class="sn" id="snCoC" href="https://online-appointment.marina.gov.ph/verify-id-certificate" target="_blank" rel="noopener noreferrer" data-sn="8570065" aria-label="Certificate serial number 8570065. Copies the serial number and opens the MARINA verification page in a new tab.">SN 8570065</a></span></span></li>
           <li class="reveal">CoC Officer in Charge of a Navigational Watch, MARINA<span class="cert-note">Valid to 16 Oct 2030 &middot; no limitation</span></li>
           <li class="reveal">Deck Management Level: theoretical examination passed, practical assessment completed<span class="cert-note">January 2026</span></li>
           <li class="reveal">Management Level Course, Marine Deck Officers, Functions 1, 2 &amp; 3<span class="cert-note">Navigation; cargo handling &amp; stowage; controlling the operation of the ship (2025)</span></li>
@@ -2137,6 +2182,64 @@ function fmtMD(days){
   }, 1600);
 })();
 
+/* ============ CERTIFICATE SERIAL ============ */
+(function serial(){
+  const link = document.getElementById('snCoC');
+  if (!link) return;
+  const sn = link.dataset.sn;
+
+  let el = null, timer = 0;
+  function toast(msg){
+    if (!el){
+      el = document.createElement('div');
+      el.className = 'toast';
+      el.setAttribute('role','status');
+      el.setAttribute('aria-live','polite');
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    /* Force a frame so a repeat click re-runs the transition rather than sitting still. */
+    el.classList.remove('is-on');
+    void el.offsetWidth;
+    el.classList.add('is-on');
+    clearTimeout(timer);
+    timer = setTimeout(function(){ el.classList.remove('is-on'); }, 4500);
+  }
+
+  /* execCommand is dead everywhere modern, but this page is also read from ships'
+     in-app browsers and from file:// copies, where navigator.clipboard is absent or
+     refuses outside a secure context. */
+  function legacyCopy(text){
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly','');
+      ta.style.cssText = 'position:fixed;top:0;left:-9999px;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      const done = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return done;
+    } catch (e){ return false; }
+  }
+
+  const OK   = 'Serial ' + sn + ' copied \u2014 choose COP/COC/COE (MISMO ISSUED) and paste';
+  const FAIL = 'Serial ' + sn + ' \u2014 choose COP/COC/COE (MISMO ISSUED)';
+
+  /* No preventDefault: the anchor's own new-tab navigation is the link, and the copy
+     rides along inside the same user gesture. If the script is broken or blocked the
+     link still works -- it just does not carry the number. */
+  link.addEventListener('click', function(){
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(sn).then(
+        function(){ toast(OK); },
+        function(){ toast(legacyCopy(sn) ? OK : FAIL); }
+      );
+    } else {
+      toast(legacyCopy(sn) ? OK : FAIL);
+    }
+  });
+})();
 
 document.getElementById('year').textContent = new Date().getFullYear();
 </script>
