@@ -8,14 +8,15 @@ Live at **https://richardmarkadlawan.github.io**
 | File | What it is |
 |---|---|
 | `index.html` | The website. Single file, dark by default with a light toggle. |
-| `cv_print.html` | The print layout the PDF is made from. A4, two pages. |
+| `cv_print.html` | The print layout the PDF is made from. Two pages, sized to fit A4 and US Letter. |
 | `ADLAWAN_RICHARD_CV.pdf` | The downloadable CV. `index.html` links to it. |
-| `portrait.jpg` | The profile photo. 640×640 square, drawn as a circle by CSS in both pages. |
+| `portrait.jpg` | The profile photo. 640×640 square, cropped to a 4:5 rectangle by CSS in both pages. |
 | `apps/` | The shipboard apps, one folder each. Linked from the Tools section. |
 
-Everything is vanilla HTML, CSS and JavaScript with a system font stack — no frameworks, no CDNs,
-no web fonts. Open `index.html` straight from disk and it works offline, including on a phone
-with no signal.
+Everything is vanilla HTML, CSS and JavaScript — no frameworks and no CDNs. The two typefaces
+(Newsreader for prose, IBM Plex Mono for data) are embedded in each file as base64 rather than
+linked, so the pages keep their typography with no connection at all. Open `index.html` straight
+from disk and it works offline, including on a handset with no signal.
 
 ## Publishing to GitHub Pages
 
@@ -65,6 +66,8 @@ The CV is generated from `cv_print.html`, so edit that file rather than the PDF.
 
 In Safari or Chrome, open `cv_print.html` and print (⌘P). Choose **Save as PDF**, paper size
 **A4**, margins **Default**, turn **off** headers and footers, turn **on** background graphics.
+The layout is sized to fit inside US Letter's shorter height as well, so it comes out as two
+pages on either paper.
 Save it next to `index.html` as `ADLAWAN_RICHARD_CV.pdf`. The on-screen page shows these same
 instructions; they do not appear in the print output.
 

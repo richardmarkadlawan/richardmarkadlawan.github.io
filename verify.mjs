@@ -42,7 +42,11 @@ function extractService(src, file){
       type: str('type'),
       rank: str('rank'),
       from: str('from'),
-      to: nullable('to')
+      to: nullable('to'),
+      /* `note` was outside this diff and had already drifted -- the site said "Contract to
+         Oct 2026" while the print CV said "to Oct 2026". It is the availability signal, so
+         it is worth as much as the dates. */
+      note: nullable('note')
     };
   });
 }
@@ -140,6 +144,103 @@ if (va && vb){
       if (!sailed.has(v)) { fail(`vessel particulars list ${v}, which is not in the sea service`); drift++; }
     }
     if (!drift) ok(`vessel particulars: ${names.length} ships, identical in both files`);
+  }
+}
+
+/* ---------- static register mirror ---------- */
+
+/* #timeline used to be an empty div filled in by JS, which meant the most important
+   section on the page rendered as nothing at all wherever scripts were blocked. It now
+   ships as static markup. That buys a second copy of the record inside the same file, so
+   it gets the same treatment every other duplicate here gets: checked, not trusted.
+
+   Note what is deliberately NOT mirrored — the duration. A stored duration is what let
+   all six rows drift from their own dates in the first place, so the markup carries only
+   data-from/data-to and the span is derived at render time. This check enforces that too:
+   a duration written into the markup is a failure, not a convenience. */
+
+function extractMirror(src){
+  const host = src.match(/<div class="timeline" id="timeline">([\s\S]*?)\n        <\/div>/);
+  if (!host) { fail(`${SITE}: could not find the #timeline register`); return null; }
+  const out = [];
+  for (const group of host[1].match(/<article class="vgroup">[\s\S]*?<\/article>/g) || []){
+    const g = re => (group.match(re) || [])[1] ?? null;
+    const vessel = g(/class="vessel">([^<]*)</);
+    const type   = g(/class="flagtype">([^<]*)</);
+    const specs  = g(/class="svc-specs">([^<]*)</);
+    for (const row of group.match(/<li class="svc[\s\S]*?<\/li>/g) || []){
+      const pick = re => (row.match(re) || [])[1] ?? null;
+      out.push({
+        vessel, type, specs,
+        rank: pick(/class="rank-chip">([^<]*)</),
+        from: pick(/data-from="([^"]*)"/),
+        to:   pick(/data-to="([^"]*)"/),
+        note: pick(/class="svc-note">([^<]*)</),
+        live: /<li class="svc[^"]*\blive\b/.test(row),
+        storedDur: (row.match(/class="dur-badge[^"]*">\s*([^<\s][^<]*)</) || [])[1] ?? null
+      });
+    }
+  }
+  return out;
+}
+
+const mirror = extractMirror(siteSrc);
+
+if (mirror && a){
+  /* The SERVICE array keeps `note`; extractService drops it, so re-read it here. */
+  const notes = (siteSrc.match(/const SERVICE = \[([\s\S]*?)\n\];/)[1].match(/\{[^}]*\}/g) || [])
+    .map(r => (r.match(/note:\s*'([^']*)'/) || [])[1] ?? null);
+
+  if (mirror.length !== a.length){
+    fail(`register mirror has ${mirror.length} rows but SERVICE has ${a.length}`);
+  } else {
+    let drift = 0;
+    mirror.forEach((m, i) => {
+      const c = a[i];
+      for (const k of ['vessel','type','rank','from']){
+        if (m[k] !== c[k]){
+          fail(`register mirror row ${i + 1} (${c.vessel}) differs on "${k}": ` +
+               `markup=${JSON.stringify(m[k])} vs SERVICE=${JSON.stringify(c[k])}`);
+          drift++;
+        }
+      }
+      if ((m.to ?? null) !== (c.to ?? null)){
+        fail(`register mirror row ${i + 1} (${c.vessel}) differs on "to": ` +
+             `markup=${JSON.stringify(m.to)} vs SERVICE=${JSON.stringify(c.to)}`);
+        drift++;
+      }
+      if ((m.note ?? null) !== (notes[i] ?? null)){
+        fail(`register mirror row ${i + 1} (${c.vessel}) differs on "note": ` +
+             `markup=${JSON.stringify(m.note)} vs SERVICE=${JSON.stringify(notes[i])}`);
+        drift++;
+      }
+      /* The open contract carries the accent rule and reads "Present"; the class is what
+         drives both, so a mismatch here shows the wrong contract as current. */
+      if (m.live !== (c.to === null)){
+        fail(`register mirror row ${i + 1} (${c.vessel}) is ${m.live ? '' : 'not '}marked live, ` +
+             `but its contract is ${c.to === null ? 'open' : 'closed'}`);
+        drift++;
+      }
+      if (m.storedDur){
+        fail(`register mirror row ${i + 1} (${c.vessel}) has a duration written into the ` +
+             `markup ("${m.storedDur}") — durations are derived from the dates, never stored`);
+        drift++;
+      }
+      /* Particulars are the part a recruiter checks against a registry. */
+      if (m.specs){
+        const v = va && va[m.vessel];
+        if (v){
+          const want = `IMO ${v.imo} &middot; Built ${v.built} &middot; ${v.size} ` +
+                       `&middot; ${v.dims} &middot; ${v.flag} flag`;
+          if (m.specs !== want){
+            fail(`register mirror row ${i + 1} (${c.vessel}) particulars differ from VESSELS:\n` +
+                 `       markup: ${m.specs}\n       VESSELS: ${want}`);
+            drift++;
+          }
+        }
+      }
+    });
+    if (!drift) ok(`register mirror: ${mirror.length} static rows match SERVICE and VESSELS`);
   }
 }
 
@@ -271,6 +372,67 @@ for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
   if (remote.length){
     fail(`${file} loads ${remote.length} remote resource(s) — breaks offline use: ` +
          remote.map(r => r.slice(0, 60)).join(', '));
+  }
+}
+
+/* ---------- the tools list ---------- */
+
+/* Two of the five linked, shipped apps -- Draft Survey and Ballast Voyage Planner -- were
+   missing from the print CV and nothing noticed, so the PDF a recruiter files advertised
+   less than the site did. */
+
+function extractTools(src, re){
+  return (src.match(re) || []).map(m => m.replace(/<[^>]*>/g, '').replace(/&amp;/g,'&')
+    .replace(/&ldquo;|&rdquo;/g,'"').replace(/&nbsp;/g,' ').trim());
+}
+const toolsSite  = extractTools(siteSrc,  /<h3>[^<]*<\/h3>/g);
+const toolsPrint = extractTools(printSrc, /<li><b>[^<]*<\/b>/g);
+
+if (toolsSite.length && toolsPrint.length){
+  /* The site's <h3>s include the competency run-in headings, so compare only the ones the
+     print CV also claims to list: every tool named in print must exist on the site, and
+     every tool card on the site must be in print. */
+  const cards = extractTools(
+    (siteSrc.match(/<div class="tools-grid">[\s\S]*?<\/div>\s*<p class="tech-line/) || [''])[0],
+    /<h3>[^<]*<\/h3>/g);
+  let drift = 0;
+  for (const t of cards){
+    if (!toolsPrint.includes(t)){ fail(`tool "${t}" is on the site but missing from ${PRINT}`); drift++; }
+  }
+  for (const t of toolsPrint){
+    if (!cards.includes(t)){ fail(`tool "${t}" is in ${PRINT} but not on the site`); drift++; }
+  }
+  if (!drift) ok(`tools: ${cards.length} projects, identical in both files`);
+}
+
+/* ---------- the hero sentence restates the record ---------- */
+
+/* The line "Sails as 2nd Officer on MV FG Eucalyptus - a 50,011 DWT Supramax bulk carrier
+   under the Singapore flag" is a hand-typed join of SERVICE[0] and VESSELS[...]. Nothing
+   checked it, so signing the next contract would leave it quietly wrong while every other
+   rendering of the same facts updated itself. */
+
+if (a && a.length && va){
+  const lede = (siteSrc.match(/<p class="lede rise">([\s\S]*?)<\/p>/) || [])[1];
+  if (!lede){
+    fail(`${SITE}: could not find the hero sentence`);
+  } else {
+    const txt = lede.replace(/<[^>]*>/g,'').replace(/&nbsp;/g,' ').replace(/&mdash;/g,'—');
+    const cur = a[0], v = va[cur.vessel];
+    let drift = 0;
+    const want = [
+      [cur.vessel.replace(/\b(\w)(\w*)/g, (_,x,y) => x + y.toLowerCase()), 'the current vessel'],
+      [cur.rank, 'the current rank'],
+      [v && v.size.split(' /')[0], 'the current vessel’s tonnage'],
+      [v && v.flag, 'the current vessel’s flag']
+    ];
+    for (const [needle, what] of want){
+      if (needle && !txt.toLowerCase().includes(String(needle).toLowerCase())){
+        fail(`the hero sentence does not state ${what} ("${needle}") — it has drifted from the record`);
+        drift++;
+      }
+    }
+    if (!drift) ok('hero sentence: vessel, rank, tonnage and flag all match the record');
   }
 }
 
