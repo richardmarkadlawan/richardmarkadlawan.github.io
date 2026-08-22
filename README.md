@@ -8,14 +8,15 @@ Live at **https://richardmarkadlawan.github.io**
 | File | What it is |
 |---|---|
 | `index.html` | The website. Single file, dark by default with a light toggle. |
-| `cv_print.html` | The print layout the PDF is made from. A4, two pages. |
+| `cv_print.html` | The print layout the PDF is made from. Two pages, sized to fit A4 and US Letter. |
 | `ADLAWAN_RICHARD_CV.pdf` | The downloadable CV. `index.html` links to it. |
-| `portrait.jpg` | The profile photo. 640×640 square, drawn as a circle by CSS in both pages. |
+| `portrait.jpg` | The profile photo. 640×640 square, cropped to a 4:5 rectangle by CSS in both pages. |
 | `apps/` | The shipboard apps, one folder each. Linked from the Tools section. |
 
-Everything is vanilla HTML, CSS and JavaScript with a system font stack — no frameworks, no CDNs,
-no web fonts. Open `index.html` straight from disk and it works offline, including on a phone
-with no signal.
+Everything is vanilla HTML, CSS and JavaScript — no frameworks and no CDNs. The two typefaces
+(Newsreader for prose, IBM Plex Mono for data) are embedded in each file as base64 rather than
+linked, so the pages keep their typography with no connection at all. Open `index.html` straight
+from disk and it works offline, including on a handset with no signal.
 
 ## Publishing to GitHub Pages
 
