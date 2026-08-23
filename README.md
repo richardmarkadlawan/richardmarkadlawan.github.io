@@ -1,7 +1,7 @@
 # Richard Mark H. Adlawan — Deck Officer CV
 
 Personal career website, matching PDF CV, and five working shipboard apps. No build step,
-no dependencies.
+no install, nothing to run before it works.
 
 Live at **https://richardmarkadlawan.github.io**
 
@@ -13,7 +13,13 @@ Live at **https://richardmarkadlawan.github.io**
 | `portrait.jpg` | The profile photo. 640×640 square, cropped to a 4:5 rectangle by CSS in both pages. |
 | `apps/` | The shipboard apps, one folder each. Linked from the Tools section. |
 
-Everything is vanilla HTML, CSS and JavaScript — no frameworks and no CDNs. The two typefaces
+Everything is vanilla HTML, CSS and JavaScript — no frameworks and no CDNs. The one exception
+is [Motion](https://motion.dev) 13.1.1, which drives the reveal-on-scroll animation in
+`index.html`: it is *vendored*, meaning a 10 KB tree-shaken build is pasted into the page as a
+literal `<script>` rather than fetched from a CDN or pulled in at build time. There is still
+nothing to install and nothing to compile. The banner comment above that script says how to
+rebuild it — do it in a scratch directory, as `package.json` and `node_modules` must never
+appear in this repo. The page is written to stay fully readable if that script never runs. The two typefaces
 (Newsreader for prose, IBM Plex Mono for data) are embedded in each file as base64 rather than
 linked, so the pages keep their typography with no connection at all. Open `index.html` straight
 from disk and it works offline, including on a handset with no signal.
