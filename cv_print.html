@@ -93,6 +93,26 @@ body{
 }
 @media print{ .hint{ display:none !important; } }
 
+/* On screen below the sheet's own width the fixed 210mm forced the whole page sideways
+   (measured: 794px of content in a 393px viewport). This is a print layout and stays
+   exactly 210mm on paper -- @page and the print rules above are untouched -- but on a
+   handset it now fits the viewport so the file can at least be read before it is printed. */
+@media screen and (max-width:840px){
+  .page{ width:auto; max-width:100%; padding:6mm 5mm; margin:8px; }
+  .hint{ max-width:100%; margin:12px 8px 0; }
+  /* The sea service table is the one block that will not compress on its own: the column
+     widths are inline percentages and the Period cell holds a mono date range plus the
+     contract note, so it held itself at 560px inside a 320px screen. Widths are released
+     and the mono column allowed to wrap. Screen only -- on paper the table keeps its
+     inline percentages and its full size. */
+  table{ table-layout:auto; width:100%; }
+  th{ width:auto !important; }
+  th,td{ word-break:break-word; }
+  td.num,.svc-note{ white-space:normal; font-size:8.5px; }
+  th{ font-size:8px; }
+  .totals{ flex-wrap:wrap; gap:4px 10px; }
+}
+
 /* ---------- IDENTITY ---------- */
 header{
   border-bottom:.8pt solid var(--ink); padding-bottom:6pt; margin-bottom:9pt;
@@ -247,9 +267,58 @@ footer{
           <th style="width:11%" class="t-right">Duration</th>
         </tr>
       </thead>
-      <tbody id="svcBody"></tbody>
+      <!-- Static, for the same reason #timeline is static in index.html: this is the
+           record, and it must not depend on a script having run. A print pipeline that
+           snapshots before JS -- or any reader with scripts off -- got an empty table here.
+           What is NOT static is the Duration column: an open contract moves it every day,
+           so each row declares data-from/data-to and the span is derived below. Writing a
+           duration into this markup is the bug that check in verify.mjs exists to catch. -->
+      <tbody id="svcBody">
+        <tr data-from="2026-02-07">
+          <td class="v-name">FG EUCALYPTUS</td>
+          <td>Supramax Bulk Carrier</td>
+          <td>2nd Officer</td>
+          <td class="num">07 Feb 2026 &ndash; present<span class="svc-note"> &middot; Contract to Oct 2026</span></td>
+          <td class="num t-right dur"></td>
+        </tr>
+        <tr data-from="2024-09-13" data-to="2025-08-12">
+          <td class="v-name">CL BANYAN</td>
+          <td>Panamax Woodchip Carrier</td>
+          <td>2nd Officer</td>
+          <td class="num">13 Sep 2024 &ndash; 12 Aug 2025</td>
+          <td class="num t-right dur"></td>
+        </tr>
+        <tr data-from="2024-02-12" data-to="2024-04-05">
+          <td class="v-name">JACK LONDON</td>
+          <td>Panamax Container Vessel</td>
+          <td>2nd Officer</td>
+          <td class="num">12 Feb 2024 &ndash; 05 Apr 2024</td>
+          <td class="num t-right dur"></td>
+        </tr>
+        <tr data-from="2023-04-01" data-to="2023-10-02">
+          <td class="v-name">JACK LONDON</td>
+          <td>Panamax Container Vessel</td>
+          <td>2nd Officer</td>
+          <td class="num">01 Apr 2023 &ndash; 02 Oct 2023</td>
+          <td class="num t-right dur"></td>
+        </tr>
+        <tr data-from="2022-03-09" data-to="2022-10-27">
+          <td class="v-name">JACK LONDON</td>
+          <td>Panamax Container Vessel</td>
+          <td>3rd Officer</td>
+          <td class="num">09 Mar 2022 &ndash; 27 Oct 2022</td>
+          <td class="num t-right dur"></td>
+        </tr>
+        <tr data-from="2020-12-11" data-to="2021-07-12">
+          <td class="v-name">JACK LONDON</td>
+          <td>Panamax Container Vessel</td>
+          <td>3rd Officer</td>
+          <td class="num">11 Dec 2020 &ndash; 12 Jul 2021</td>
+          <td class="num t-right dur"></td>
+        </tr>
+      </tbody>
     </table>
-    <p class="vparticulars" id="vparticulars"></p>
+    <p class="vparticulars" id="vparticulars"><b>Vessel particulars</b> &mdash; FG EUCALYPTUS: IMO 9942172, built 2023, 50,011 DWT, LOA 200 m &times; 32 m, Singapore flag. CL BANYAN: IMO 9936836, built 2023, 71,033 DWT / 57,541 GT, LOA 215 m &times; 37 m, Singapore flag. JACK LONDON: IMO 9431812, built 2010, 4,250 TEU / 50,278 DWT, LOA 261 m &times; 32 m, Liberia flag.</p>
     <div class="totals">
       <span>Total as 2nd Officer: <b id="t2o">—</b></span>
       <span>Total as 3rd Officer: <b id="t3o">—</b></span>
@@ -380,11 +449,11 @@ function today(){ const n = new Date(); return new Date(Date.UTC(n.getFullYear()
 function fmtD(s){ const d = parseD(s); return String(d.getUTCDate()).padStart(2,'0') + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
 function spanDays(c){ const end = c.to ? parseD(c.to) : today(); return Math.round((end - parseD(c.from)) / DAY_MS) + 1; }
 function monthsOf(days){ return days / 30.4375; }
+/* Floored, not rounded -- see the note on fmtYM in index.html. The two must agree. */
 function fmtYM(days){
   const m = monthsOf(days);
   const y = Math.floor(m / 12);
-  const rm = Math.round(m - y * 12);
-  if (rm === 12) return (y + 1) + 'y 0m';
+  const rm = Math.floor(m - y * 12);
   return y > 0 ? y + 'y ' + rm + 'm' : rm + ' mo';
 }
 function fmtMD(days){
@@ -396,32 +465,15 @@ function fmtMD(days){
 }
 
 (function build(){
-  let html = '';
-  for (const c of SERVICE){
-    const live = !c.to;
-    html +=
-      '<tr>' +
-        '<td class="v-name">' + c.vessel + '</td>' +
-        '<td>' + c.type + '</td>' +
-        '<td>' + c.rank + '</td>' +
-        '<td class="num">' + fmtD(c.from) + ' – ' + (live ? 'present' : fmtD(c.to)) +
-          /* The note carries the availability signal -- "Contract to Oct 2026" is the
-             second thing a crewing officer wants after the CoC. It was stored on every
-             row here and rendered nowhere, so the PDF a recruiter files never said when
-             he is next free. */
-          (c.note ? '<span class="svc-note"> · ' + c.note + '</span>' : '') + '</td>' +
-        '<td class="num t-right">' + fmtMD(spanDays(c)) + '</td>' +
-      '</tr>';
+  /* The rows and the particulars are static markup now (see the comment on #svcBody).
+     The only thing filled in here is what cannot be written down: the span each row's
+     own dates imply, and the totals they add up to. */
+  for (const row of document.querySelectorAll('#svcBody tr')){
+    const from = row.getAttribute('data-from');
+    if (!from) continue;
+    const cell = row.querySelector('.dur');
+    if (cell) cell.textContent = fmtMD(spanDays({ from: from, to: row.getAttribute('data-to') }));
   }
-  document.getElementById('svcBody').innerHTML = html;
-
-  document.getElementById('vparticulars').innerHTML =
-    '<b>Vessel particulars</b> &mdash; ' +
-    Object.keys(VESSELS).map(function(name){
-      const v = VESSELS[name];
-      return name + ': IMO ' + v.imo + ', built ' + v.built + ', ' + v.size +
-             ', ' + v.dims + ', ' + v.flag + ' flag.';
-    }).join(' ');
 
   let d2 = 0, d3 = 0;
   for (const c of SERVICE){
