@@ -106,9 +106,23 @@ check failed on a clean clone for exactly that reason, over a 32-millisecond gap
 a genuinely stale PDF made it pass. The date inside the file is the moment the figures were
 frozen, and nothing in a clone or a copy can move it.
 
-So: while a contract is open the PDF must have been exported today. With no open contract the
-figures are fixed, and the check instead asks git whether `cv_print.html` has changed since the
-export. When it fails, regenerate the PDF (below) and run it again.
+While a contract is open the PDF drifts by a day, every day, so its age is what matters:
+
+| PDF age | What happens |
+|---|---|
+| 0–2 days | passes, stating the age |
+| 3–6 days | **warns** — printed in its own block, but the run still exits 0 |
+| 7 days or more | **fails** — exits non-zero |
+
+Failing on day one would be technically right and practically useless: it would go red every
+morning, and a check that is always red is one people learn to skip with `--no-verify`. A CV one
+day out is accurate; a CV a week out understates the record by a week, which is the point at
+which a recruiter is reading something wrong. Both thresholds are constants at the top of that
+block if you want them tighter.
+
+With no open contract the figures are fixed, so age alone is harmless — the check instead asks
+git whether `cv_print.html` has changed since the export. When it fails, regenerate the PDF
+(below) and run it again.
 
 Note that the word "phone" is banned outright in the two CV pages, not just phone-number patterns.
 That is deliberate — a blunt guard is the right trade for a privacy check — so avoid the word even

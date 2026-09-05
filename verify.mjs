@@ -22,9 +22,15 @@ const PDF = 'ADLAWAN_RICHARD_CV.pdf';
 const read = f => readFileSync(new URL(f, import.meta.url), 'utf8');
 const failures = [];
 const notes = [];
+/* A third outcome, between "fine" and "stop". Some things are worth saying out loud
+   without failing the run -- a PDF a couple of days old is still an accurate CV, and a
+   check that exits non-zero over it is one people learn to skip with --no-verify. Warnings
+   print in their own block and never touch the exit code. */
+const warnings = [];
 
 function fail(msg){ failures.push(msg); }
 function ok(msg){ notes.push(msg); }
+function warn(msg){ warnings.push(msg); }
 
 /* ---------- sea service ---------- */
 
@@ -396,8 +402,27 @@ function pdfCreationDate(buf){
       if (daysOld < 0){
         fail(`${PDF} claims it was exported on ${made.iso}, which is in the future -- check the clock`);
       } else if (a && a.some(r => r.to === null) && daysOld > 0){
-        fail(`${PDF} was exported ${daysOld} day(s) ago (${made.iso}) and a contract is still ` +
-             `open, so its durations and totals now understate the record -- regenerate it`);
+        /* While a contract is open the PDF drifts by a day, every day. Failing on day one
+           is technically right and practically useless: it would go red every morning, and
+           a check that is always red stops being read. A CV one day out is accurate; a CV
+           a week out understates the record by a week, which is the point at which a
+           recruiter is reading something wrong.
+
+           Thresholds, not a slope, so the policy is legible and testable. */
+        const PDF_WARN_DAYS = 3;
+        const PDF_FAIL_DAYS = 7;
+        const drift = `its durations and totals understate the record by ${daysOld} day(s)`;
+        if (daysOld >= PDF_FAIL_DAYS){
+          fail(`${PDF} was exported ${daysOld} days ago (${made.iso}) and a contract is ` +
+               `still open, so ${drift} -- regenerate it (see README)`);
+        } else if (daysOld >= PDF_WARN_DAYS){
+          warn(`${PDF} was exported ${daysOld} days ago (${made.iso}) and a contract is ` +
+               `still open, so ${drift}. Not failing yet, but regenerate it before you ` +
+               `send this CV to anyone.`);
+        } else {
+          ok(`${PDF} exported ${made.iso}, ${daysOld} day(s) ago -- within tolerance ` +
+             `(warns at ${PDF_WARN_DAYS}, fails at ${PDF_FAIL_DAYS})`);
+        }
       } else if (daysOld > 0){
         /* No open contract: the figures are fixed, so age alone is harmless. What is not
            harmless is the source page having changed since. git is the only record of that
@@ -772,6 +797,10 @@ if (ldCerts && vizCerts){
 /* ---------- report ---------- */
 
 for (const n of notes) console.log(`  ok   ${n}`);
+if (warnings.length){
+  console.log('');
+  for (const w of warnings) console.log(`  WARN ${w}`);
+}
 if (!failures.length){
   console.log('\nAll checks passed.');
   process.exit(0);
