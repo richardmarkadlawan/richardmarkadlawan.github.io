@@ -416,7 +416,11 @@ b,strong{ font-weight:var(--w-emph); }
   position:absolute; left:var(--s-3); top:-60px; z-index:60;
   background:var(--ground-raised); color:var(--ink);
   border:1px solid var(--rule-strong);
+  /* min-height, not padding: the box is centred so the label keeps its optical position
+     while the target clears 44px. It is only on screen when focused, and a keyboard or
+     switch user is exactly who needs the bigger target. */
   padding:var(--s-2) var(--s-4);
+  min-height:44px; display:inline-flex; align-items:center;
   font-family:var(--font-mono); font-size:var(--t-label);
   text-transform:uppercase; letter-spacing:var(--tr-label); text-decoration:none;
   transition:top .16s ease;
@@ -886,7 +890,13 @@ nav{
    colour. That bar answered "how much of each rank" and nothing else: it had no time in it,
    so the shape of the career -- when he sailed, how long the leave was, when the rank
    changed -- was not on the page anywhere. This is the same data plotted against time. */
-.axis{ margin:var(--s-5) 0 var(--s-6); max-width:840px; }
+/* The plot and its key are the only things on this page whose numbers cannot be shipped
+   as static markup: an open contract moves them every day, which is why #timeline carries
+   dates and derives its spans. So rather than leave an empty 52px box and a missing key
+   wherever scripts are off, the whole figure is withheld -- the register below states the
+   same record in text, in full. html.js is set by the pre-paint script in <head>. */
+.axis{ display:none; }
+html.js .axis{ display:block; margin:var(--s-5) 0 var(--s-6); max-width:840px; }
 .axis-plot{
   position:relative;
   height:52px;
@@ -1181,8 +1191,13 @@ ul.creg-list{ list-style:none; margin:0 0 var(--s-6); padding:0; max-width:var(-
    MARINA's form cannot be prefilled from outside it -- it reads no query string and is
    captcha-gated -- so the click copies the number and opens the page, and the toast says
    what to do with it. */
+/* The hit area, not the ink. At 393px these rendered 80x21 -- under WCAG 2.5.8's 24px
+   floor, on the eight highest-value taps on the page. The padding buys a 43px target and
+   the matching negative margin keeps the grid row exactly where it was. */
 .sn{
   justify-self:end;
+  padding:12px 4px;
+  margin:-12px -4px;
   font-family:var(--font-mono);
   font-size:var(--t-small);
   font-variant-numeric:lining-nums tabular-nums;
@@ -1909,7 +1924,7 @@ footer .mono{ font-size:var(--t-label); }
       </section>
 
       <footer>
-        <p>&copy; <span id="year"></span> Richard Mark H. Adlawan</p>
+        <p>&copy; <span id="year">2026</span> Richard Mark H. Adlawan</p>
         <p class="mono">This page is one file with no dependencies and works with no connection &mdash; the same constraint as the shipboard tools above.</p>
       </footer>
 
@@ -1977,11 +1992,15 @@ function today(){ const n = new Date(); return new Date(Date.UTC(n.getFullYear()
 function fmtD(s){ const d = parseD(s); return String(d.getUTCDate()).padStart(2,'0') + ' ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
 function spanDays(c){ const end = c.to ? parseD(c.to) : today(); return Math.round((end - parseD(c.from)) / DAY_MS) + 1; }
 function monthsOf(days){ return days / 30.4375; }
+/* Floored, not rounded. Rounding turned 364 days into "1y 0m" and 447 into "1y 3m" --
+   both claim more seatime than the dates support, and seatime is the one figure on this
+   page a manning office checks against the register. MARINA counts in fixed 30-day months
+   and already reports lower (see .svc-foot); overstating here widens that gap in the worst
+   direction. Flooring can only ever understate, which is the safe side of a credential. */
 function fmtYM(days){
   const m = monthsOf(days);
   const y = Math.floor(m / 12);
-  const rm = Math.round(m - y * 12);
-  if (rm === 12) return (y + 1) + 'y 0m';
+  const rm = Math.floor(m - y * 12);
   return y > 0 ? y + 'y ' + rm + 'm' : rm + ' mo';
 }
 function fmtMD(days){
@@ -2297,7 +2316,7 @@ function fmtMD(days){
 })();
 
 /* ============ MOBILE SECTION SHEET ============ */
-/* Below 900px the nav shows a readout instead of the nine-link strip; this is the strip's
+/* Below 900px the nav shows a readout instead of the ten-link strip; this is the strip's
    replacement. The rows are generated from the strip's own anchors so the two can never
    list different sections — and so the strip stays the single source of truth for which
    section is current, which it already tracks in scrollWiring. */
@@ -2382,7 +2401,11 @@ function fmtMD(days){
      kept counting. Re-reading on scroll keeps the two showing the same section. */
   main.addEventListener('scroll', function(){ if (open) markCurrent(); }, { passive:true });
 
-  btn.addEventListener('click', function(){ open ? hide(false) : show(); });
+  /* #navScrim (z-index 44) covers this button (nav is 40) while the sheet is open, so the
+     scrim's own handler is what actually closes it and the hide() branch here never runs.
+     It is kept, and kept as hide(true), so that a future z-index change resurrects the
+     correct behaviour -- returning focus to the trigger -- rather than the silent one. */
+  btn.addEventListener('click', function(){ open ? hide(true) : show(); });
   scrim.addEventListener('click', function(){ hide(true); });
   for (const r of rows){
     /* Move focus to the chosen section rather than dropping it. `hide(false)` leaves
@@ -2565,7 +2588,12 @@ function fmtMD(days){
   }
 })();
 
-document.getElementById('year').textContent = new Date().getFullYear();
+/* The span ships with a literal year so the line reads correctly with scripts off; this
+   keeps it current when they are on. */
+(function(){
+  const y = document.getElementById('year');
+  if (y) y.textContent = new Date().getFullYear();
+})();
 </script>
 </body>
 </html>

@@ -12,7 +12,8 @@
  * Exits non-zero on any failure, so it works as a pre-commit hook.
  */
 
-import { readFileSync, statSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 const SITE = 'index.html';
 const PRINT = 'cv_print.html';
@@ -292,11 +293,30 @@ const banned = [
   [/\bUPPER\s+PAKIGNE\b/i, 'a home address'],
   /* Name plus a live certificate number is the raw material for impersonation and for
      fraudulent verification lookups. Titles, issuer and dates only. */
-  [/\b(?:CCM|COICNW|GOC|BTB|SCRB|PSCRB|AFF|SSO|MECA)\d{9,}\b/, 'a certificate number']
+  /* The separator class is not decoration: real MISMO numbers are written with a space
+     or a hyphen as often as not, and `MECA 123456789` / `MECA-123456789` both walked past
+     the glued-together version of this pattern when they were injected and re-run. */
+  [/\b(?:CCM|COICNW|GOC|BTB|SCRB|PSCRB|AFF|SSO|MECA)[\s\-‐-―._]?\d{9,}\b/,
+   'a certificate number']
 ];
+/* Scanned on the decoded text as well as the raw. `me&#64;gmail.com` renders as an
+   ordinary address and walked straight past the raw-source patterns when it was injected
+   and re-run; so did `&commat;`. A privacy guard that only catches the unencoded form
+   catches the careful mistake and misses the copy-pasted one. */
+function decodeEntities(t){
+  return t
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(+d))
+    .replace(/&commat;/gi, '@').replace(/&period;/gi, '.')
+    .replace(/&plus;/gi, '+').replace(/&lpar;/gi, '(').replace(/&rpar;/gi, ')')
+    .replace(/&sol;/gi, '/').replace(/&amp;/gi, '&');
+}
+
 for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
+  const decoded = decodeEntities(src);
   for (const [re, what] of banned){
     if (re.test(src)) fail(`${file} contains ${what}`);
+    else if (re.test(decoded)) fail(`${file} contains ${what}, written as HTML entities`);
   }
 }
 
@@ -319,9 +339,13 @@ for (const dir of readdirSync(new URL('apps/', import.meta.url), { withFileTypes
   let src;
   try { src = read(rel); } catch { fail(`${rel} is missing`); continue; }
   let clean = true;
+  const decodedApp = decodeEntities(src);
   for (const [re, what] of appBanned){
-    const hit = src.match(re);
-    if (hit){ fail(`${rel} contains ${what}: "${hit[0]}"`); clean = false; }
+    const hit = src.match(re) || decodedApp.match(re);
+    /* The value itself is never echoed -- this output is read in terminals, pasted into
+       issues and scrolled past by other people. Naming the file and the kind of detail is
+       enough to go and look. */
+    if (hit){ fail(`${rel} contains ${what}`); clean = false; }
   }
   if (clean) ok(`${rel}: no contact details`);
 }
@@ -329,55 +353,123 @@ for (const dir of readdirSync(new URL('apps/', import.meta.url), { withFileTypes
 /* ---------- the PDF goes stale on its own ---------- */
 
 /* The PDF is a frozen snapshot of numbers the two pages compute live. While a contract
-   is open, its duration and every seatime total grow by a day, every day — so a PDF
+   is open, its duration and every seatime total grow by a day, every day -- so a PDF
    that was correct when it was exported quietly stops matching the site. Nothing in the
-   browser can notice that, and a recruiter reads the PDF, not the site. */
-{
-  let pdf = null;
-  try { pdf = statSync(new URL(PDF, import.meta.url)); }
-  catch { fail(`${PDF} is missing — regenerate it from ${PRINT} (see README)`); }
+   browser can notice that, and a recruiter reads the PDF, not the site.
 
-  if (pdf){
-    const printStat = statSync(new URL(PRINT, import.meta.url));
-    if (pdf.mtimeMs < printStat.mtimeMs){
-      fail(`${PDF} is older than ${PRINT} — regenerate the PDF (see README)`);
-    } else if (a && a.some(r => r.to === null)){
-      /* Compare *local* calendar days, not UTC ones. Both pages derive "today" from
-         new Date().getFullYear/getMonth/getDate — the local date — so that is the clock
-         the PDF's numbers were frozen against. Diffing UTC day floors instead reported a
-         PDF exported this morning as a day stale for anyone east of UTC. */
-      const localDay = d =>
-        Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000;
-      const days = localDay(new Date()) - localDay(pdf.mtime);
-      if (days > 0){
-        fail(`${PDF} was exported ${days} day(s) ago and a contract is still open, ` +
-             `so its durations and totals now understate the record — regenerate it`);
-      } else {
-        ok(`${PDF} is current (exported today, open contract still counting)`);
-      }
+   This used to compare mtimes. It cannot: git does not preserve mtimes, so on any fresh
+   clone both files carry the checkout time and whichever landed first is declared "older"
+   -- this script failed on a clean clone for that reason, 32ms apart -- while `touch`ing a
+   genuinely stale PDF made it pass. It was testing the filesystem, not the document.
+
+   A PDF states when it was made, inside itself, in its Info dictionary. Git cannot destroy
+   that, a copy cannot fake it, and it is the exact moment the figures were frozen. */
+
+function pdfCreationDate(buf){
+  /* D:YYYYMMDDHHmmSS+HH'mm'  (PDF 32000-1, 7.9.4). The offset is what makes this the
+     author's local calendar day, which is the clock the page's own figures were frozen
+     against -- both pages derive "today" from the local date. */
+  const m = buf.toString('latin1').match(/\/CreationDate\s*\(\s*D:(\d{4})(\d{2})(\d{2})(?:(\d{2})(\d{2})(\d{2}))?(?:([+-Z])(\d{2})'?(\d{2})?)?/);
+  if (!m) return null;
+  const [, y, mo, d, hh = '00', mi = '00', ss = '00', sign, oh = '00', om = '00'] = m;
+  let t = Date.UTC(+y, +mo - 1, +d, +hh, +mi, +ss);
+  if (sign === '+') t -= (+oh * 60 + +om) * 60000;
+  else if (sign === '-') t += (+oh * 60 + +om) * 60000;
+  /* Local calendar day at the point of export. */
+  return { exportedDay: Date.UTC(+y, +mo - 1, +d) / 86400000, iso: `${y}-${mo}-${d}`, ms: t };
+}
+
+{
+  let buf = null;
+  try { buf = readFileSync(new URL(PDF, import.meta.url)); }
+  catch { fail(`${PDF} is missing -- regenerate it from ${PRINT} (see README)`); }
+
+  if (buf){
+    const made = pdfCreationDate(buf);
+    if (!made){
+      fail(`${PDF} carries no /CreationDate, so there is no way to tell whether it is stale ` +
+           `-- re-export it with a real PDF writer (see README)`);
     } else {
-      ok(`${PDF} is newer than ${PRINT}`);
+      const localDay = dt => Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate()) / 86400000;
+      const daysOld = localDay(new Date()) - made.exportedDay;
+
+      if (daysOld < 0){
+        fail(`${PDF} claims it was exported on ${made.iso}, which is in the future -- check the clock`);
+      } else if (a && a.some(r => r.to === null) && daysOld > 0){
+        fail(`${PDF} was exported ${daysOld} day(s) ago (${made.iso}) and a contract is still ` +
+             `open, so its durations and totals now understate the record -- regenerate it`);
+      } else if (daysOld > 0){
+        /* No open contract: the figures are fixed, so age alone is harmless. What is not
+           harmless is the source page having changed since. git is the only record of that
+           which survives a clone; if it is unavailable the check says so rather than
+           quietly passing. */
+        let edited = null;
+        try {
+          edited = execFileSync('git', ['log', '-1', '--format=%cI', '--', PRINT],
+                                { cwd: new URL('.', import.meta.url), encoding: 'utf8' }).trim();
+        } catch { /* not a checkout, or no git */ }
+        if (!edited){
+          ok(`${PDF} exported ${made.iso}; no open contract, and ${PRINT}'s history is ` +
+             `unavailable here, so its age could not be checked against it`);
+        } else if (Date.parse(edited) > made.ms){
+          fail(`${PRINT} was last changed ${edited.slice(0,10)} but ${PDF} was exported ` +
+               `${made.iso} -- regenerate the PDF (see README)`);
+        } else {
+          ok(`${PDF} exported ${made.iso}, after the last change to ${PRINT}; no open contract`);
+        }
+      } else {
+        ok(`${PDF} is current (exported today, ${made.iso})`);
+      }
     }
   }
 }
 
 /* ---------- offline guarantee ---------- */
 
+/* What this is really guarding is resources the browser fetches on its own to paint the
+   page -- stylesheets, scripts, fonts, images. rel="canonical"/"alternate" and <a href>
+   carry absolute URLs but are declarative: nothing is requested until a reader clicks, and
+   the page renders identically with no network. Those are dropped before scanning.
+
+   The old version matched only  (src|href)="http(s)://" , which let six regressions
+   through when they were injected and re-run -- among them the one that matters most:
+
+     @font-face{ src:url(https://fonts.gstatic.com/...) }
+
+   Both pages embed their typefaces as src:url(data:font/woff2;base64,...). Swapping one
+   for a Google Fonts URL is the single most plausible future edit, it looks perfect on a
+   laptop, and it takes the page bare-faced on a ship with no signal. CSS url() was
+   invisible here. So were @import, srcset, unquoted attributes and protocol-relative
+   //host URLs. All are covered below. */
+
+const REMOTE = '(?:https?:)?//';
+
 for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
-  /* rel="canonical" and rel="alternate" carry an absolute URL but are declarative
-     metadata — the browser never fetches them, so they cost nothing offline. An <a href>
-     is the same kind of promise: nothing is requested until a reader clicks, and the page
-     renders identically with no network. What this check is really guarding is resources
-     the browser fetches on its own to paint the page — stylesheets, scripts, fonts,
-     images. Drop the declarative tags before scanning; everything left with an http(s)
-     src/href does get fetched. */
   const scanned = src
     .replace(/<link\b[^>]*\brel\s*=\s*["'](?:canonical|alternate)["'][^>]*>/gi, '')
-    .replace(/<a\b[^>]*>/gi, '');
-  const remote = scanned.match(/(?:src|href)\s*=\s*["']https?:\/\/[^"']+/gi) || [];
-  if (remote.length){
-    fail(`${file} loads ${remote.length} remote resource(s) — breaks offline use: ` +
-         remote.map(r => r.slice(0, 60)).join(', '));
+    .replace(/<a\b[^>]*>/gi, '')
+    /* ld+json and the og:/twitter: tags state URLs as data, not as things to fetch. */
+    .replace(/<script\b[^>]*type\s*=\s*["']application\/ld\+json["'][\s\S]*?<\/script>/gi, '')
+    .replace(/<meta\b[^>]*>/gi, '');
+
+  const hits = [];
+  const add = (what, m) => { if (m) for (const h of m) hits.push(`${what}: ${h.slice(0, 70)}`); };
+
+  /* Fetched attributes, quoted or bare. srcset and poster were both unguarded. */
+  add('attribute', scanned.match(new RegExp(
+    `(?:src|href|srcset|poster|data|formaction|action)\\s*=\\s*(?:["']\\s*)?${REMOTE}[^"'\\s>]+`, 'gi')));
+  /* Anything CSS pulls in itself -- fonts, backgrounds, masks, cursors. */
+  add('css url()', scanned.match(new RegExp(`url\\(\\s*["']?${REMOTE}[^)"']+`, 'gi')));
+  add('css @import', scanned.match(new RegExp(`@import\\s+(?:url\\(\\s*)?["']?${REMOTE}[^)"';]+`, 'gi')));
+  /* A remote font declared the long way round. */
+  add('@font-face src', scanned.match(new RegExp(`src\\s*:\\s*[^;}]*${REMOTE}[^;}]*`, 'gi')));
+
+  const uniq = [...new Set(hits)];
+  if (uniq.length){
+    fail(`${file} loads ${uniq.length} remote resource(s) -- breaks offline use:\n       ` +
+         uniq.join('\n       '));
+  } else {
+    ok(`${file}: no remote resources -- opens with no network`);
   }
 }
 
@@ -439,6 +531,241 @@ if (a && a.length && va){
       }
     }
     if (!drift) ok('hero sentence: vessel, rank, tonnage and flag all match the record');
+  }
+}
+
+/* ---------- the print CV mirrors the register too ---------- */
+
+/* cv_print.html built its whole Sea Service table with innerHTML, so with scripts off it
+   rendered an empty <tbody>, a blank particulars line and three em-dashes where the
+   seatime totals go -- measured, not guessed. index.html was fixed for exactly this and
+   got the mirror check above; the page that becomes the PDF a recruiter files never was.
+   The rows are static now, which buys a third copy of the record, so it gets the same
+   treatment as every other copy here: checked, not trusted. */
+
+function extractPrintRows(src){
+  const host = src.match(/<tbody id="svcBody">([\s\S]*?)<\/tbody>/);
+  if (!host) { fail(`${PRINT}: could not find the #svcBody register`); return null; }
+  return (host[1].match(/<tr[\s\S]*?<\/tr>/g) || []).map(row => {
+    const pick = re => (row.match(re) || [])[1] ?? null;
+    const cells = (row.match(/<td[^>]*>([\s\S]*?)<\/td>/g) || [])
+      .map(c => c.replace(/<[^>]*>/g, '').replace(/&ndash;/g, '–').replace(/&middot;/g, '·').trim());
+    return {
+      from: pick(/data-from="([^"]*)"/),
+      to:   pick(/data-to="([^"]*)"/),
+      vessel: cells[0] ?? null,
+      type:   cells[1] ?? null,
+      rank:   cells[2] ?? null,
+      period: cells[3] ?? null,
+      storedDur: cells[4] || null
+    };
+  });
+}
+
+const prows = extractPrintRows(printSrc);
+
+if (prows && b){
+  const pnotes = (printSrc.match(/const SERVICE = \[([\s\S]*?)\n\];/)[1].match(/\{[^}]*\}/g) || [])
+    .map(r => (r.match(/note:\s*'([^']*)'/) || [])[1] ?? null);
+
+  if (prows.length !== b.length){
+    fail(`${PRINT} register has ${prows.length} static rows but its SERVICE has ${b.length}`);
+  } else {
+    let drift = 0;
+    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const human = d => { const [y,m,dd] = d.split('-'); return `${dd} ${MON[+m-1]} ${y}`; };
+    prows.forEach((m, i) => {
+      const c = b[i];
+      for (const k of ['vessel','type','rank','from']){
+        if (m[k] !== c[k]){
+          fail(`${PRINT} register row ${i + 1} (${c.vessel}) differs on "${k}": ` +
+               `markup=${JSON.stringify(m[k])} vs SERVICE=${JSON.stringify(c[k])}`);
+          drift++;
+        }
+      }
+      if ((m.to ?? null) !== (c.to ?? null)){
+        fail(`${PRINT} register row ${i + 1} (${c.vessel}) differs on "to": ` +
+             `markup=${JSON.stringify(m.to)} vs SERVICE=${JSON.stringify(c.to)}`);
+        drift++;
+      }
+      /* The period cell is hand-written text; it must restate the row's own dates and the
+         note, or the printed CV says something the data does not. */
+      const want = human(c.from) + ' – ' + (c.to ? human(c.to) : 'present') +
+                   (pnotes[i] ? ' · ' + pnotes[i] : '');
+      if (m.period !== want){
+        fail(`${PRINT} register row ${i + 1} (${c.vessel}) period cell reads\n` +
+             `       "${m.period}"\n       but its dates imply "${want}"`);
+        drift++;
+      }
+      /* Same rule as the site: a duration in the markup is the bug, not a convenience. */
+      if (m.storedDur){
+        fail(`${PRINT} register row ${i + 1} (${c.vessel}) has a duration written into the ` +
+             `markup ("${m.storedDur}") — durations are derived from the dates, never stored`);
+        drift++;
+      }
+    });
+    if (!drift) ok(`${PRINT} register: ${prows.length} static rows match its SERVICE`);
+  }
+
+  /* The particulars line is static too, and states the same IMO numbers a recruiter checks. */
+  const vpar = (printSrc.match(/<p class="vparticulars" id="vparticulars">([\s\S]*?)<\/p>/) || [])[1];
+  if (!vpar){
+    fail(`${PRINT}: could not find the vessel particulars line`);
+  } else if (vb){
+    let drift = 0;
+    for (const name of Object.keys(vb)){
+      const v = vb[name];
+      const want = `${name}: IMO ${v.imo}, built ${v.built}, ${v.size}, ${v.dims}, ${v.flag} flag.`;
+      if (!vpar.includes(want)){
+        fail(`${PRINT} particulars line does not state ${name} as its VESSELS entry implies:\n` +
+             `       expected: ${want}`);
+        drift++;
+      }
+    }
+    if (!drift) ok(`${PRINT} particulars: ${Object.keys(vb).length} ships match VESSELS`);
+  }
+}
+
+/* ---------- the certificates ---------- */
+
+/* The credentials are stated three times: the ld+json a search engine reads, the visible
+   register with its serials, and the print CV. They are what a recruiter actually checks
+   against MARINA, which makes them worth more than the dates -- and until now nothing
+   compared them. They agreed; that was luck, and luck is not a check. */
+
+function extractLdCerts(src){
+  const blk = src.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+  if (!blk) { fail(`${SITE}: could not find the structured-data block`); return null; }
+  let data;
+  try { data = JSON.parse(blk[1]); }
+  catch (e){ fail(`${SITE}: the ld+json block is not valid JSON (${e.message})`); return null; }
+  const creds = data.hasCredential || [];
+  if (!creds.length){ fail(`${SITE}: the ld+json block lists no credentials`); return null; }
+  return creds.map(c => ({ id: String(c.identifier ?? ''), from: c.validFrom ?? null,
+                           to: c.expires ?? null, name: c.name ?? '' }));
+}
+
+function extractVisibleCerts(src){
+  const blk = src.match(/<ul class="creg-list">([\s\S]*?)<\/ul>/);
+  if (!blk) { fail(`${SITE}: could not find the certificate register`); return null; }
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const iso = t => {
+    const m = t.match(/(\d{2}) (\w{3}) (\d{4})/);
+    return m ? `${m[3]}-${String(MON.indexOf(m[2]) + 1).padStart(2, '0')}-${m[1]}` : null;
+  };
+  return (blk[1].match(/<li class="creg[\s\S]*?<\/li>/g) || []).map(li => {
+    const dates = ((li.match(/<p class="creg-dates">([\s\S]*?)<\/p>/) || [])[1] || '')
+      .replace(/<[^>]*>/g, ' ').replace(/&[a-z]+;/gi, ' ').replace(/\s+/g, ' ').trim();
+    const tail = dates.replace(/^\d{2} \w{3} \d{4}\s*/, '');
+    return {
+      id: (li.match(/data-sn="(\d+)"/) || [])[1] ?? null,
+      name: ((li.match(/<p class="creg-name">([^<]*)/) || [])[1] || '').trim(),
+      from: iso(dates),
+      to: /no expiry/i.test(tail) ? null : iso(tail)
+    };
+  });
+}
+
+const ldCerts  = extractLdCerts(siteSrc);
+const vizCerts = extractVisibleCerts(siteSrc);
+
+if (ldCerts && vizCerts){
+  let drift = 0;
+  if (ldCerts.length !== vizCerts.length){
+    fail(`certificates: ld+json lists ${ldCerts.length} but the page shows ${vizCerts.length}`);
+    drift++;
+  }
+  for (const v of vizCerts){
+    if (!v.id){ fail(`a certificate row on ${SITE} carries no serial number`); drift++; continue; }
+    const l = ldCerts.find(x => x.id === v.id);
+    if (!l){
+      fail(`certificate SN ${v.id} (${v.name}) is on the page but missing from the ld+json`);
+      drift++; continue;
+    }
+    if (v.from !== l.from){
+      fail(`certificate SN ${v.id} (${v.name}) issue date differs: page=${v.from} vs ld+json=${l.from}`);
+      drift++;
+    }
+    if ((v.to ?? null) !== (l.to ?? null)){
+      fail(`certificate SN ${v.id} (${v.name}) expiry differs: page=${v.to} vs ld+json=${l.to}`);
+      drift++;
+    }
+  }
+  for (const l of ldCerts){
+    if (!vizCerts.find(x => x.id === l.id)){
+      fail(`the ld+json claims certificate ${l.id} (${l.name}) with no visible row to back it`);
+      drift++;
+    }
+  }
+
+  /* And the print CV must state the same dates for the same certificate. Matched on the
+     visible name, which is a prefix of the printed line in every case. */
+  const printLines = ((printSrc.match(/<div class="certs">([\s\S]*?)<\/div>\s*<p class="certfoot"/) || [])[1] || '')
+    .match(/<div class="cert">[\s\S]*?<\/div>/g) || [];
+  const flat = printLines.map(d => d.replace(/<[^>]*>/g, '')
+    .replace(/&rsquo;/g, "'").replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim());
+  if (!flat.length){
+    fail(`${PRINT}: could not find the certificate list`);
+    drift++;
+  } else {
+    const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const human = d => { const [y,m,dd] = d.split('-'); return `${dd} ${MON[+m-1]} ${y}`; };
+    for (const v of vizCerts){
+      const key = v.name.replace(/&rsquo;/g, "'").replace(/&amp;/g, '&').trim();
+      const line = flat.find(t => t.startsWith(key));
+      if (!line){
+        fail(`certificate "${key}" is on the site but no matching line in ${PRINT}`);
+        drift++; continue;
+      }
+      if (v.from && !line.includes(human(v.from))){
+        fail(`certificate "${key}" is issued ${human(v.from)} on the site, but ${PRINT} says:\n       ${line}`);
+        drift++;
+      }
+      if (v.to && !line.includes(human(v.to))){
+        fail(`certificate "${key}" expires ${human(v.to)} on the site, but ${PRINT} says:\n       ${line}`);
+        drift++;
+      }
+      if (!v.to && !/no expiry/i.test(line)){
+        fail(`certificate "${key}" has no expiry on the site, but ${PRINT} states one:\n       ${line}`);
+        drift++;
+      }
+    }
+  }
+
+  /* A certificate that has lapsed is worse than one that is missing: the page presents
+     every row as current. */
+  const todayISO = new Date().toISOString().slice(0, 10);
+  for (const v of vizCerts){
+    if (v.to && v.to < todayISO){
+      fail(`certificate SN ${v.id} (${v.name}) expired on ${v.to} — remove it or mark it lapsed`);
+      drift++;
+    }
+  }
+
+  if (!drift) ok(`certificates: ${vizCerts.length} registered, identical in the ld+json, ` +
+                 `the page and ${PRINT}, none expired`);
+}
+
+/* ---------- hand-written validity claims go stale silently ---------- */
+
+/* Two claims on these pages are prose, not data: the PEME validity and the contract note.
+   Nothing derives them, so nothing notices when they pass. */
+{
+  const now = new Date();
+  const MON = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  const endOfMonth = (mon, yr) => Date.UTC(yr, mon + 1, 0);
+  for (const [src, file] of [[siteSrc, SITE], [printSrc, PRINT]]){
+    const re = /(?:valid to|Contract to)\s+([A-Z][a-z]{2})[a-z]*\s+((?:19|20)\d{2})/gi;
+    let m;
+    while ((m = re.exec(src))){
+      const mon = MON.indexOf(m[1].toLowerCase());
+      if (mon < 0) continue;
+      const expires = endOfMonth(mon, +m[2]);
+      const daysLeft = Math.round((expires - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+      const claim = `"${m[0]}"`;
+      if (daysLeft < 0) fail(`${file} still states ${claim}, which lapsed ${-daysLeft} day(s) ago`);
+      else if (daysLeft <= 45) ok(`${file}: ${claim} expires in ${daysLeft} day(s) — plan the update`);
+    }
   }
 }
 
