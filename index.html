@@ -1042,14 +1042,14 @@ html.js .axis{ display:block; margin:var(--s-5) 0 var(--s-6); max-width:840px; }
   color:var(--ink-dim);
   margin:var(--s-1) 0 0;
 }
-.svc-manning,.svc-foot{
+.svc-foot{
   font-size:var(--t-small);
   color:var(--ink-dim);
   max-width:var(--measure);
   text-wrap:pretty;
+  /* Was var(--s-2): the manning line above used to carry the section's top spacing. */
+  margin-top:var(--s-5);
 }
-.svc-manning{ margin-top:var(--s-5); color:var(--ink-mid); }
-.svc-foot{ margin-top:var(--s-2); }
 
 /* ============ COMPETENCY LISTS ============
    Bullets are set as ruled entries with a hanging mono marker, so a recruiter scanning
@@ -1353,16 +1353,6 @@ ul.creg-list{ list-style:none; margin:0 0 var(--s-6); padding:0; max-width:var(-
   a.tool-card:hover .tool-open svg{ transform:translateX(3px); }
 }
 @media (prefers-reduced-motion: reduce){ .tool-open svg{ transition:none; } }
-
-.tech-line{
-  margin-top:var(--s-5);
-  font-family:var(--font-mono);
-  font-size:var(--t-small);
-  color:var(--ink-dim);
-  max-width:var(--measure);
-  line-height:1.7;
-}
-.tech-line b{ color:var(--accent); font-weight:400; }
 
 /* ============ CONTACT ============ */
 /* No fill and no box. This was the only filled surface in the document body -- every other
@@ -1703,7 +1693,6 @@ footer .mono{ font-size:var(--t-label); }
           </ol>
         </article>
         </div>
-        <p class="svc-manning reveal">Manning: <span class="mono">V.Ships (Fleet 6B Manila)</span> &middot; earlier contracts under <span class="mono">Pacific Ocean Manning, Inc.</span></p>
         <p class="svc-foot reveal">Durations are actual days aboard, derived from the sign-on and sign-off dates. MARINA records sea service in fixed 30-day months, so the official register shows marginally lower figures for the same dates.</p>
       </section>
 
@@ -1843,7 +1832,7 @@ footer .mono{ font-size:var(--t-label); }
       <!-- ================= EDUCATION ================= -->
       <section id="education" aria-labelledby="education-h">
         <h2 id="education-h" class="reveal">Education</h2>
-        <p class="edu-line reveal"><strong>University of Cebu, Maritime Education and Training Center (UC-METC)</strong><span class="edu-note">College, maritime programme &middot; graduated 2008</span></p>
+        <p class="edu-line reveal"><strong>University of Cebu, Maritime Education and Training Center (UC-METC)</strong><span class="edu-note">College &middot; graduated 2008</span></p>
       </section>
 
       <!-- ================= TOOLS & PROJECTS ================= -->
@@ -1890,13 +1879,7 @@ footer .mono{ font-size:var(--t-label); }
             <h3>Medical Inventory System</h3>
             <p>Scale A compliance workbook: expiry tracking, requisition generation.</p>
           </div>
-          <div class="tool-card reveal">
-            <div class="t-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg></div>
-            <h3>&ldquo;Bulk Carrier Knowledge Edition 2025&rdquo;</h3>
-            <p>Compiled internal reference document.</p>
-          </div>
         </div>
-        <p class="tech-line reveal">Vanilla JS, HTML and CSS &middot; offline-first architecture &middot; AI-assisted development (Claude Code) &middot; Excel &middot; Git and GitHub</p>
       </section>
 
       <!-- ================= LEADERSHIP ================= -->
@@ -1925,7 +1908,6 @@ footer .mono{ font-size:var(--t-label); }
 
       <footer>
         <p>&copy; <span id="year">2026</span> Richard Mark H. Adlawan</p>
-        <p class="mono">This page is one file with no dependencies and works with no connection &mdash; the same constraint as the shipboard tools above.</p>
       </footer>
 
     </div>

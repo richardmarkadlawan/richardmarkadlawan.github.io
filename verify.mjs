@@ -514,10 +514,18 @@ const toolsPrint = extractTools(printSrc, /<li><b>[^<]*<\/b>/g);
 if (toolsSite.length && toolsPrint.length){
   /* The site's <h3>s include the competency run-in headings, so compare only the ones the
      print CV also claims to list: every tool named in print must exist on the site, and
-     every tool card on the site must be in print. */
+     every tool card on the site must be in print.
+
+     Anchored on the #tools section, not on whatever happens to follow the grid. It used to
+     end the match at `<p class="tech-line`, so deleting that one decorative paragraph made
+     the region match nothing, `cards` come back empty, and every tool in the print CV get
+     reported as missing from the site -- seven failures from a change that touched neither
+     list. A check should not depend on an element it is not checking. Every <h3> inside
+     #tools is a tool card; the section's own heading is an <h2>. */
   const cards = extractTools(
-    (siteSrc.match(/<div class="tools-grid">[\s\S]*?<\/div>\s*<p class="tech-line/) || [''])[0],
+    (siteSrc.match(/<section id="tools"[\s\S]*?<\/section>/) || [''])[0],
     /<h3>[^<]*<\/h3>/g);
+  if (!cards.length) fail(`${SITE}: found no tool cards in the #tools section -- the markup moved`);
   let drift = 0;
   for (const t of cards){
     if (!toolsPrint.includes(t)){ fail(`tool "${t}" is on the site but missing from ${PRINT}`); drift++; }
