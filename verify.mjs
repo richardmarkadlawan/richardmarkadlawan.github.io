@@ -22,9 +22,15 @@ const PDF = 'ADLAWAN_RICHARD_CV.pdf';
 const read = f => readFileSync(new URL(f, import.meta.url), 'utf8');
 const failures = [];
 const notes = [];
+/* A third outcome, between "fine" and "stop". Some things are worth saying out loud
+   without failing the run -- a PDF a couple of days old is still an accurate CV, and a
+   check that exits non-zero over it is one people learn to skip with --no-verify. Warnings
+   print in their own block and never touch the exit code. */
+const warnings = [];
 
 function fail(msg){ failures.push(msg); }
 function ok(msg){ notes.push(msg); }
+function warn(msg){ warnings.push(msg); }
 
 /* ---------- sea service ---------- */
 
@@ -396,8 +402,27 @@ function pdfCreationDate(buf){
       if (daysOld < 0){
         fail(`${PDF} claims it was exported on ${made.iso}, which is in the future -- check the clock`);
       } else if (a && a.some(r => r.to === null) && daysOld > 0){
-        fail(`${PDF} was exported ${daysOld} day(s) ago (${made.iso}) and a contract is still ` +
-             `open, so its durations and totals now understate the record -- regenerate it`);
+        /* While a contract is open the PDF drifts by a day, every day. Failing on day one
+           is technically right and practically useless: it would go red every morning, and
+           a check that is always red stops being read. A CV one day out is accurate; a CV
+           a week out understates the record by a week, which is the point at which a
+           recruiter is reading something wrong.
+
+           Thresholds, not a slope, so the policy is legible and testable. */
+        const PDF_WARN_DAYS = 3;
+        const PDF_FAIL_DAYS = 7;
+        const drift = `its durations and totals understate the record by ${daysOld} day(s)`;
+        if (daysOld >= PDF_FAIL_DAYS){
+          fail(`${PDF} was exported ${daysOld} days ago (${made.iso}) and a contract is ` +
+               `still open, so ${drift} -- regenerate it (see README)`);
+        } else if (daysOld >= PDF_WARN_DAYS){
+          warn(`${PDF} was exported ${daysOld} days ago (${made.iso}) and a contract is ` +
+               `still open, so ${drift}. Not failing yet, but regenerate it before you ` +
+               `send this CV to anyone.`);
+        } else {
+          ok(`${PDF} exported ${made.iso}, ${daysOld} day(s) ago -- within tolerance ` +
+             `(warns at ${PDF_WARN_DAYS}, fails at ${PDF_FAIL_DAYS})`);
+        }
       } else if (daysOld > 0){
         /* No open contract: the figures are fixed, so age alone is harmless. What is not
            harmless is the source page having changed since. git is the only record of that
@@ -489,10 +514,18 @@ const toolsPrint = extractTools(printSrc, /<li><b>[^<]*<\/b>/g);
 if (toolsSite.length && toolsPrint.length){
   /* The site's <h3>s include the competency run-in headings, so compare only the ones the
      print CV also claims to list: every tool named in print must exist on the site, and
-     every tool card on the site must be in print. */
+     every tool card on the site must be in print.
+
+     Anchored on the #tools section, not on whatever happens to follow the grid. It used to
+     end the match at `<p class="tech-line`, so deleting that one decorative paragraph made
+     the region match nothing, `cards` come back empty, and every tool in the print CV get
+     reported as missing from the site -- seven failures from a change that touched neither
+     list. A check should not depend on an element it is not checking. Every <h3> inside
+     #tools is a tool card; the section's own heading is an <h2>. */
   const cards = extractTools(
-    (siteSrc.match(/<div class="tools-grid">[\s\S]*?<\/div>\s*<p class="tech-line/) || [''])[0],
+    (siteSrc.match(/<section id="tools"[\s\S]*?<\/section>/) || [''])[0],
     /<h3>[^<]*<\/h3>/g);
+  if (!cards.length) fail(`${SITE}: found no tool cards in the #tools section -- the markup moved`);
   let drift = 0;
   for (const t of cards){
     if (!toolsPrint.includes(t)){ fail(`tool "${t}" is on the site but missing from ${PRINT}`); drift++; }
@@ -772,6 +805,10 @@ if (ldCerts && vizCerts){
 /* ---------- report ---------- */
 
 for (const n of notes) console.log(`  ok   ${n}`);
+if (warnings.length){
+  console.log('');
+  for (const w of warnings) console.log(`  WARN ${w}`);
+}
 if (!failures.length){
   console.log('\nAll checks passed.');
   process.exit(0);
